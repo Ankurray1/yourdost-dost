@@ -30,6 +30,7 @@ const P = {
   people: '<circle cx="8" cy="9" r="3"/><circle cx="16.5" cy="9" r="3"/><path d="M2.5 19c.7-3 2.8-4.5 5.5-4.5s4.8 1.5 5.5 4.5M13.5 15c.9-.4 1.9-.6 3-.6 2.7 0 4.8 1.5 5.5 4.6"/>',
   spark: '<path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5L18 18M6 18l2.5-2.5M15.5 8.5L18 6"/>',
   shield: '<path d="M12 3.5l7 3v5.5c0 4.2-3 7.4-7 8.5-4-1.1-7-4.3-7-8.5V6.5z"/><path d="M9 12l2 2 4-4"/>',
+  bell: '<path d="M6 16.5V11a6 6 0 0 1 12 0v5.5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/>',
   gift: '<rect x="4" y="9" width="16" height="11" rx="2"/><path d="M4 13h16M12 9v11M12 9c-2.5 0-4.5-1-4.5-3S10 3.5 12 9c2-5.5 4.5-5 4.5-3s-2 3-4.5 3"/>',
 };
 const ic = (n, x = '') => `<svg class="i ${x}" viewBox="0 0 24 24" aria-hidden="true">${P[n] || ''}</svg>`;
@@ -90,7 +91,7 @@ const KEY = 'yd-app-v3';
 const fresh = () => ({
   onboarded: false, ob: 0, name: 'Riya', email: 'riya.sharma@acme.com', company: 'Acme Corp', concerns: [], lang: 'English',
   view: 'home', params: {}, stack: [], tab: 'home',
-  moods: seedMoods(), lastCheck: null, tour: null, leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
+  moods: seedMoods(), lastCheck: null, tour: null, regs: [], notifs: NOTIF_SEED(), leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
   plan: null, sessionsLeft: 3, favs: ['e1'], seg: 'browse', sort: 'match', quiz: null,
   booked: { id: 'e1', day: 'Mon 24 Nov', time: '6 pm', mode: 'Video', n: 3 },
   history: [{ id: 'e1', n: 1, date: 'Mon 10 Nov', mode: 'Video', fit: 4, note: 'Mapped what drains my evenings: late calls and checking Slack in bed.', task: 'Try a switch-off ritual' }, { id: 'e1', n: 2, date: 'Mon 17 Nov', mode: 'Video', fit: 5, note: 'The ritual helped on 3 of 5 nights. Next: saying no to one late meeting.', task: 'Box breathing before stand-up' }],
@@ -98,6 +99,8 @@ const fresh = () => ({
 });
 let S;
 try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { S = fresh(); }
+if (!Array.isArray(S.notifs)) S.notifs = NOTIF_SEED();
+if (!Array.isArray(S.regs)) S.regs = [];
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 let SHEET = null, TOAST = null, X = {}; // transient: open sheet, toast, screen-local state
 
@@ -227,9 +230,10 @@ function bindIntro() {
 /* ---- First-visit tour: spotlight one feature at a time with a short explanation ---- */
 const TOUR = [
   { sel: '.moodcard', title: 'A 5-second daily check-in', text: 'Tap how you feel once a day. It disappears for 24 hours and builds your mood history.' },
+  { sel: '.bell', title: 'Notifications', text: 'Reminders, event nudges and the odd quick survey. The number shows what you haven\'t read yet.' },
   { sel: '.moodchip', title: 'Your mood score', text: 'Your average for the week, out of 100. Tap it to see your week, month and year, and what lifts you.' },
   { sel: '#t-step', title: "Today's one step", text: 'One small thing to do today, picked by Dost from your plan. Never a long to-do list.' },
-  { sel: '#t-garden', title: 'Your garden', text: 'Every kind thing you do for yourself grows a plant. It never wilts, so missed days are okay.' },
+  { sel: '#t-events', title: 'Live events, free', text: 'Webinars and community circles, like Cheers to Men tomorrow. Register in seconds; join anonymously if you like.' },
   { sel: '.tab[data-v="experts"]', title: 'Experts', text: 'Find your counsellor. Take the smart match, swipe through profiles and book a time from their calendar.' },
   { sel: '.orbbtn', title: 'Dost, your AI guide', text: "Talk or type anytime. Dost listens, asks a few questions and finds the right next step. It's not a doctor." },
   { sel: '.tab[data-v="grow"]', title: 'Grow', text: 'Short exercises, 7-day programs and quick checks for stress, sleep and mood.' },
@@ -261,6 +265,123 @@ function drawTour() {
       <div class="row between"><div class="dots" aria-hidden="true">${steps.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
         <div class="row" style="gap:8px">${i > 0 ? `<button class="btn ghost sm" data-a="tour-back">Back</button>` : ''}<button class="btn primary sm" data-a="tour-next">${i === steps.length - 1 ? 'Got it' : 'Next'}</button></div></div></div>`;
 }
+
+/* ---- Events: live webinars and community circles, with a short typographic sign-up ---- */
+const EVENTS = [
+  { id: 'men', kicker: "International Men's Day", a: 'Cheers', b: 'to Men.', theme: 'ev-ink', date: [2026, 10, 19], time: '6 pm', mins: 60, format: 'Live circle · online · camera optional',
+    host: 'Rohan Mehta & Kabir Singh, YourDOST counsellors', blurb: 'An honest, no-pressure evening for men to talk about the stuff we usually carry alone: work, family, money and "sab theek hai".',
+    take: ['How to say "I\'m not okay" to someone you trust', 'A 3-minute reset for heavy days', 'Where to get help, privately'] },
+  { id: 'toolkit', kicker: 'Webinar', a: "Men's Toolkit", b: 'for mental health.', theme: 'ev-peach', date: [2026, 10, 22], time: '11 am', mins: 45, format: 'Webinar · online · questions anonymous',
+    host: 'Aditya Rao, clinical psychologist', blurb: 'Practical tools for stress, anger and low mood, built for men who prefer doing to talking.',
+    take: ['Spot the early signs of burnout', 'Three tools you can use at your desk', 'How to support a friend who is struggling'] },
+  { id: 'w360', kicker: 'Wellbeing 360', a: 'Building health', b: 'into everyday life.', theme: 'ev-sage', date: [2026, 10, 26], time: '5 pm', mins: 45, format: 'Webinar · online',
+    host: 'Priya Iyer, clinical psychologist', blurb: 'Sleep, movement, food and screens: small daily habits that add up to feeling better, without a big overhaul.',
+    take: ['A wind-down routine that works', 'Moving more without a gym', 'Screen habits that protect your mood'] },
+  { id: 'yoga', kicker: 'Live session', a: 'Desk yoga', b: '& breathwork.', theme: 'ev-violet', date: [2026, 10, 29], time: '8 am', mins: 20, format: 'Live · online · cameras off',
+    host: 'Farah Siddiqui, counsellor', blurb: 'Twenty gentle minutes to loosen your shoulders and slow your breathing before the day starts.',
+    take: ['A 5-minute stretch you can do in a chair', 'Box breathing, guided', 'A calmer start to your workday'] },
+];
+const EVM = Object.fromEntries(EVENTS.map(e => [e.id, e]));
+const evDate = e => new Date(e.date[0], e.date[1], e.date[2]);
+function evWhen(e) {
+  const d = evDate(e), t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - t0) / 86400000);
+  return (diff === 0 ? 'Today' : diff === 1 ? 'Tomorrow' : dayLabel(d)) + ' · ' + e.time;
+}
+function evCard(e, i) {
+  const reg = S.regs.includes(e.id);
+  return `<button class="evcard ${e.theme}" data-a="event" data-v="${e.id}" aria-label="${esc(e.a + ' ' + e.b)}, ${evWhen(e)}${reg ? ', you are registered' : ''}">
+    <span class="row between"><span class="evkick">${esc(e.kicker)}</span>${reg ? `<span class="evin">${ic('check')}You're in</span>` : `<span class="evfree">Free</span>`}</span>
+    <span class="evtitle"><span>${esc(e.a)}</span><span class="evb">${esc(e.b)}</span></span>
+    <span class="row between" style="align-items:flex-end"><span class="evmeta">${evWhen(e)}<br>${e.mins} min · online</span><span class="evgo">${reg ? 'View' : 'Register'}</span></span></button>`;
+}
+V.event = () => {
+  const e = EVM[S.params.id], reg = S.regs.includes(e.id), f = X.f || (X.f = { name: S.guest ? '' : S.name, email: S.guest ? '' : S.email, anon: true, ask: '' });
+  return `<div class="screen notab">${top('')}
+    <div class="evhero ${e.theme}"><span class="evkick">${esc(e.kicker)}</span><h1 class="evtitle big"><span>${esc(e.a)}</span><span class="evb">${esc(e.b)}</span></h1>
+      <span class="evmeta">${evWhen(e)} · ${e.mins} min<br>${esc(e.format)}</span></div>
+    <p class="lg" style="margin:0">${esc(e.blurb)}</p>
+    <div class="stack" style="gap:6px"><span class="lbl muted">You'll take away</span>${e.take.map(t => `<span class="row" style="gap:8px;align-items:flex-start"><span style="color:var(--sage-600)">${ic('check')}</span>${esc(t)}</span>`).join('')}</div>
+    <span class="cap">Hosted by ${esc(e.host)}</span>
+    ${reg ? `<div class="card tint-sage stack" style="box-shadow:none"><b class="t2">You're registered</b><span class="muted">We'll remind you an hour before. The link opens 10 minutes early.</span>
+        <div class="row wrap"><button class="btn primary sm" data-a="toast" data-v="Added to your calendar.">${ic('cal')}Add to calendar</button><button class="link" data-a="ev-cancel">Cancel my spot</button></div></div>`
+    : `<form class="madlib" id="evform" autocomplete="on" onsubmit="return false">
+      <span class="eyebrow">Save your spot, it's free</span>
+      <p class="ml">Hi, I'm <label class="sr" for="ev-name">Your name</label><input id="ev-name" class="mlin" value="${esc(f.name)}" placeholder="your name" autocomplete="given-name">.<br>
+        Send the link to <label class="sr" for="ev-email">Email</label><input id="ev-email" class="mlin wide" type="email" value="${esc(f.email)}" placeholder="you@company.com" autocomplete="email"><br>
+        I'd like to join <button type="button" class="mlpick" data-a="ev-anon" aria-pressed="${f.anon}">${f.anon ? 'anonymously' : 'with my name'}</button>.</p>
+      <label class="lbl" for="ev-ask">Anything you'd like covered? <span class="muted">(optional, anonymous)</span></label>
+      <input id="ev-ask" class="field" value="${esc(f.ask)}" placeholder="e.g. how to talk to my dad" maxlength="140">
+      <button class="btn primary block" data-a="ev-register">Register for free</button>
+      <span class="cap">${ic('lock')} ${esc(S.company)} only sees how many people joined, never who.</span></form>`}
+  </div>`;
+};
+V.evdone = () => {
+  const e = EVM[S.params.id], nm = (X.nm || '').trim();
+  return `<div class="screen notab evdone glow" style="justify-content:center;gap:18px">
+    <span class="burst" aria-hidden="true">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span>
+    <h1 class="yourein"><span>You're in${nm ? ',' : '.'}</span>${nm ? `<span class="swash">${esc(nm)}.</span>` : ''}</h1>
+    <p class="note" style="font-size:24px;margin:0">showing up is the bravest part</p>
+    <p class="lg" style="margin:0">See you ${esc(evWhen(e).replace(' · ', ' at '))} for <b>${esc(e.a + ' ' + e.b.replace(/\.$/, ''))}</b>. We'll send the link to your email and remind you an hour before.</p>
+    <div class="stack"><button class="btn primary block" data-a="toast" data-v="Added to your calendar.">${ic('cal')}Add to calendar</button><button class="btn ghost block" data-a="tab" data-v="home">Back to Today</button></div></div>`;
+};
+let EVT = null;
+function autoSlide() {
+  clearInterval(EVT); EVT = null;
+  const sc = document.getElementById('evscroll'); if (!sc || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let hold = 0; sc.onpointerdown = () => { hold = Date.now(); }; sc.onscroll = () => updDots(sc);
+  EVT = setInterval(() => {
+    if (!document.body.contains(sc) || S.tour !== null && S.tour !== undefined) return;
+    if (Date.now() - hold < 6000) return;
+    const w = sc.firstElementChild.getBoundingClientRect().width + 12, k = Math.round(sc.scrollLeft / w), n = sc.children.length;
+    sc.scrollTo({ left: ((k + 1) % n) * w, behavior: 'smooth' });
+  }, 4000);
+}
+function updDots(sc) { const d = document.getElementById('evdots'); if (!d) return; const w = sc.firstElementChild.getBoundingClientRect().width + 12, k = Math.round(sc.scrollLeft / w); [...d.children].forEach((x, i) => x.classList.toggle('on', i === k)); }
+
+/* ---- Notifications: in-app nudges with an unread count ---- */
+function NOTIF_SEED() { return [
+  { id: 'n1', kind: 'survey', icon: 'pen', tint: 'sun', title: 'Got 2 minutes?', body: 'Acme People team: a quick, anonymous pulse survey on how supported you feel.', when: 'Just now', read: false, go: ['survey', ''] },
+  { id: 'n2', kind: 'event', icon: 'people', tint: 'violet', title: 'Cheers to Men is tomorrow', body: 'A live circle for International Men\'s Day, 6 pm. Save your spot.', when: '1 h ago', read: false, go: ['event', 'men'] },
+  { id: 'n3', kind: 'session', icon: 'video', tint: 'peach', title: 'Session 3 with Neha', body: 'Mon 24 Nov at 6 pm. Want to note what you\'d like to talk about?', when: 'Today', read: false, go: ['tab', 'experts'] },
+  { id: 'n4', kind: 'dost', icon: 'chat', tint: 'sage', title: 'Dost: how did the ritual go?', body: 'Last time, your switch-off ritual helped on 3 of 5 nights. Want to check in?', when: 'Yesterday', read: false, go: ['dost', ''] },
+  { id: 'n5', kind: 'tip', icon: 'spark', tint: 'sun', title: 'New: Desk yoga & breathwork', body: '20 gentle minutes before work, Sat 29 Nov.', when: '3 days ago', read: true, go: ['event', 'yoga'] },
+]; }
+const unread = () => S.notifs.filter(n => !n.read).length;
+function bell() {
+  const n = unread();
+  return `<button class="iconbtn bell ${X.bellBump ? 'bump' : ''}" data-a="notifs" aria-label="Notifications${n ? `, ${n} unread` : ''}">${ic('bell')}${n ? `<span class="badge">${n > 9 ? '9+' : n}</span>` : ''}</button>`;
+}
+V.notifs = () => {
+  const fresh = S.notifs.filter(n => !n.read), old = S.notifs.filter(n => n.read);
+  const row = n => `<button class="li nrow ${n.read ? '' : 'unread'}" data-a="notif" data-v="${n.id}"><span class="dot tint-${n.tint}">${ic(n.icon)}</span>
+      <span class="grow"><b>${esc(n.title)}</b><span class="cap" style="display:block;margin-top:2px">${esc(n.body)}</span><span class="cap" style="display:block;margin-top:4px;color:var(--ink-soft)">${esc(n.when)}</span></span>${n.read ? '' : '<i class="udot" aria-label="Unread"></i>'}</button>`;
+  return `<div class="screen notab">${top('Notifications', fresh.length ? `<button class="link" data-a="notif-all">Mark all as read</button>` : '')}
+    ${fresh.length ? `<section class="sec"><span class="eyebrow">New · ${fresh.length}</span><div class="list">${fresh.map(row).join('')}</div></section>` : `<div class="card stack" style="text-align:center;box-shadow:none;background:var(--surface-sunken)"><b>You're all caught up</b><span class="muted">New nudges and reminders will show up here.</span></div>`}
+    ${old.length ? `<section class="sec"><span class="eyebrow">Earlier</span><div class="list">${old.map(row).join('')}</div></section>` : ''}
+    <p class="cap" style="margin:0">${ic('lock')} Nudges never include what you shared with Dost or a counsellor.</p></div>`;
+};
+const SURVEY = [
+  { q: 'How supported do you feel at work right now?', lo: 'Not at all', hi: 'Very' },
+  { q: 'How easy was it to find help when you needed it?', lo: 'Very hard', hi: 'Very easy' },
+  { q: 'How likely are you to recommend YourDOST to a colleague?', lo: 'Not likely', hi: 'Very likely' },
+];
+V.survey = () => {
+  const a = X.sv || (X.sv = []), i = a.length;
+  if (i >= SURVEY.length) return `<div class="screen notab glow" style="justify-content:center;text-align:center;gap:16px">
+    <span class="burst" aria-hidden="true" style="align-self:center">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span>
+    <h1 class="yourein" style="justify-items:center"><span>Thank you.</span><span class="swash">Heard.</span></h1>
+    <p class="note" style="font-size:22px;margin:0">your voice shapes what we build</p>
+    <p class="muted" style="margin:0">Your answers are anonymous. ${esc(S.company)} only sees totals from 10 or more people.</p>
+    <button class="btn primary block" data-a="tab" data-v="home">Back to Today</button></div>`;
+  const Q = SURVEY[i];
+  return `<div class="screen notab">${top('Pulse survey · ' + (i + 1) + ' of ' + SURVEY.length)}
+    <div class="bar"><i style="width:${(i + 1) / SURVEY.length * 100}%;background:var(--violet-600)"></i></div>
+    <h2 class="t1">${esc(Q.q)}</h2>
+    <div class="scale5">${[1, 2, 3, 4, 5].map(v => `<button data-a="sv" data-v="${v}">${v}</button>`).join('')}</div>
+    <div class="row between"><span class="cap">${esc(Q.lo)}</span><span class="cap">${esc(Q.hi)}</span></div>
+    <div style="flex:1"></div><p class="cap" style="margin:0">${ic('lock')} Anonymous · about 1 minute</p></div>`;
+};
 
 /* ---- Home ---- */
 /* ---- Mood: one check-in every 24 hours, a score out of 100, history by week, month and year ---- */
@@ -359,13 +480,14 @@ V.home = () => {
   const care = (S.plan && S.plan.ex) ? [S.plan.ex, 'ex_good', 'ex_ground'] : ['ex_box', 'ex_good', 'ex_ground'];
   return `<div class="screen">
   <div class="row between"><div><span class="cap">${greet()},</span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div>
-    <div class="row">${moodChip()}<button class="avatar" data-a="tab" data-v="me" aria-label="Me" style="border:0">${esc(S.name[0])}</button></div></div>
+    <div class="row" style="gap:8px">${bell()}${moodChip()}</div></div>
   ${moodCard()}
   <section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
     ${step ? stepCard(step) : `<button class="card glow row" data-a="dost" style="border:0;text-align:left;box-shadow:var(--shadow-card)"><span class="orb sm" style="animation:none;flex:none;width:64px;height:64px;box-shadow:0 0 0 6px color-mix(in srgb,var(--violet-200) 70%,transparent)"></span><span class="stack" style="gap:4px"><b>Talk to Dost for 2 minutes</b><span class="cap">Dost asks a few questions and finds the right support for you.</span></span></button>`}</section>
   ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(bk.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
-  <section class="card stack" id="t-garden"><div class="row between"><h2 class="t2">Your garden</h2><span class="cap">${S.leaves} of 7 this week</span></div>
-    ${garden(S.leaves)}<p class="muted" style="margin:0">Every kind thing you do for yourself grows a plant. It never wilts, so missed days are okay.</p></section>
+  <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2><span class="cap">free · online</span></div>
+    <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
+    <div class="dots" id="evdots" aria-hidden="true">${EVENTS.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div></section>
   <section class="sec"><div class="sec-h"><h2 class="t2">Today's care</h2><button class="link" data-a="tab" data-v="grow">See all</button></div>
     <div class="hscroll">${care.map((id, i) => actCard(id, i === 0 ? 'For you' : '')).join('')}</div></section>
   <button class="card row" id="t-help" data-a="help" style="border:0;text-align:left"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span style="flex:1"><b>Need to talk now?</b><span class="cap" style="display:block">A counsellor is on call, 24×7.</span></span>${ic('chev', 'chev')}</button>
@@ -640,7 +762,7 @@ V.ex = () => {
   return `<div class="screen notab">${top(x.name)}<p class="muted" style="margin:0">${esc(x.why)}</p>${body}</div>`;
 };
 V.exdone = () => `<div class="screen notab glow" style="justify-content:center;text-align:center">
-  ${garden(S.leaves)}<h1 class="t1">A new plant in your garden</h1><p class="lg muted" style="margin:0">${S.leaves} kind things for yourself this week.</p>
+  <span class="burst" aria-hidden="true" style="align-self:center">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span><h1 class="t1">Nice work. That counts.</h1><p class="lg muted" style="margin:0">${S.leaves} kind things for yourself this week.</p>
   <div class="stack"><span class="lbl">How do you feel now?</span><div class="row" style="justify-content:center;gap:8px">${[['better', 'A bit better'], ['same', 'About the same'], ['worse', 'Worse']].map(([v, l]) => `<button class="chip" style="background:var(--surface-raised);box-shadow:var(--shadow-card)" data-a="feel" data-v="${v}">${l}</button>`).join('')}</div></div></div>`;
 V.check = () => {
   const c = CHECKS[S.params.id], st = X.c || (X.c = { a: [] }), i = st.a.length;
@@ -669,7 +791,7 @@ V.me = () => {
     <button class="card stack" data-a="moodview" style="border:0;text-align:left"><div class="row between"><h2 class="t2">Your week</h2><span class="link">Mood details ›</span></div>
       <div class="moodbars" role="img" aria-label="Mood over the last 7 days">${week.map((v, i) => `<div><b style="height:${v === undefined ? 6 : 18 + v * 20}px;background:${v === undefined ? 'var(--surface-sunken)' : MOOD_FILL[v]}"></b><span class="cap">${days[i]}</span></div>`).join('')}</div>
       <span class="muted">${moodDue() ? 'Check in on Home to add today.' : 'Thanks for checking in today.'}</span></button>
-    <section class="card tint-sage stack" style="box-shadow:none"><h2 class="t2">Small wins this week</h2>${garden(S.leaves)}<ul style="margin:0;padding-left:18px;display:grid;gap:4px">${S.wins.slice(-4).map(w => `<li>${esc(w)}</li>`).join('')}</ul></section>
+    <section class="card tint-sage stack" style="box-shadow:none"><h2 class="t2">Small wins this week</h2><ul style="margin:0;padding-left:18px;display:grid;gap:4px">${S.wins.slice(-4).map(w => `<li>${esc(w)}</li>`).join('')}</ul></section>
     <section class="card tint-violet stack" style="box-shadow:none"><div class="row between"><h2 class="t2">Your benefits</h2><span class="tag">${esc(S.company)}</span></div>
       <span>${S.sessionsLeft} of 6 counselling sessions left this year</span><div class="bar"><i style="width:${S.sessionsLeft / 6 * 100}%;background:var(--violet-600)"></i></div><span class="cap">Dost, Grow and quick checks are unlimited.</span></section>
     <div class="list">
@@ -739,6 +861,7 @@ function render() {
   if (S.view === 'deck') bindSwipe();
   if (S.view === 'intro') bindIntro();
   drawTour();
+  if (S.view === 'home') autoSlide(); else { clearInterval(EVT); EVT = null; }
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
 }
 function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; X.date = null; save(); render(); const nx = EXM[p.ids[(p.i + 1) % n]]; if (nx) { const im = new Image(); im.src = `/app/img/${nx.id}.webp`; } }
@@ -795,6 +918,17 @@ $app.addEventListener('click', e => {
     case 'tour-back': S.tour = Math.max(0, (S.tour || 0) - 1); save(); drawTour(); break;
     case 'tour-skip': S.tour = null; save(); drawTour(); break;
     case 'tour-noop': break;
+    case 'event': go('event', { id: v }); break;
+    case 'notifs': go('notifs'); break;
+    case 'notif': { const n = S.notifs.find(x => x.id === v); if (!n) break; n.read = true; save(); const [act, arg] = n.go;
+      if (act === 'tab') { if (arg === 'experts') S.seg = 'mine'; go(arg); } else if (act === 'event') go('event', { id: arg }); else go(act); break; }
+    case 'notif-all': S.notifs.forEach(n => { n.read = true; }); save(); toast('All caught up.'); render(); break;
+    case 'sv': X.sv.push(+v); if (X.sv.length >= SURVEY.length) { S.surveyDone = true; save(); } render(); break;
+    case 'ev-anon': { const f = X.f; f.name = document.getElementById('ev-name').value; f.email = document.getElementById('ev-email').value; f.ask = document.getElementById('ev-ask').value; f.anon = !f.anon; render(); break; }
+    case 'ev-register': { const nm = document.getElementById('ev-name').value.trim(), em = document.getElementById('ev-email').value.trim();
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast('Add an email so we can send you the link.'); break; }
+      const id = S.params.id; if (!S.regs.includes(id)) S.regs.push(id); save(); go('evdone', { id }, false); X.nm = nm; render(); break; }
+    case 'ev-cancel': S.regs = S.regs.filter(x => x !== S.params.id); save(); toast('Your spot is cancelled.'); render(); break;
     case 'tour-again': S.tour = 0; save(); go('home'); break;
     case 'tab': go(v); break;
     case 'back': back(); break;
@@ -844,7 +978,7 @@ $app.addEventListener('click', e => {
     case 'check': go('check', { id: v }); break;
     case 'cans': X.c.a.push(+v); render(); break;
     case 'journal': go('journal'); break;
-    case 'jsave': { const t = document.getElementById('jtext').value.trim(); if (!t) { toast('Write a line first.'); break; } S.journal.push({ d: new Date().toDateString(), t }); if (!S.doneToday.journal) { S.doneToday.journal = true; S.leaves = Math.min(7, S.leaves + 1); } save(); toast('Saved. A new plant in your garden.'); render(); break; }
+    case 'jsave': { const t = document.getElementById('jtext').value.trim(); if (!t) { toast('Write a line first.'); break; } S.journal.push({ d: new Date().toDateString(), t }); if (!S.doneToday.journal) { S.doneToday.journal = true; S.leaves = Math.min(7, S.leaves + 1); } save(); toast('Saved. Writing it down helps.'); render(); break; }
     case 'memory': S.memory = !S.memory; save(); render(); break;
     case 'restart': try { localStorage.removeItem(KEY); } catch {} S = fresh(); SHEET = null; X = {}; render(); break;
   }
