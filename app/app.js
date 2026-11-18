@@ -96,13 +96,14 @@ const fresh = () => ({
   plan: null, sessionsLeft: 3, favs: ['e1'], seg: 'browse', sort: 'match', quiz: null,
   booked: { id: 'e1', day: 'Mon 24 Nov', time: '6 pm', mode: 'Video', n: 3 },
   history: [{ id: 'e1', n: 1, date: 'Mon 10 Nov', mode: 'Video', fit: 4, note: 'Mapped what drains my evenings: late calls and checking Slack in bed.', task: 'Try a switch-off ritual' }, { id: 'e1', n: 2, date: 'Mon 17 Nov', mode: 'Video', fit: 5, note: 'The ritual helped on 3 of 5 nights. Next: saying no to one late meeting.', task: 'Box breathing before stand-up' }],
-  filt: { lang: [], mode: [], gender: [], today: false }, pg: { pg_calm: 3 }, doneToday: {}, journal: [], shareSummary: true, memory: true,
+  filt: { lang: [], mode: [], gender: [], today: false, where: [] }, pg: { pg_calm: 3 }, doneToday: {}, journal: [], shareSummary: true, memory: true,
 });
 let S;
 try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { S = fresh(); }
 if (!Array.isArray(S.notifs)) S.notifs = NOTIF_SEED();
 if (!Array.isArray(S.regs)) S.regs = [];
 if (!Array.isArray(S.rituals)) S.rituals = [];
+if (S.filt && !Array.isArray(S.filt.where)) S.filt.where = [];
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 let SHEET = null, TOAST = null, X = {}; // transient: open sheet, toast, screen-local state
 
@@ -778,7 +779,15 @@ const STAR = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 /* availability for the booking calendar: the next 6 weeks, a few times on most days */
-function availFor(e, dt) {
+const CLINIC = { e1: 'YourDOST Centre, Koramangala, Bengaluru', e3: 'YourDOST Centre, Indiranagar, Bengaluru', e4: 'YourDOST Centre, Andheri West, Mumbai', e6: 'YourDOST Centre, Connaught Place, Delhi' };
+function availFor(e, dt, where = 'online') {
+  if (where === 'inperson') {
+    if (!CLINIC[e.id]) return [];
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0); const d = new Date(dt); d.setHours(0, 0, 0, 0); const diff = Math.round((d - t0) / 86400000);
+    if (diff < 1 || diff > 42 || ![2, 4, 6].includes(d.getDay())) return [];
+    const h = (d.getDate() + e.id.charCodeAt(1)) % 4; if (h === 0) return [];
+    return ['11 am', '2 pm', '4:30 pm'].slice(0, h);
+  }
   const t0 = new Date(); t0.setHours(0, 0, 0, 0); const d = new Date(dt); d.setHours(0, 0, 0, 0);
   const diff = Math.round((d - t0) / 86400000); if (diff < 0 || diff > 42) return [];
   if (diff === 0) return e.today ? [e.today] : [];
@@ -789,12 +798,13 @@ function availFor(e, dt) {
 }
 const dayLabel = d => `${DAYS[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
 function nextFree(e, n = 3) { const out = []; for (let i = 0; i < 21 && out.length < n; i++) { const d = new Date(); d.setDate(d.getDate() + i); const t = availFor(e, d); if (t.length) out.push((i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dayLabel(d)) + ', ' + t[0]); } return out; }
-function filtCount() { const f = S.filt; return f.lang.length + f.mode.length + f.gender.length + (f.today ? 1 : 0) + (S.sort !== 'match' ? 1 : 0); }
+function filtCount() { const f = S.filt; return f.lang.length + f.mode.length + f.gender.length + f.where.length + (f.today ? 1 : 0) + (S.sort !== 'match' ? 1 : 0); }
 function expertList() {
   const f = S.filt, q = (S.q || '').trim().toLowerCase(); let list = matches().map(x => x.e);
   if (q) list = list.filter(e => [e.name, e.title, e.style, ...e.langs, ...e.focus.map(c => CL[c] || '')].join(' ').toLowerCase().includes(q));
   if (f.lang.length) list = list.filter(e => f.lang.some(l => e.langs.includes(l)));
   if (f.mode.length) list = list.filter(e => f.mode.some(m => e.modes.includes(m)));
+  if (f.where.length) list = list.filter(e => f.where.some(w => w === 'Online' || CLINIC[e.id]));
   if (f.gender.length) list = list.filter(e => f.gender.includes(e.gender));
   if (f.today) list = list.filter(e => e.today);
   if (S.sort === 'rating') list.sort((a, b) => b.rating - a.rating);
@@ -826,7 +836,7 @@ V.experts = () => {
     body = `<div class="row" style="gap:10px"><label class="searchbox"><span class="sr">Search experts</span>${ic('search')}<input id="xsearch" type="search" placeholder="Search name or topic" value="${esc(S.q || '')}" autocomplete="off"></label>
       <button class="iconbtn filtbtn ${nf ? 'on' : ''}" data-a="sheet" data-v="filter" aria-label="Filter and sort${nf ? ', ' + nf + ' on' : ''}">${ic('filter')}${nf ? `<span class="badge">${nf}</span>` : ''}</button></div>
       ${S.q ? `<span class="cap">${list.length} result${list.length === 1 ? '' : 's'} for “${esc(S.q)}”</span>` : ''}
-      ${list.length ? `<div class="grid2">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
+      ${list.length ? `<div class="grid2">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}${CLINIC[e.id] ? '<span class="ptag">In person too</span>' : ''}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
           <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
         <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(' · ')}</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
         : `<div class="card stack" style="text-align:center"><b>No one matches${S.q ? ' “' + esc(S.q) + '”' : ' all of these'}</b><span class="muted">Try a different word or remove a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear search and filters</button></div>`}`;
@@ -893,7 +903,7 @@ V.booked = () => {
   return `<div class="screen notab glow" style="justify-content:center;text-align:center;gap:16px">
     <span class="mphoto" style="width:120px;height:120px;border-radius:50%;align-self:center">${img(e)}</span>
     <h1 class="t1">You're booked with ${esc(e.name.split(' ')[0])}</h1>
-    <p class="lg muted" style="margin:0">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)}<br>${S.sessionsLeft} free sessions left this year</p>
+    <p class="lg muted" style="margin:0">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)}<br>${S.booked.loc ? esc(S.booked.loc) + '<br>' : ''}${S.sessionsLeft} free sessions left this year</p>
     ${S.shareSummary ? `<div class="card tint-violet" style="box-shadow:none;text-align:left">${ic('lock')} ${esc(e.name.split(' ')[0])} will see a short summary of what you told Dost, so you don't have to start from zero.</div>` : ''}
     <p class="note">first sessions feel easier than you think</p>
     <button class="btn primary block" data-a="tab" data-v="home">Back to Today</button></div>`;
@@ -1080,22 +1090,24 @@ function sheetHTML() {
     const n = expertList().length;
     body = `<div class="row between"><h2 class="t1">Filter &amp; sort</h2><button class="link" data-a="filt-clear">Reset</button></div>
       <div class="stack" style="gap:8px"><span class="lbl">Show first</span><div class="row wrap">${[['match', 'Best match'], ['rating', 'Top rated'], ['soonest', 'Free soonest']].map(([k, l]) => `<button class="chip" data-a="sortc" data-v="${k}" aria-pressed="${S.sort === k}">${l}</button>`).join('')}</div></div>
-      ${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu'])}${grp('mode', 'How to talk', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
+      ${grp('where', 'Session type', ['Online', 'In person'])}${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu'])}${grp('mode', 'Online as', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
       <div class="row between"><span class="lbl">Free today</span><button class="toggle" role="switch" aria-checked="${f.today}" aria-label="Free today" data-a="filt-today"></button></div>
       <button class="btn primary block" data-a="close" ${n ? '' : 'disabled style="opacity:.5"'}>${n ? `Show ${n} expert${n === 1 ? '' : 's'}` : 'No one matches yet'}</button>`; }
   if (s.name === 'sort') body = `<h2 class="t1">Sort by</h2><div class="stack">${[['match', 'Best match'], ['rating', 'Rating'], ['soonest', 'Soonest free']].map(([k, l]) => `<button class="qopt" data-a="sort" data-v="${k}" ${S.sort === k ? 'style="border-color:var(--violet-600)"' : ''}>${l}</button>`).join('')}</div>`;
   if (s.name === 'book') {
-    const e = EXM[S.params.ids[S.params.i]], mo = X.calM || 0, t0 = new Date(); t0.setHours(0, 0, 0, 0);
-    if (!X.date) for (let i = 0; i < 42; i++) { const d = new Date(t0); d.setDate(d.getDate() + i); if (availFor(e, d).length) { X.date = dkey(d); break; } }
+    const e = EXM[S.params.ids[S.params.i]], W = X.where || 'online', mo = X.calM || 0, t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    if (!X.date) for (let i = 0; i < 42; i++) { const d = new Date(t0); d.setDate(d.getDate() + i); if (availFor(e, d, W).length) { X.date = dkey(d); break; } }
     const first = new Date(t0.getFullYear(), t0.getMonth() + mo, 1), nd = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate(), lead = first.getDay();
     const cells = []; for (let k = 0; k < lead; k++) cells.push('<span></span>');
     for (let d = 1; d <= nd; d++) {
-      const dt = new Date(first.getFullYear(), first.getMonth(), d), key = dkey(dt), av = availFor(e, dt).length > 0, isT = key === dkey(t0);
+      const dt = new Date(first.getFullYear(), first.getMonth(), d), key = dkey(dt), av = availFor(e, dt, W).length > 0, isT = key === dkey(t0);
       cells.push(`<button class="d ${av ? 'av' : ''} ${X.date === key ? 'sel' : ''} ${isT ? 'today' : ''}" data-a="cald" data-v="${key}" ${av ? '' : 'disabled'} aria-label="${dayLabel(dt)}${av ? ', free' : ', not available'}">${d}</button>`);
     }
-    const sel = X.date ? new Date(X.date + 'T12:00') : null, times = sel ? availFor(e, sel) : [], lab = sel ? dayLabel(sel) : '';
+    const sel = X.date ? new Date(X.date + 'T12:00') : null, times = sel ? availFor(e, sel, W) : [], lab = sel ? dayLabel(sel) : '';
     const navBtn = (dir, off, label, icon) => `<button class="iconbtn calnav" data-a="calm" data-v="${dir}" ${off ? 'disabled' : ''} aria-label="${label}">${ic(icon)}</button>`;
     body = `<div class="row"><span class="mphoto" style="width:48px;height:56px">${img(e, '', 's')}</span><div><h2 class="t2">Book ${esc(e.name.split(' ')[0])}</h2><span class="cap">50 min · ${esc(e.modes.join(', '))} · free (uses 1 of ${S.sessionsLeft})</span></div></div>
+      <div class="seg" role="group" aria-label="Session type"><button data-a="bwhere" data-v="online" aria-pressed="${W === 'online'}">${ic('video')}Online</button><button data-a="bwhere" data-v="inperson" aria-pressed="${W === 'inperson'}" ${CLINIC[e.id] ? '' : 'disabled style="opacity:.45"'}>${ic('people')}In person</button></div>
+      ${W === 'inperson' ? `<div class="card row" style="box-shadow:none;background:var(--sun-100);padding:12px"><span class="dot" style="background:var(--surface-raised)">${ic('home')}</span><span style="flex:1"><b>${esc(CLINIC[e.id])}</b><span class="cap" style="display:block">Tue, Thu and Sat · 50 min · free for you</span></span></div>` : !CLINIC[e.id] ? `<span class="cap">${esc(e.name.split(' ')[0])} sees people online only.</span>` : `<span class="cap">${esc(e.modes.join(', '))} · from anywhere</span>`}
       <div class="calbox"><div class="row between">${navBtn(-1, mo === 0, 'Previous month', 'back')}<b class="t2">${MONTH[first.getMonth()]} ${first.getFullYear()}</b>${navBtn(1, mo >= 1, 'Next month', 'chev')}</div>
         <div class="cal">${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(w => `<span class="wd">${w}</span>`).join('')}${cells.join('')}</div>
         <div class="row" style="gap:14px;flex-wrap:wrap"><span class="cap row" style="gap:6px"><i class="lgd lgd-av"></i>Free</span><span class="cap row" style="gap:6px"><i class="lgd lgd-sel"></i>Selected</span><span class="cap row" style="gap:6px"><i class="lgd lgd-no"></i>Not available</span></div></div>
@@ -1233,7 +1245,7 @@ V.tests = () => `<div class="screen notab">${top('Check yourself')}
       ${h ? `<span class="tag" style="background:var(--surface-raised)">${esc(testBand(t, h.s).b[1])}</span>` : `<span class="go">${ic('chev')}</span>`}</button>`; }).join('')}</div>
   <p class="cap" style="margin:0">${ic('lock')} Answers stay on this phone. ${esc(S.company)} never sees them.</p></div>`;
 V.test = () => {
-  const id = S.params.id, t = TESTS[id], st = X.t || (X.t = { a: [] }), i = st.a.length;
+  const id = S.params.id, t = TESTS[id], st = X.t || (X.t = { a: S.params.a ? S.params.a.slice() : [] }), i = st.a.length, vis = S.params.vis || [];
   if (i >= t.qs.length) {
     const s = testScore(t, st.a), { i: bi, b } = testBand(t, s), prev = (S.tests[id] || []).slice(-2, -1)[0];
     const lo = t.min || 0, pct = (s - lo) / (t.max - lo), heavy = t.good ? bi === 0 : bi >= Math.max(2, t.bands.length - 2), risk = t.risk !== undefined && st.a[t.risk] > 0;
@@ -1247,9 +1259,9 @@ V.test = () => {
       <p class="cap" style="margin:0">This is a screening questionnaire, not a diagnosis. Only a professional can diagnose.</p>
       <h2 class="t2">What might help</h2>
       ${heavy || risk ? `<button class="btn primary block" data-a="tab" data-v="experts">${ic('people')}Talk to a counsellor</button>` : ''}
-      <div class="list"><button class="li" data-a="ex" data-v="${ex}"><span class="dot tint-sage">${ic('play')}</span><span class="grow"><b>${esc(EX[ex].name)}</b><span class="cap" style="display:block">${EX[ex].mins} min · try it now</span></span>${ic('chev', 'chev')}</button>
-        <button class="li" data-a="pg" data-v="${pg}"><span class="dot tint-sun">${ic('grow')}</span><span class="grow"><b>${esc(PG[pg].name)}</b><span class="cap" style="display:block">7-day program</span></span>${ic('chev', 'chev')}</button>
-        <button class="li" data-a="dost"><span class="dot tint-violet">${ic('mic')}</span><span class="grow"><b>Talk it through with Dost</b></span>${ic('chev', 'chev')}</button></div>
+      <div class="list">${[['ex', ex, 'sage', 'play', EX[ex].name, `${EX[ex].mins} min · try it now`, S.doneToday[ex]], ['pg', pg, 'sun', 'grow', PG[pg].name, '7-day program', vis.includes('pg')], ['dost', '', 'violet', 'mic', 'Talk it through with Dost', '2 minutes', vis.includes('dost')], ['act', 'worry', 'peach', 'grow', 'The Worry Tree', '4 min · sort a worry', S.doneToday.worry]].map(([a, v, tint, icon, name, sub, done]) =>
+        `<button class="li" data-a="${a}" data-v="${v}" data-tv="${a}"><span class="dot tint-${tint}">${done ? ic('check') : ic2(icon)}</span><span class="grow"><b>${esc(name)}</b><span class="cap" style="display:block">${done ? 'Done · nice work' : esc(sub)}</span></span>${done ? `<span class="tag sage">${ic('check')}Done</span>` : ic('chev', 'chev')}</button>`).join('')}</div>
+      <p class="cap" style="margin:0">Try one, then come back here for the next.</p>
       <button class="link" data-a="test-again" style="justify-self:center">Take it again in 2 weeks to see how you're doing</button></div>`;
   }
   return `<div class="screen notab">${top(t.name)}<div class="bar"><i style="width:${i / t.qs.length * 100}%;background:var(--violet-600)"></i></div>
@@ -1551,6 +1563,7 @@ function growAfter() {
 $app.addEventListener('click', e => {
   const a = e.target.closest('[data-a]'); if (!a) return;
   const act = a.dataset.a, v = a.dataset.v;
+  if (a.dataset.tv && S.params) { S.params.vis = [...(S.params.vis || []), a.dataset.tv]; }
   if (act === 'scrim' && e.target !== a) return;
   switch (act) {
     case 'go-tests': go('tests'); break;
@@ -1559,10 +1572,10 @@ $app.addEventListener('click', e => {
     case 'go-games': go('games'); break;
     case 'go-pgs': go('pgs'); break;
     case 'test': go('test', { id: v }); break;
-    case 'tans': { const t = TESTS[S.params.id]; X.t.a.push(+v); if (X.t.a.length >= t.qs.length) { (S.tests[S.params.id] = S.tests[S.params.id] || []).push({ d: todayK(), s: testScore(t, X.t.a) }); if (!S.doneToday['t_' + S.params.id]) { S.doneToday['t_' + S.params.id] = true; S.wins.push(`Checked in: ${t.name}`); } save(); }
+    case 'tans': { const t = TESTS[S.params.id]; X.t.a.push(+v); if (X.t.a.length >= t.qs.length) { S.params.a = X.t.a.slice(); S.params.vis = []; (S.tests[S.params.id] = S.tests[S.params.id] || []).push({ d: todayK(), s: testScore(t, X.t.a) }); if (!S.doneToday['t_' + S.params.id]) { S.doneToday['t_' + S.params.id] = true; S.wins.push(`Checked in: ${t.name}`); } save(); }
       render(); $app.querySelector('.screen').scrollTop = 0; break; }
     case 'tprev': X.t.a.pop(); render(); break;
-    case 'test-again': X.t = { a: [] }; render(); break;
+    case 'test-again': X.t = { a: [] }; S.params.a = null; S.params.vis = []; save(); render(); break;
     case 'akind': X.ak = v; X.keep = true; render(); break;
     case 'act': go('act', { id: v }); break;
     case 'act-go': X.a.on = true; X.a.t0 = Date.now(); if (S.params.id === 'listen') playSound(X.snd || 'rain'); render(); break;
@@ -1688,18 +1701,19 @@ $app.addEventListener('click', e => {
     case 'qstyle': { const st = S.quiz.style || (S.quiz.style = [null, null, null, null]); st[+a.dataset.i] = +v === -1 ? null : +v; save(); render(); break; }
     case 'qnext': if ((X.qs || 0) < QUIZ.length - 1) { X.qs = (X.qs || 0) + 1; render(); $app.querySelector('.screen').scrollTop = 0; } else { X.finding = true; render(); setTimeout(() => { S.quiz.done = true; S.seg = 'for'; X = {}; save(); go('experts', {}, false); }, 1600); } break;
     case 'fav': S.favs = S.favs.includes(v) ? S.favs.filter(x => x !== v) : [...S.favs, v]; save(); render(); break;
-    case 'sheet': if (v === 'book') { X.date = null; X.slot = null; X.calM = 0; } sheet(v); break;
+    case 'sheet': if (v === 'book') { X.date = null; X.slot = null; X.calM = 0; X.where = S.filt.where.length === 1 && S.filt.where[0] === 'In person' && CLINIC[S.params.ids[S.params.i]] ? 'inperson' : 'online'; } sheet(v); break;
     case 'cald': X.date = v; X.slot = null; render(); break;
+    case 'bwhere': X.where = v; X.date = null; X.slot = null; X.calM = 0; render(); break;
     case 'calm': X.calM = Math.max(0, Math.min(1, (X.calM || 0) + +v)); render(); break;
     case 'filt': { const k = a.dataset.k; S.filt[k] = S.filt[k].includes(v) ? S.filt[k].filter(x => x !== v) : [...S.filt[k], v]; save(); render(); break; }
     case 'filt-today': S.filt.today = !S.filt.today; save(); render(); break;
-    case 'filt-clear': S.filt = { lang: [], mode: [], gender: [], today: false }; S.sort = 'match'; S.q = ''; save(); render(); break;
+    case 'filt-clear': S.filt = { lang: [], mode: [], gender: [], today: false, where: [] }; S.sort = 'match'; S.q = ''; save(); render(); break;
     case 'sortc': S.sort = v; save(); render(); break;
     case 'evdot': evGo(+v); break;
     case 'sort': S.sort = v; SHEET = null; save(); render(); break;
     case 'slot': X.slot = v; render(); break;
     case 'share': S.shareSummary = !S.shareSummary; save(); render(); break;
-    case 'book-ok': { if (!X.slot) break; const [d, t] = X.slot.split('|'), ex = EXM[S.params.ids[S.params.i]]; S.booked = { id: ex.id, day: d, time: t, mode: ex.modes[0], n: S.history.filter(h => h.id === ex.id).length + 1 }; S.sessionsLeft = Math.max(0, S.sessionsLeft - 1); if (S.plan) { const s = S.plan.steps.find(x => x.kind === 'book'); if (s) s.done = true; } go('booked', {}, false); break; }
+    case 'book-ok': { if (!X.slot) break; const [d, t] = X.slot.split('|'), ex = EXM[S.params.ids[S.params.i]]; S.booked = { id: ex.id, day: d, time: t, mode: X.where === 'inperson' ? 'In person' : ex.modes[0], loc: X.where === 'inperson' ? CLINIC[ex.id] : null, n: S.history.filter(h => h.id === ex.id).length + 1 }; S.sessionsLeft = Math.max(0, S.sessionsLeft - 1); if (S.plan) { const s = S.plan.steps.find(x => x.kind === 'book'); if (s) s.done = true; } go('booked', {}, false); break; }
     case 'cancel': S.booked = null; S.sessionsLeft = Math.min(6, S.sessionsLeft + 1); save(); toast('Session cancelled. Your free session is back.'); break;
     case 'pg': go('pg', { id: v }); break;
     case 'ex': if (a.getAttribute('aria-disabled') === 'true') { toast('Finish the earlier days first, one at a time.'); break; } go('ex', { id: v, pg: a.dataset.pg || null, day: a.dataset.day || null }); break;
