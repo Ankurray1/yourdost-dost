@@ -169,19 +169,19 @@ const V = {};
 /* ---- onboarding ---- */
 V.ob = () => {
   const n = S.ob, dots = `<div class="dots" aria-hidden="true">${[0, 1, 2, 3].map(i => `<i class="${i === n ? 'on' : ''}"></i>`).join('')}</div>`;
-  if (n === 0) return `<div class="screen notab glow" style="justify-content:space-between;padding-top:36px">
+  if (n === 0) return `<div class="screen notab glow" style="justify-content:space-between;padding-top:calc(var(--sb) + 20px)">
     <div class="row between"><img src="/yd-logo.png" alt="YourDOST" style="height:30px;width:auto;background:#FFFFFF;border-radius:10px;padding:4px 8px"><button class="link" data-a="ob-skip">Skip</button></div>
     <div class="orb" aria-hidden="true"></div>
     <div class="stack"><h1 class="display">Kya haal hai, dost?</h1><p class="lg muted">A friend for the hard days and the good ones. Free through your company, private, and here 24×7.</p></div>
     <div class="stack">${dots}<button class="btn primary block" data-a="ob-next">Get started</button></div></div>`;
-  if (n === 1) return `<div class="screen notab" style="padding-top:28px">
+  if (n === 1) return `<div class="screen notab" style="padding-top:calc(var(--sb) + 16px)">
     <div class="row"><button class="iconbtn" data-a="ob-prev" aria-label="Back">${ic('back')}</button></div>
     <h1 class="t1">Sign in with your work or college email</h1>
     <div class="stack"><label for="ob-email" class="lbl">Email</label><input id="ob-email" class="field" type="email" value="${esc(S.email)}" autocomplete="email"></div>
     <div class="card tint-sage stack"><div class="row">${ic('gift')}<b>${esc(S.company)} covers you</b></div>
       <p class="muted" style="margin:0">6 counselling sessions a year, plus Dost, programs and checks, all free for you.</p></div>
     <div style="flex:1"></div><div class="stack">${dots}<button class="btn primary block" data-a="ob-next">Continue</button><p class="cap" style="text-align:center;margin:0">Prototype: no real sign-in happens.</p></div></div>`;
-  if (n === 2) return `<div class="screen notab" style="padding-top:28px">
+  if (n === 2) return `<div class="screen notab" style="padding-top:calc(var(--sb) + 16px)">
     <div class="row"><button class="iconbtn" data-a="ob-prev" aria-label="Back">${ic('back')}</button></div>
     <h1 class="t1">What you share stays with you</h1>
     <div class="list">
@@ -191,7 +191,7 @@ V.ob = () => {
     </div>
     <p class="note">no judgement here</p>
     <div style="flex:1"></div><div class="stack">${dots}<button class="btn primary block" data-a="ob-next">Got it</button></div></div>`;
-  return `<div class="screen notab" style="padding-top:28px">
+  return `<div class="screen notab" style="padding-top:calc(var(--sb) + 16px)">
     <div class="row"><button class="iconbtn" data-a="ob-prev" aria-label="Back">${ic('back')}</button></div>
     <h1 class="t1">What would you like help with?</h1><p class="muted" style="margin:-8px 0 0">Pick any. You can change this later.</p>
     <div class="row wrap">${CONCERNS.map(([k, l]) => `<button class="chip" data-a="ob-concern" data-v="${k}" aria-pressed="${S.concerns.includes(k)}">${l}</button>`).join('')}</div>
@@ -344,7 +344,22 @@ function quizMatches() {
     return { e: EXM[e.id], pct, why: why.slice(0, 3) };
   }).sort((a, b) => b.pct - a.pct);
 }
-const img = (e, cls = '') => `<img class="${cls}" src="/app/img/${e.id}.jpg" alt="${esc(e.name)}" loading="lazy">`;
+const img = (e, cls = '', size = '') => `<img class="${cls}" src="/app/img/${e.id}${size === 's' ? '-s' : ''}.webp" alt="${esc(e.name)}" decoding="async">`;
+const STAR = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="var(--sun-400)"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
+const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+/* availability for the booking calendar: the next 6 weeks, a few times on most days */
+function availFor(e, dt) {
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0); const d = new Date(dt); d.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - t0) / 86400000); if (diff < 0 || diff > 42) return [];
+  if (diff === 0) return e.today ? [e.today] : [];
+  const h = (d.getDate() * 7 + d.getMonth() * 3 + e.id.charCodeAt(1) * 5) % 10;
+  if (h < 3 || (d.getDay() === 0 && h < 8)) return [];
+  const all = ['9 am', '10 am', '11:30 am', '1 pm', '3 pm', '5 pm', '6 pm', '7:30 pm', '9 pm'];
+  return all.filter((_, i) => (i + h + d.getDate()) % 3 !== 0).slice(0, 3 + h % 3);
+}
+const dayLabel = d => `${DAYS[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
+function nextFree(e, n = 3) { const out = []; for (let i = 0; i < 21 && out.length < n; i++) { const d = new Date(); d.setDate(d.getDate() + i); const t = availFor(e, d); if (t.length) out.push((i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dayLabel(d)) + ', ' + t[0]); } return out; }
 V.experts = () => {
   const seg = S.seg;
   let body = '';
@@ -354,14 +369,14 @@ V.experts = () => {
     <div class="card tint-help row" style="box-shadow:none"><span class="dot" style="background:var(--surface-raised);color:var(--help-600)">${ic('phone')}</span><div style="flex:1"><b>Talk now</b><div class="cap">An on-call counsellor, usually in under 2 minutes</div></div><button class="btn helpbtn sm" data-a="talknow" style="background:var(--surface-raised)">Call</button></div>
     ${res ? `<section class="sec"><div class="sec-h"><h2 class="t2">Your top 3</h2><button class="link" data-a="quiz">Retake</button></div>
       ${res.map(({ e, pct, why }, i) => `<button class="card row" style="border:0;text-align:left;align-items:stretch;gap:14px" data-a="deck" data-v="${res.map(r => r.e.id).join(',')}" data-i="${i}">
-        <span class="mphoto">${img(e)}</span><span class="stack" style="gap:6px;flex:1;min-width:0"><span class="row between"><span class="tag ${i === 0 ? 'peach' : 'violet'}">${i === 0 ? 'Best match' : 'Good match'}</span><b class="pct">${pct}%</b></span>
+        <span class="mphoto">${img(e, '', 's')}</span><span class="stack" style="gap:6px;flex:1;min-width:0"><span class="row between"><span class="tag ${i === 0 ? 'peach' : 'violet'}">${i === 0 ? 'Best match' : 'Good match'}</span><b class="pct">${pct}%</b></span>
         <b style="font:600 17px/22px var(--f-display)">${esc(e.name)}</b><span class="cap">${esc(e.title)} · ${e.yrs} yrs</span>
         ${why.map(w => `<span class="row" style="gap:6px;align-items:flex-start;font-size:13px;line-height:18px"><span style="color:var(--sage-600)">${ic('check')}</span>${esc(w)}</span>`).join('')}</span></button>`).join('')}</section>`
     : `<button class="hero" data-a="quiz">
         <span class="eyebrow">Smart match · 6 quick questions</span>
         <span class="hero-h">Find the counsellor who <span class="swash">gets you</span>.</span>
         <span class="note" style="color:var(--ink-muted)">no long forms, just taps</span>
-        <span class="row" style="gap:-8px">${EXPERTS.slice(0, 4).map(e => `<span class="stackph">${img(e)}</span>`).join('')}<span class="cap" style="margin-left:14px">Matched on what you need, how you like to talk, and language</span></span>
+        <span class="row" style="gap:-8px">${EXPERTS.slice(0, 4).map(e => `<span class="stackph">${img(e, '', 's')}</span>`).join('')}<span class="cap" style="margin-left:14px">Matched on what you need, how you like to talk, and language</span></span>
         <span class="btn primary block">Start · about 2 minutes</span></button>`}
     <p class="muted" style="margin:0">Want to look around first? <button class="link" data-a="seg" data-v="browse">Browse all experts</button></p>`;
   }
@@ -375,10 +390,9 @@ V.experts = () => {
     if (S.sort === 'soonest') list.sort((a, b) => (b.today ? 1 : 0) - (a.today ? 1 : 0));
     const nf = f.lang.length + f.mode.length + f.gender.length + (f.today ? 1 : 0), ids = list.map(e => e.id).join(',');
     body = `<div class="row"><button class="btn sm" style="flex:1;background:var(--surface-raised);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)" data-a="sheet" data-v="sort">${ic('sort')}${S.sort === 'match' ? 'Best match' : S.sort === 'rating' ? 'Top rated' : 'Soonest'}</button><button class="btn sm" style="flex:1;background:var(--violet-600);color:var(--surface-raised)" data-a="sheet" data-v="filter">${ic('filter')}Filter${nf ? ' · ' + nf : ''}</button></div>
-      ${list.length ? `<div class="grid2">${list.map((e, i) => `<div class="tile"><div class="photo">${img(e)}<button class="fav" data-a="fav" data-v="${e.id}" aria-pressed="${S.favs.includes(e.id)}" aria-label="Save ${esc(e.name)}">${ic('heart')}</button><span class="rate"><i></i>${e.rating.toFixed(1)} · ${e.n}</span>
+      ${list.length ? `<div class="grid2">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
           <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
-        <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b style="font:600 15px/20px var(--f-display)">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(', ')} · ${e.langs.slice(0, 2).join(', ')}</span></button>
-        <span class="tag ${e.today ? 'peach' : ''}" style="justify-self:start">${e.today ? 'Free today ' + e.today : 'Free tomorrow'}</span></div>`).join('')}</div>`
+        <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(' · ')}</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
         : `<div class="card stack" style="text-align:center"><b>No one matches all of these</b><span class="muted">Try removing a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear filters</button></div>`}`;
   }
   if (seg === 'mine') {
@@ -404,12 +418,12 @@ V.experts = () => {
 V.deck = () => {
   const ids = S.params.ids, i = S.params.i, e = EXM[ids[i]], nxt = EXM[ids[(i + 1) % ids.length]];
   const m = (S.quiz && S.quiz.done ? quizMatches() : matches()).find(x => x.e.id === e.id);
-  const sl = slotsFor(e).slice(0, 2);
+  const nf = nextFree(e);
   return `<div class="screen flush notab deck tint-${e.tint}">
     <div class="deck-top"><button class="iconbtn" data-a="back" aria-label="Close">${ic('back')}</button><span class="lbl">${i + 1} of ${ids.length}</span>
-      <button class="iconbtn fav" style="position:static" data-a="fav" data-v="${e.id}" aria-pressed="${S.favs.includes(e.id)}" aria-label="Save ${esc(e.name)}">${ic('heart')}</button></div>
+      <span style="width:44px" aria-hidden="true"></span></div>
     <div class="arch-wrap">${ids.length > 1 ? `<div class="arch behind" aria-hidden="true">${img(nxt)}</div>` : ''}
-      <div class="arch" id="swipe" tabindex="0" aria-label="${esc(e.name)}. Swipe left for the next expert.">${img(e)}<span class="rate" style="left:14px;bottom:14px"><i></i>${e.rating.toFixed(1)} · ${e.n} sessions</span></div></div>
+      <div class="arch" id="swipe" tabindex="0" aria-label="${esc(e.name)}. Swipe left for the next expert.">${img(e)}<span class="rate" style="left:14px;bottom:14px">${STAR}${e.rating.toFixed(1)} · ${e.n} sessions</span></div></div>
     <div class="dsheet">
       <div class="grab" aria-hidden="true"></div>
       <div class="row between" style="align-items:flex-start"><div><h1 class="t1">${esc(e.name)}</h1><span class="muted">${esc(e.title)} · ${e.yrs} years</span></div>${m && m.pct ? `<span class="tag peach">${m.pct}% match</span>` : ''}</div>
@@ -417,7 +431,7 @@ V.deck = () => {
       <p style="margin:0">${esc(e.about)}</p>
       <div class="row wrap" style="gap:6px"><span class="lbl muted" style="width:100%">Style</span><span class="tag sage">${esc(e.style)}</span>${e.modes.map(md => `<span class="tag">${md}</span>`).join('')}</div>
       ${m ? `<div class="stack" style="gap:6px"><span class="lbl muted">Why this match</span>${m.why.map(w => `<span class="row" style="gap:8px"><span style="color:var(--sage-600)">${ic('check')}</span>${esc(w)}</span>`).join('')}</div>` : ''}
-      <div class="stack" style="gap:6px"><span class="lbl muted">Next free</span><div class="row wrap" style="gap:6px">${sl.flatMap(([d, ts]) => ts.slice(0, 2).map(t => `<span class="tag">${d} ${t}</span>`)).join('')}</div></div>
+      <div class="stack" style="gap:6px"><span class="lbl muted">Next free</span><div class="row wrap" style="gap:6px">${nf.map(x => `<span class="tag">${x}</span>`).join('')}</div></div>
     </div>
     <div class="deck-cta"><div class="row" style="gap:10px"><button class="iconbtn" data-a="deck-move" data-v="-1" aria-label="Previous expert" ${ids.length > 1 ? '' : 'disabled'}>${ic('back')}</button>
         <button class="btn primary" style="flex:1" data-a="sheet" data-v="book">${ic('cal')}Book ${esc(e.name.split(' ')[0])}</button>
@@ -618,11 +632,25 @@ function sheetHTML() {
     body = `<div class="row between"><h2 class="t1">Filter</h2><button class="link" data-a="filt-clear">Clear all</button></div>${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu'])}${grp('mode', 'How to talk', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
       <div class="row between"><span class="lbl">Free today</span><button class="toggle" role="switch" aria-checked="${f.today}" aria-label="Free today" data-a="filt-today"></button></div><button class="btn primary block" data-a="close">Show experts</button>`; }
   if (s.name === 'sort') body = `<h2 class="t1">Sort by</h2><div class="stack">${[['match', 'Best match'], ['rating', 'Rating'], ['soonest', 'Soonest free']].map(([k, l]) => `<button class="qopt" data-a="sort" data-v="${k}" ${S.sort === k ? 'style="border-color:var(--violet-600)"' : ''}>${l}</button>`).join('')}</div>`;
-  if (s.name === 'book') { const e = EXM[S.params.ids[S.params.i]], sl = slotsFor(e), pick = X.slot;
-    body = `<div class="row"><span class="mphoto" style="width:52px;height:60px">${img(e)}</span><div><h2 class="t2">Book ${esc(e.name.split(' ')[0])}</h2><span class="cap">50 min · free (uses 1 of ${S.sessionsLeft})</span></div></div>
-      ${sl.map(([d, ts]) => `<div class="stack" style="gap:8px"><span class="lbl muted">${d}</span><div class="row wrap">${ts.map(t => `<button class="slot" data-a="slot" data-v="${d}|${t}" aria-pressed="${pick === d + '|' + t}">${t}</button>`).join('')}</div></div>`).join('')}
+  if (s.name === 'book') {
+    const e = EXM[S.params.ids[S.params.i]], mo = X.calM || 0, t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    if (!X.date) for (let i = 0; i < 42; i++) { const d = new Date(t0); d.setDate(d.getDate() + i); if (availFor(e, d).length) { X.date = dkey(d); break; } }
+    const first = new Date(t0.getFullYear(), t0.getMonth() + mo, 1), nd = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate(), lead = first.getDay();
+    const cells = []; for (let k = 0; k < lead; k++) cells.push('<span></span>');
+    for (let d = 1; d <= nd; d++) {
+      const dt = new Date(first.getFullYear(), first.getMonth(), d), key = dkey(dt), av = availFor(e, dt).length > 0, isT = key === dkey(t0);
+      cells.push(`<button class="d ${av ? 'av' : ''} ${X.date === key ? 'sel' : ''} ${isT ? 'today' : ''}" data-a="cald" data-v="${key}" ${av ? '' : 'disabled'} aria-label="${dayLabel(dt)}${av ? ', free' : ', not available'}">${d}</button>`);
+    }
+    const sel = X.date ? new Date(X.date + 'T12:00') : null, times = sel ? availFor(e, sel) : [], lab = sel ? dayLabel(sel) : '';
+    const navBtn = (dir, off, label, icon) => `<button class="iconbtn calnav" data-a="calm" data-v="${dir}" ${off ? 'disabled' : ''} aria-label="${label}">${ic(icon)}</button>`;
+    body = `<div class="row"><span class="mphoto" style="width:48px;height:56px">${img(e, '', 's')}</span><div><h2 class="t2">Book ${esc(e.name.split(' ')[0])}</h2><span class="cap">50 min · ${esc(e.modes.join(', '))} · free (uses 1 of ${S.sessionsLeft})</span></div></div>
+      <div class="calbox"><div class="row between">${navBtn(-1, mo === 0, 'Previous month', 'back')}<b class="t2">${MONTH[first.getMonth()]} ${first.getFullYear()}</b>${navBtn(1, mo >= 1, 'Next month', 'chev')}</div>
+        <div class="cal">${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(w => `<span class="wd">${w}</span>`).join('')}${cells.join('')}</div>
+        <div class="row" style="gap:14px;flex-wrap:wrap"><span class="cap row" style="gap:6px"><i class="lgd lgd-av"></i>Free</span><span class="cap row" style="gap:6px"><i class="lgd lgd-sel"></i>Selected</span><span class="cap row" style="gap:6px"><i class="lgd lgd-no"></i>Not available</span></div></div>
+      ${sel ? `<div class="stack" style="gap:8px"><span class="lbl">Times on ${lab}</span><div class="row wrap">${times.map(t => `<button class="slot" data-a="slot" data-v="${lab}|${t}" aria-pressed="${X.slot === lab + '|' + t}">${t}</button>`).join('')}</div></div>` : `<span class="muted">Pick a highlighted date to see times.</span>`}
       <div class="row between" style="align-items:flex-start"><span><b>Share my Dost summary</b><span class="cap" style="display:block">So you don't start from zero. Never shared with ${esc(S.company)}.</span></span><button class="toggle" role="switch" aria-checked="${S.shareSummary}" aria-label="Share summary" data-a="share"></button></div>
-      <button class="btn primary block" data-a="book-ok" ${pick ? '' : 'disabled style="opacity:.45"'}>${pick ? 'Confirm ' + esc(pick.replace('|', ', ')) : 'Pick a time'}</button>`; }
+      <button class="btn primary block" data-a="book-ok" ${X.slot ? '' : 'disabled style="opacity:.45"'}>${X.slot ? 'Book ' + esc(X.slot.replace('|', ', ')) : 'Pick a date and time'}</button>`;
+  }
   if (s.name === 'privacy') body = `<h2 class="t1">Privacy and your data</h2><div class="list">
     <div class="li"><span class="dot tint-violet">${ic('eye')}</span><span class="grow"><b>What ${esc(S.company)} sees</b><span class="cap" style="display:block">Group totals only, and only when 10 or more people are in a group.</span></span></div>
     <div class="li"><span class="dot tint-sun">${ic('mic')}</span><span class="grow"><b>Your voice</b><span class="cap" style="display:block">Turned into text on your phone; audio is never uploaded.</span></span></div>
@@ -646,7 +674,7 @@ function render() {
   if (S.view === 'ex' && X.ex && X.ex.running) runBreath();
   if (S.view === 'deck') bindSwipe();
 }
-function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; save(); render(); }
+function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; X.date = null; save(); render(); const nx = EXM[p.ids[(p.i + 1) % n]]; if (nx) { const im = new Image(); im.src = `/app/img/${nx.id}.webp`; } }
 function bindSwipe() {
   const el = document.getElementById('swipe'); if (!el) return;
   let x0 = null, dx = 0;
@@ -725,7 +753,9 @@ $app.addEventListener('click', e => {
     case 'qstyle': { const st = S.quiz.style || (S.quiz.style = [null, null, null, null]); st[+a.dataset.i] = +v === -1 ? null : +v; save(); render(); break; }
     case 'qnext': if ((X.qs || 0) < QUIZ.length - 1) { X.qs = (X.qs || 0) + 1; render(); $app.querySelector('.screen').scrollTop = 0; } else { X.finding = true; render(); setTimeout(() => { S.quiz.done = true; S.seg = 'for'; X = {}; save(); go('experts', {}, false); }, 1600); } break;
     case 'fav': S.favs = S.favs.includes(v) ? S.favs.filter(x => x !== v) : [...S.favs, v]; save(); render(); break;
-    case 'sheet': sheet(v); break;
+    case 'sheet': if (v === 'book') { X.date = null; X.slot = null; X.calM = 0; } sheet(v); break;
+    case 'cald': X.date = v; X.slot = null; render(); break;
+    case 'calm': X.calM = Math.max(0, Math.min(1, (X.calM || 0) + +v)); render(); break;
     case 'filt': { const k = a.dataset.k; S.filt[k] = S.filt[k].includes(v) ? S.filt[k].filter(x => x !== v) : [...S.filt[k], v]; save(); render(); break; }
     case 'filt-today': S.filt.today = !S.filt.today; save(); render(); break;
     case 'filt-clear': S.filt = { lang: [], mode: [], gender: [], today: false }; save(); render(); break;
