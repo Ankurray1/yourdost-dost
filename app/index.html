@@ -697,6 +697,10 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .spdots button{width:17px;height:24px;border:0;padding:0;background:none;display:grid;place-items:center;cursor:pointer}
 .spdots button::before{content:"";width:5px;height:5px;border-radius:3px;background:var(--ink);opacity:.25;transition:width .3s,opacity .3s}
 .spdots button.on::before{width:14px;opacity:.7}
+.spkick{background:linear-gradient(100deg,var(--violet-600) 0%,var(--violet-600) 38%,#C9B8FF 48%,#FFFFFF 50%,#C9B8FF 52%,var(--violet-600) 62%,var(--violet-600) 100%);background-size:260% 100%;-webkit-background-clip:text;background-clip:text;color:transparent!important;animation:kshine 3.6s ease-in-out infinite;justify-self:start}
+.sp-ink .spkick{background-image:linear-gradient(100deg,#FFD225 0%,#FFD225 38%,#FFF4C7 48%,#FFFFFF 50%,#FFF4C7 52%,#FFD225 62%,#FFD225 100%)}
+@keyframes kshine{0%,35%{background-position:100% 0}75%,100%{background-position:0 0}}
+@media (prefers-reduced-motion:reduce){.spkick{animation:none}}
 .spot:has(.sp-ink.cur) .spdots button::before{background:#FFF4C7}
 .spcard{opacity:0;transition:opacity .25s}
 .spcard.cur,.spot.dragging .spcard{opacity:1}
