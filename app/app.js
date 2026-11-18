@@ -166,38 +166,63 @@ function actCard(id, label, from) {
 /* ================= SCREENS ================= */
 const V = {};
 
-/* ---- onboarding ---- */
-V.ob = () => {
-  const n = S.ob, dots = `<div class="dots" aria-hidden="true">${[0, 1, 2, 3].map(i => `<i class="${i === n ? 'on' : ''}"></i>`).join('')}</div>`;
-  if (n === 0) return `<div class="screen notab glow" style="justify-content:space-between;padding-top:calc(var(--sb) + 20px)">
-    <div class="row between"><img src="/yd-logo.png" alt="YourDOST" style="height:30px;width:auto;background:#FFFFFF;border-radius:10px;padding:4px 8px"><button class="link" data-a="ob-skip">Skip</button></div>
-    <div class="orb" aria-hidden="true"></div>
-    <div class="stack"><h1 class="display">Kya haal hai, dost?</h1><p class="lg muted">A friend for the hard days and the good ones. Free through your company, private, and here 24×7.</p></div>
-    <div class="stack">${dots}<button class="btn primary block" data-a="ob-next">Get started</button></div></div>`;
-  if (n === 1) return `<div class="screen notab" style="padding-top:calc(var(--sb) + 16px)">
-    <div class="row"><button class="iconbtn" data-a="ob-prev" aria-label="Back">${ic('back')}</button></div>
-    <h1 class="t1">Sign in with your work or college email</h1>
-    <div class="stack"><label for="ob-email" class="lbl">Email</label><input id="ob-email" class="field" type="email" value="${esc(S.email)}" autocomplete="email"></div>
-    <div class="card tint-sage stack"><div class="row">${ic('gift')}<b>${esc(S.company)} covers you</b></div>
-      <p class="muted" style="margin:0">6 counselling sessions a year, plus Dost, programs and checks, all free for you.</p></div>
-    <div style="flex:1"></div><div class="stack">${dots}<button class="btn primary block" data-a="ob-next">Continue</button><p class="cap" style="text-align:center;margin:0">Prototype: no real sign-in happens.</p></div></div>`;
-  if (n === 2) return `<div class="screen notab" style="padding-top:calc(var(--sb) + 16px)">
-    <div class="row"><button class="iconbtn" data-a="ob-prev" aria-label="Back">${ic('back')}</button></div>
-    <h1 class="t1">What you share stays with you</h1>
-    <div class="list">
-      <div class="li"><span class="dot tint-violet">${ic('eye')}</span><div class="grow"><b>${esc(S.company)} never sees your chats</b><div class="cap">Only group totals, like "120 people used YourDOST this month".</div></div></div>
-      <div class="li"><span class="dot tint-sun">${ic('mic')}</span><div class="grow"><b>Your voice stays on your phone</b><div class="cap">Dost turns speech into text on the device.</div></div></div>
-      <div class="li"><span class="dot tint-sage">${ic('trash')}</span><div class="grow"><b>Delete anything, anytime</b><div class="cap">From Me › Privacy, in one tap.</div></div></div>
-    </div>
-    <p class="note">no judgement here</p>
-    <div style="flex:1"></div><div class="stack">${dots}<button class="btn primary block" data-a="ob-next">Got it</button></div></div>`;
-  return `<div class="screen notab" style="padding-top:calc(var(--sb) + 16px)">
-    <div class="row"><button class="iconbtn" data-a="ob-prev" aria-label="Back">${ic('back')}</button></div>
-    <h1 class="t1">What would you like help with?</h1><p class="muted" style="margin:-8px 0 0">Pick any. You can change this later.</p>
-    <div class="row wrap">${CONCERNS.map(([k, l]) => `<button class="chip" data-a="ob-concern" data-v="${k}" aria-pressed="${S.concerns.includes(k)}">${l}</button>`).join('')}</div>
-    <div class="stack"><span class="lbl">Language</span><div class="seg">${['English', 'हिंदी', 'Hinglish'].map(l => `<button data-a="ob-lang" data-v="${l}" aria-pressed="${S.lang === l}">${l}</button>`).join('')}</div></div>
-    <div style="flex:1"></div><div class="stack">${dots}<button class="btn primary block" data-a="ob-done" data-v="dost">${ic('mic')}Talk to Dost for 2 minutes</button><button class="btn ghost block" data-a="ob-done" data-v="home">I'll look around first</button></div></div>`;
+/* ---- First open: login, then three intro slides ---- */
+V.login = () => `<div class="screen notab login" style="padding-top:calc(var(--sb) + 18px)">
+  <span class="blob b1" aria-hidden="true"></span><span class="blob b2" aria-hidden="true"></span><span class="blob b3" aria-hidden="true"></span>
+  <img src="/yd-logo.png" alt="YourDOST" class="lglogo">
+  <h1 class="hello"><span class="h-a">Hey.</span><span class="h-b">How are you,</span><span class="h-c">really?</span></h1>
+  <p class="lg muted" style="margin:0;max-width:300px;position:relative">A safe space to talk, feel better and grow. Free through your company or college.</p>
+  <div style="flex:1"></div>
+  <form class="stack" id="loginform" style="position:relative" autocomplete="on">
+    <label for="lg-email" class="lbl">Work or college email</label>
+    <input id="lg-email" class="field" type="email" placeholder="you@company.com" value="${esc(S.email)}" autocomplete="email">
+    <button class="btn primary block" data-a="login" type="button">Continue</button>
+    <div class="or"><span>or</span></div>
+    <button class="btn block guestbtn" data-a="guest" type="button">Continue as guest</button>
+    <p class="cap" style="text-align:center;margin:4px 0 0">${ic('lock')} Private. Your company never sees what you share.</p>
+  </form></div>`;
+const SLIDES = [
+  { bg: 'var(--violet-100)', wave: 'var(--violet-200)', wave2: 'var(--violet-400)', a: 'You are', b: 'not alone.', note: 'lots of us feel this way',
+    sub: 'Feeling low, anxious or stuck happens to many people. Reaching out is how it starts to get lighter.',
+    art: `<svg viewBox="0 0 240 150" class="iart" aria-hidden="true"><circle class="bob d1" cx="60" cy="80" r="26" fill="var(--violet-200)"/><circle class="bob d2" cx="180" cy="72" r="22" fill="var(--peach-100)"/><circle class="bob d3" cx="120" cy="40" r="18" fill="var(--sage-100)"/><circle class="bob d4" cx="150" cy="118" r="16" fill="var(--violet-200)"/><circle class="bob d2" cx="86" cy="124" r="14" fill="var(--sun-200)"/><circle class="bob" cx="120" cy="82" r="30" fill="var(--sun-400)"/><path d="M110 82c3 4 17 4 20 0" stroke="#2F2663" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="111" cy="74" r="2.5" fill="#2F2663"/><circle cx="129" cy="74" r="2.5" fill="#2F2663"/></svg>` },
+  { bg: 'var(--sun-100)', wave: 'var(--sun-200)', wave2: 'var(--sun-400)', a: 'Opening this app', b: 'took courage.', note: "that's the biggest step",
+    sub: 'Most people wait a long time before they reach out. You just did. Be proud of that.',
+    art: `<svg viewBox="0 0 240 150" class="iart" aria-hidden="true"><g class="rise"><circle cx="120" cy="120" r="54" fill="var(--sun-400)"/><g stroke="var(--peach-400)" stroke-width="5" stroke-linecap="round"><path d="M120 46V28"/><path d="M70 66L58 54"/><path d="M170 66l12-12"/><path d="M52 104H34"/><path d="M188 104h18"/></g></g><rect x="20" y="118" width="200" height="40" fill="var(--sun-100)"/><path d="M20 118h200" stroke="var(--peach-400)" stroke-width="4" stroke-linecap="round"/></svg>` },
+  { bg: 'var(--peach-100)', wave: '#FFD9BF', wave2: 'var(--peach-400)', a: "Don't worry.", b: "We've got you.", note: 'one small step at a time',
+    sub: 'Talk to Dost, try a 2-minute exercise, or speak to a counsellor. Private, free and here 24×7.',
+    art: `<svg viewBox="0 0 240 150" class="iart" aria-hidden="true"><g class="beat"><path d="M120 132C86 110 62 90 62 64c0-17 13-28 28-28 13 0 22 8 30 18 8-10 17-18 30-18 15 0 28 11 28 28 0 26-24 46-58 68z" fill="var(--peach-400)"/><path d="M96 70c4-8 12-12 20-11" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" fill="none" opacity=".7"/></g></svg>` },
+];
+const waveSvg = (c1, c2) => `<div class="waves" aria-hidden="true"><svg class="wv w1" viewBox="0 0 1600 120" preserveAspectRatio="none"><path d="M0 60 Q100 20 200 60 T400 60 T600 60 T800 60 T1000 60 T1200 60 T1400 60 T1600 60 V120 H0Z" fill="${c1}"/></svg><svg class="wv w2" viewBox="0 0 1600 120" preserveAspectRatio="none"><path d="M0 70 Q100 40 200 70 T400 70 T600 70 T800 70 T1000 70 T1200 70 T1400 70 T1600 70 V120 H0Z" fill="${c2}" opacity=".35"/></svg></div>`;
+function slideHTML(i) {
+  const s = SLIDES[i], last = i === SLIDES.length - 1;
+  return `<div class="iwrap in">${s.art}
+    <h1 class="ibig"><span>${esc(s.a)}</span><span class="swash">${esc(s.b)}</span></h1>
+    <p class="note" style="font-size:22px;margin:0">${esc(s.note)}</p>
+    <p class="lg muted" style="margin:0;max-width:310px">${esc(s.sub)}</p></div>
+    <div class="ifoot"><div class="dots" aria-hidden="true">${SLIDES.map((_, k) => `<i class="${k === i ? 'on' : ''}"></i>`).join('')}</div>
+      ${last ? `<button class="btn primary" data-a="intro-next" style="padding:0 28px">Let's begin ${ic('send')}</button>` : `<button class="inext" data-a="intro-next" aria-label="Next">${ic('send')}</button>`}</div>`;
+}
+V.intro = () => {
+  const i = X.slide || 0, s = SLIDES[i];
+  return `<div class="screen notab intro" id="intro" style="background:${s.bg};padding-top:calc(var(--sb) + 12px)">
+    <div class="row between" style="position:relative;z-index:6"><span class="lbl muted">${i + 1} of ${SLIDES.length}</span><button class="link" data-a="intro-skip">Skip</button></div>
+    ${slideHTML(i)}${waveSvg(s.wave, s.wave2)}</div>`;
 };
+function introNext() {
+  const i = X.slide || 0;
+  if (i >= SLIDES.length - 1) { S.onboarded = true; S.view = 'home'; S.tab = 'home'; save(); X = {}; render(); return; }
+  if (X.busy) return; X.busy = true;
+  const host = document.getElementById('intro'), n = SLIDES[i + 1];
+  const layer = document.createElement('div'); layer.className = 'liquid'; layer.style.background = n.bg;
+  host.appendChild(layer);
+  setTimeout(() => { X.slide = i + 1; X.busy = false; render(); }, 720);
+}
+function bindIntro() {
+  const el = document.getElementById('intro'); if (!el) return;
+  let x0 = null;
+  el.onpointerdown = e => { if (e.target.closest('button')) return; x0 = e.clientX; };
+  el.onpointerup = e => { if (x0 === null) return; const dx = e.clientX - x0; x0 = null; if (dx < -50) introNext(); };
+}
 
 /* ---- Home ---- */
 /* ---- Mood: one check-in every 24 hours, a score out of 100, history by week, month and year ---- */
@@ -663,7 +688,7 @@ function sheetHTML() {
 /* ---------------- render ---------------- */
 function render() {
   document.documentElement.dataset.theme = 'light';
-  if (!S.onboarded) S.view = 'ob';
+  if (!S.onboarded && !['login', 'intro'].includes(S.view)) S.view = 'login';
   const fn = V[S.view] || V.home;
   const keepScroll = $app.querySelector('.screen'); const y = keepScroll ? keepScroll.scrollTop : 0;
   $app.innerHTML = fn() + sheetHTML() + (TOAST ? `<div class="toast" role="status">${esc(TOAST)}</div>` : '');
@@ -673,6 +698,8 @@ function render() {
   const f = document.getElementById('dform'); if (f) f.onsubmit = e => { e.preventDefault(); const i = document.getElementById('dtext'); const v = i.value; i.value = ''; dostSend(v); };
   if (S.view === 'ex' && X.ex && X.ex.running) runBreath();
   if (S.view === 'deck') bindSwipe();
+  if (S.view === 'intro') bindIntro();
+  const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
 }
 function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; X.date = null; save(); render(); const nx = EXM[p.ids[(p.i + 1) % n]]; if (nx) { const im = new Image(); im.src = `/app/img/${nx.id}.webp`; } }
 function bindSwipe() {
@@ -719,12 +746,11 @@ $app.addEventListener('click', e => {
   const act = a.dataset.a, v = a.dataset.v;
   if (act === 'scrim' && e.target !== a) return;
   switch (act) {
-    case 'ob-next': if (S.ob === 1) { const em = document.getElementById('ob-email'); if (em && em.value) S.email = em.value; } S.ob = Math.min(3, S.ob + 1); save(); render(); break;
-    case 'ob-prev': S.ob = Math.max(0, S.ob - 1); render(); break;
-    case 'ob-skip': S.ob = 3; render(); break;
-    case 'ob-concern': S.concerns = S.concerns.includes(v) ? S.concerns.filter(x => x !== v) : [...S.concerns, v]; save(); render(); break;
-    case 'ob-lang': S.lang = v; save(); render(); break;
-    case 'ob-done': S.onboarded = true; S.view = 'home'; S.tab = 'home'; save(); if (v === 'dost') go('dost'); else render(); break;
+    case 'login': { const em = (document.getElementById('lg-email') || {}).value || ''; if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast('Enter your work or college email, or continue as guest.'); break; }
+      S.email = em; const nm = em.split('@')[0].split(/[._-]/)[0]; S.name = nm ? nm[0].toUpperCase() + nm.slice(1) : 'Riya'; S.guest = false; S.view = 'intro'; X = { slide: 0 }; save(); render(); break; }
+    case 'guest': S.guest = true; S.name = 'Friend'; S.email = 'Guest'; S.view = 'intro'; X = { slide: 0 }; save(); render(); break;
+    case 'intro-next': introNext(); break;
+    case 'intro-skip': S.onboarded = true; S.view = 'home'; S.tab = 'home'; save(); X = {}; render(); break;
     case 'tab': go(v); break;
     case 'back': back(); break;
     case 'dost': go('dost'); break;

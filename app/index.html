@@ -269,6 +269,52 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .lgd-av{background:var(--violet-100);box-shadow:inset 0 0 0 1px var(--violet-200)}
 .lgd-sel{background:var(--violet-600)}
 .lgd-no{background:var(--surface-sunken)}
+/* login: typography over slowly shifting shapes */
+.login{position:relative;overflow:hidden;gap:16px}
+.login>*{position:relative;z-index:1}
+.blob{position:absolute!important;z-index:0!important;border-radius:42% 58% 63% 37%/41% 44% 56% 59%;animation:morph 14s ease-in-out infinite alternate;opacity:.75}
+.b1{width:260px;height:260px;right:-90px;top:60px;background:var(--violet-200)}
+.b2{width:200px;height:200px;left:-80px;top:300px;background:var(--sun-200);animation-duration:17s;animation-delay:-4s}
+.b3{width:140px;height:140px;right:40px;top:380px;background:var(--peach-100);animation-duration:12s;animation-delay:-7s}
+@keyframes morph{0%{border-radius:42% 58% 63% 37%/41% 44% 56% 59%;transform:translate(0,0) rotate(0)}50%{border-radius:58% 42% 37% 63%/52% 61% 39% 48%}100%{border-radius:37% 63% 46% 54%/63% 37% 63% 37%;transform:translate(14px,-18px) rotate(28deg)}}
+.lglogo{height:30px;width:auto;align-self:flex-start;background:#FFFFFF;border-radius:10px;padding:4px 8px}
+.hello{margin:18px 0 0;display:grid;gap:2px}
+.hello span{display:block}
+.h-a{font:800 72px/.95 var(--f-display);letter-spacing:-3px;color:var(--ink)}
+.h-b{font:600 34px/1.1 var(--f-display);letter-spacing:-1px;color:var(--ink)}
+.h-c{font:700 64px/1 var(--f-hand);color:var(--violet-600);transform:rotate(-3deg);transform-origin:left;margin-top:2px;width:max-content;position:relative;isolation:isolate}
+.h-c::after{content:"";position:absolute;left:-4px;right:-8px;bottom:6px;height:16px;background:var(--sun-400);border-radius:8px;z-index:-1;transform:rotate(-1deg)}
+.hello span{animation:rise .8s cubic-bezier(.2,.8,.2,1) both}.h-b{animation-delay:.12s!important}.h-c{animation-delay:.24s!important}
+.or{display:flex;align-items:center;gap:10px;color:var(--ink-muted);font:600 12px/1 var(--f-body)}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.guestbtn{background:var(--surface-raised);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+/* intro slides: big type, gentle waves, a liquid flood to the next slide */
+.intro{position:relative;overflow:hidden;gap:0;transition:background .3s}
+.iwrap{position:relative;z-index:2;display:grid;gap:14px;align-content:center;flex:1;padding-bottom:40px}
+.iart{width:240px;max-width:100%;height:150px;justify-self:start}
+.ibig{margin:0;display:grid;font:800 42px/1.04 var(--f-display);letter-spacing:-1.8px;color:var(--ink)}
+.ibig .swash{justify-self:start}
+.in>*{animation:rise .9s cubic-bezier(.2,.8,.2,1) both}
+.in>*:nth-child(2){animation-delay:.1s}.in>*:nth-child(3){animation-delay:.22s}.in>*:nth-child(4){animation-delay:.34s}
+@keyframes rise{from{opacity:0;transform:translateY(28px);filter:blur(8px)}}
+.ifoot{position:relative;z-index:6;display:flex;justify-content:space-between;align-items:center;padding-bottom:6px}
+.intro .dots i{background:color-mix(in srgb,var(--ink) 20%,transparent)}
+.intro .dots i.on{background:var(--primary)}
+.inext{width:64px;height:64px;border-radius:50%;border:0;background:var(--primary);color:var(--on-primary);display:grid;place-items:center;box-shadow:var(--shadow-float)}
+.inext svg{width:22px;height:22px}
+.waves{position:absolute;left:0;right:0;bottom:0;height:150px;z-index:1;pointer-events:none;overflow:hidden}
+.wv{position:absolute;left:0;bottom:0;width:200%;height:100%}
+.w1{animation:wave 9s linear infinite}
+.w2{animation:wave 6s linear infinite reverse;bottom:-10px}
+@keyframes wave{to{transform:translateX(-50%)}}
+.liquid{position:absolute;inset:0;z-index:10;clip-path:circle(0% at 84% 90%);animation:liquid .75s cubic-bezier(.65,0,.35,1) forwards}
+@keyframes liquid{to{clip-path:circle(150% at 84% 90%)}}
+.bob{animation:bob 4s ease-in-out infinite}.bob.d1{animation-delay:-1s}.bob.d2{animation-delay:-2s}.bob.d3{animation-delay:-3s}.bob.d4{animation-delay:-.5s}
+@keyframes bob{50%{transform:translateY(-8px)}}
+.rise{animation:sunrise 1.4s cubic-bezier(.2,.8,.2,1) both}
+@keyframes sunrise{from{transform:translateY(60px);opacity:.3}}
+.beat{transform-origin:120px 84px;animation:beat 1.6s ease-in-out infinite}
+@keyframes beat{0%,100%{transform:scale(1)}15%{transform:scale(1.08)}30%{transform:scale(.98)}45%{transform:scale(1.05)}}
 .proto{position:fixed;left:16px;bottom:16px;font:500 12px/16px var(--f-body);color:var(--ink-muted);max-width:220px}
 @media (max-width:900px){.proto{display:none}}
 </style>
