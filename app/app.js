@@ -716,7 +716,7 @@ V.home = () => {
   const step = todayStep(), bk = S.booked && EXM[S.booked.id];
   const care = (S.plan && S.plan.ex) ? [S.plan.ex, 'ex_good', 'ex_ground'] : ['ex_box', 'ex_good', 'ex_ground'];
   return `<div class="screen">
-  <div class="row between"><div><span class="row" style="gap:8px"><span class="cap">${greet()},</span></span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div>
+  <div class="row between" style="align-items:flex-start"><div class="stack" style="gap:6px"><img src="/yd-logo.png" alt="YourDOST" class="homelogo"><div><span class="cap">${greet()},</span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div></div>
     <div class="row" style="gap:8px">${bell()}${moodChip()}</div></div>
   ${moodCard()}
   <section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
