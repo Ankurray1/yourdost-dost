@@ -716,8 +716,8 @@ V.home = () => {
   const step = todayStep(), bk = S.booked && EXM[S.booked.id];
   const care = (S.plan && S.plan.ex) ? [S.plan.ex, 'ex_good', 'ex_ground'] : ['ex_box', 'ex_good', 'ex_ground'];
   return `<div class="screen">
-  <div class="row between" style="align-items:flex-start"><div class="stack" style="gap:6px"><img src="/yd-logo.png" alt="YourDOST" class="homelogo"><div><span class="cap">${greet()},</span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div></div>
-    <div class="row" style="gap:8px">${bell()}${moodChip()}</div></div>
+  <div class="stack" style="gap:10px"><div class="row between"><img src="/yd-logo.png" alt="YourDOST" class="homelogo"><div class="row" style="gap:8px">${bell()}${moodChip()}</div></div>
+    <h1 class="hello1">${greet()}, <b>${esc(S.name)}</b></h1></div>
   ${moodCard()}
   <section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
     ${step ? stepCard(step) : `<button class="card glow row" data-a="dost" style="border:0;text-align:left;box-shadow:var(--shadow-card)"><span class="orb sm" style="animation:none;flex:none;width:64px;height:64px;box-shadow:0 0 0 6px color-mix(in srgb,var(--violet-200) 70%,transparent)"></span><span class="stack" style="gap:4px"><b>Talk to Dost for 2 minutes</b><span class="cap">Dost asks a few questions and finds the right support for you.</span></span></button>`}</section>
