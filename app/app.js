@@ -97,7 +97,7 @@ function slotsFor(e) {
 /* ---------------- state (kept in this browser only) ---------------- */
 const KEY = 'yd-app-v3';
 const fresh = () => ({
-  onboarded: false, ob: 0, name: 'Riya', email: 'riya.sharma@acme.com', company: 'Acme Corp', concerns: [], lang: 'English',
+  onboarded: false, ob: 0, name: 'Riya', email: 'riya.sharma@gmail.com', company: '', concerns: [], lang: 'English',
   view: 'home', params: {}, stack: [], tab: 'home',
   moods: seedMoods(), lastCheck: null, tour: null, regs: [], notifs: NOTIF_SEED(), rituals: [], leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
   plan: null, sessionsLeft: 3, favs: ['e1'], seg: 'browse', sort: 'match', quiz: null,
@@ -324,7 +324,7 @@ V.event = () => {
       <label class="lbl" for="ev-ask">Anything you'd like covered? <span class="muted">(optional, anonymous)</span></label>
       <input id="ev-ask" class="field" value="${esc(f.ask)}" placeholder="e.g. how to talk to my dad" maxlength="140">
       <button class="btn primary block" data-a="ev-register">Register for free</button>
-      <span class="cap">${ic('lock')} ${esc(S.company)} only sees how many people joined, never who.</span></form>`}
+      <span class="cap">${ic('lock')} Your employer only sees how many people joined, never who.</span></form>`}
   </div>`;
 };
 V.evdone = () => {
@@ -359,7 +359,7 @@ function updDots(sc) { const d = document.getElementById('evdots'); if (!d) retu
 
 /* ---- Notifications: in-app nudges with an unread count ---- */
 function NOTIF_SEED() { return [
-  { id: 'n1', kind: 'survey', icon: 'pen', tint: 'sun', title: 'Got 2 minutes?', body: 'Acme People team: a quick, anonymous pulse survey on how supported you feel.', when: 'Just now', read: false, go: ['survey', ''] },
+  { id: 'n1', kind: 'survey', icon: 'pen', tint: 'sun', title: 'Got 2 minutes?', body: 'Your People team: a quick, anonymous pulse survey on how supported you feel.', when: 'Just now', read: false, go: ['survey', ''] },
   { id: 'n2', kind: 'event', icon: 'people', tint: 'violet', title: 'Cheers to Men is tomorrow', body: 'A live circle for International Men\'s Day, 6 pm. Save your spot.', when: '1 h ago', read: false, go: ['event', 'men'] },
   { id: 'n3', kind: 'session', icon: 'video', tint: 'peach', title: 'Session 3 with Neha', body: 'Mon 24 Nov at 6 pm. Want to note what you\'d like to talk about?', when: 'Today', read: false, go: ['tab', 'experts'] },
   { id: 'n4', kind: 'dost', icon: 'chat', tint: 'sage', title: 'Dost: how did the ritual go?', body: 'Last time, your switch-off ritual helped on 3 of 5 nights. Want to check in?', when: 'Yesterday', read: false, go: ['dost', ''] },
@@ -390,7 +390,7 @@ V.survey = () => {
     <span class="burst" aria-hidden="true" style="align-self:center">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span>
     <h1 class="yourein" style="justify-items:center"><span>Thank you.</span><span class="swash">Heard.</span></h1>
     <p class="note" style="font-size:22px;margin:0">your voice shapes what we build</p>
-    <p class="muted" style="margin:0">Your answers are anonymous. ${esc(S.company)} only sees totals from 10 or more people.</p>
+    <p class="muted" style="margin:0">Your answers are anonymous. Your employer only sees totals from 10 or more people.</p>
     <button class="btn primary block" data-a="tab" data-v="home">Back to Today</button></div>`;
   const Q = SURVEY[i];
   return `<div class="screen notab">${top('Pulse survey · ' + (i + 1) + ' of ' + SURVEY.length)}
@@ -576,7 +576,7 @@ V.sos = () => {
     return `<div class="screen notab sosscr" style="gap:18px">
       <div class="row between"><button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button><span class="lbl">SOS · private</span><span style="width:44px"></span></div>
       <h1 class="sosbig">Some moments<br>are <span class="swash">too heavy</span><br>to hold alone.</h1>
-      <p class="lg" style="margin:0">A real counsellor can talk with you <b>in the next few minutes</b>. Free and private. ${esc(S.company)} never sees this.</p>
+      <p class="lg" style="margin:0">A real counsellor can talk with you <b>in the next few minutes</b>. Free and private. Your employer never sees this.</p>
       <div class="stack" style="gap:8px"><span class="lbl muted">Tap what feels true · optional</span>
         ${SOS_OPTS.map(([k, l]) => `<button class="sosopt" data-a="sos-pick" data-v="${k}" aria-pressed="${s.picks.includes(k)}"><span class="sosck">${ic('check')}</span>${l}</button>`).join('')}</div>
       ${harm ? `<div class="card tint-help stack" style="box-shadow:none;gap:8px"><b>Thank you for telling us. You matter.</b><span class="muted">If you might act on these thoughts, please call now. Someone will answer.</span>
@@ -719,7 +719,7 @@ V.mood = () => {
       ${careA !== null && noA !== null ? `<div class="card row"><span class="dot tint-sage">${ic('grow')}</span><span>On days you did a care activity, your mood score was ${careA} vs ${noA} on other days.</span></div>` : ''}
       <div class="card row"><span class="dot tint-violet">${ic('cal')}</span><span>You checked in on ${moodsSince(30).length} of the last 30 days. That's you showing up for yourself.</span></div></section>
     <div class="row"><button class="btn soft" style="flex:1" data-a="dost">${ic('mic')}Talk it through with Dost</button></div>
-    <p class="cap" style="margin:0">${ic('lock')} Only you see your mood. ${esc(S.company)} never does. <button class="link" data-a="mood-again">Prototype: check in again</button></p></div>`;
+    <p class="cap" style="margin:0">${ic('lock')} Only you see your mood. Your employer never does. <button class="link" data-a="mood-again">Update today's mood</button></p></div>`;
 };
 function todayStep() {
   if (S.plan) {
@@ -747,7 +747,7 @@ function whenLabel(d) { const n = dayDiff(d); return n === 0 ? 'Today' : n === 1
 function spotItems() {
   const out = [];
   out.push({ id: 'sp-voice', go: 'dost', v: '', theme: 'sp-glow', art: '<span class="orb sm sp-orb"></span>', k: '✦ New release', t: 'Talk to your Dost', s: 'Voice chat in your language · try 2 minutes' });
-  if (!S.booked && S.sessionsLeft > 0) out.push({ id: 'sp-free', go: 'tab', v: 'experts', theme: 'sp-sun', art: `<span class="sp-ic">${ic('gift')}</span>`, k: `On ${esc(S.company)}`, t: `${S.sessionsLeft} free counselling sessions`, s: 'Private. Your employer never knows who uses it' });
+  if (!S.booked && S.sessionsLeft > 0) out.push({ id: 'sp-free', go: 'tab', v: 'experts', theme: 'sp-sun', art: `<span class="sp-ic">${ic('gift')}</span>`, k: 'Your work benefit', t: `${S.sessionsLeft} free counselling sessions`, s: 'Private. Your employer never knows who uses it' });
   out.push({ id: 'sp-games', go: 'go-games', v: '', theme: 'sp-ink', art: `<span class="sp-ic">${ic2('puzzle')}</span>`, k: 'New', t: 'Train your mind', s: '6 quick brain games, build a daily streak' });
   out.push({ id: 'sp-sleep', go: 'pg', v: 'pg_sleep', theme: 'sp-violet', art: `<span class="sp-ic">${ic('moon')}</span>`, k: 'New program', t: 'Sleep Reset · 7 days', s: '10 minutes a night for calmer sleep' });
   out.push({ id: 'sp-tests', go: 'go-tests', v: '', theme: 'sp-sage', art: `<span class="sp-ic">${ic2('clip')}</span>`, k: 'Check yourself', t: 'How anxious am I, really?', s: 'Clinically tested, 2 minutes, private' });
@@ -987,7 +987,7 @@ V.experts = () => {
           <span class="cap">${esc(h.mode)} · 50 min · you rated the fit ${h.fit}/5</span>
           <p style="margin:0"><span class="lbl muted">Your takeaway</span><br>${esc(h.note)}</p>
           ${h.task ? `<span class="tag sage" style="justify-self:start">${ic('grow')}${esc(h.task)}</span>` : ''}<button class="link" data-a="rx" data-v="${h.n}" style="justify-self:start;padding:0">View prescription ›</button></div></div>`; }).join('')}</div></section>` : ''}
-      <div class="card row" style="box-shadow:none;background:var(--surface-sunken)">${ic('gift')}<span>${S.sessionsLeft} of 6 free sessions left this year, covered by ${esc(S.company)}.</span></div>`;
+      <div class="card row" style="box-shadow:none;background:var(--surface-sunken)">${ic('gift')}<span>${S.sessionsLeft} of 6 free sessions left this year, covered by your employer.</span></div>`;
   }
   return `<div class="screen"><h1 class="t1">Experts</h1>
     <div class="seg" role="group" aria-label="Experts view">${[['browse', 'Browse'], ['for', 'For you'], ['mine', 'My sessions']].map(([k, l]) => `<button data-a="seg" data-v="${k}" aria-pressed="${seg === k}">${l}</button>`).join('')}</div>${body}</div>${tabbar()}`;
@@ -1126,7 +1126,7 @@ V.dost = () => {
     </div>
     ${d.chips.length && !d.busy ? `<div class="row wrap" style="gap:8px">${d.chips.map(c => `<button class="chip" style="background:var(--surface-raised);box-shadow:var(--shadow-card)" data-a="dchip" data-v="${esc(c)}">${esc(c)}</button>`).join('')}</div>` : ''}
     ${d.done ? '' : `<form id="dform" class="row" autocomplete="off"><label for="dtext" class="sr">Your answer</label><input id="dtext" class="field" placeholder="Type how you feel…" maxlength="600"><button class="iconbtn" style="background:var(--primary);color:var(--on-primary)" aria-label="Send">${ic('send')}</button></form>`}
-    <p class="cap" style="text-align:center;margin:0">${ic('lock')} Private. ${esc(S.company)} never sees this.</p></div>`;
+    <p class="cap" style="text-align:center;margin:0">${ic('lock')} Private. Your employer never sees this.</p></div>`;
 };
 
 /* ---- Grow ---- */
@@ -1187,25 +1187,26 @@ V.me = () => {
   const days = []; for (let i = 6; i >= 0; i--) { const dt = new Date(); dt.setDate(dt.getDate() - i); days.push(DAYS[dt.getDay()][0]); }
   const wk = Object.fromEntries(moodsSince(7).map(m => [m.d, m.v])); const week = []; for (let i = 6; i >= 0; i--) { const dt = new Date(); dt.setDate(dt.getDate() - i); week.push(wk[dkey(dt)]); }
   return `<div class="screen">
-    <div class="row"><span class="avatar" style="width:56px;height:56px;font-size:22px">${esc(S.name[0])}</span><div><h1 class="t1">${esc(S.name)}</h1><span class="cap">${esc(S.email)} · ${esc(S.company)}</span></div></div>
+    <div class="row"><span class="avatar" style="width:56px;height:56px;font-size:22px">${esc(S.name[0])}</span><div><h1 class="t1">${esc(S.name)}</h1><span class="cap">${esc(S.email)}</span></div></div>
     <button class="card stack" data-a="moodview" style="border:0;text-align:left"><div class="row between"><h2 class="t2">Your week</h2><span class="link">Mood details ›</span></div>
       <div class="moodbars" role="img" aria-label="Mood over the last 7 days">${week.map((v, i) => `<div><b style="height:${v === undefined ? 6 : 18 + v * 20}px;background:${v === undefined ? 'var(--surface-sunken)' : MOOD_FILL[v]}"></b><span class="cap">${days[i]}</span></div>`).join('')}</div>
       <span class="muted">${moodDue() ? 'Check in on Home to add today.' : 'Thanks for checking in today.'}</span></button>
-    <section class="card tint-sage stack" style="box-shadow:none"><h2 class="t2">Small wins this week</h2><ul style="margin:0;padding-left:18px;display:grid;gap:4px">${S.wins.slice(-4).map(w => `<li>${esc(w)}</li>`).join('')}</ul></section>
-    <section class="card tint-violet stack" style="box-shadow:none"><div class="row between"><h2 class="t2">Your benefits</h2><span class="tag">${esc(S.company)}</span></div>
+    <section class="card tint-sage stack" style="box-shadow:none"><h2 class="t2">Small wins this week</h2><ul style="margin:0;padding-left:18px;display:grid;gap:4px">${[...new Set(S.wins.slice().reverse())].slice(0, 4).map(w => `<li>${esc(w)}</li>`).join('')}</ul></section>
+    <section class="card tint-violet stack" style="box-shadow:none"><div class="row between"><h2 class="t2">Your benefits</h2><span class="tag">Work benefit</span></div>
       <span>${S.sessionsLeft} of 6 counselling sessions left this year</span><div class="bar"><i style="width:${S.sessionsLeft / 6 * 100}%;background:var(--violet-600)"></i></div><span class="cap">Dost, Grow and quick checks are unlimited.</span></section>
     <div class="list">
       <button class="li" data-a="journal"><span class="dot tint-sun">${ic('pen')}</span><span class="grow"><b>Journal</b></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="go-health"><span class="dot tint-sage">${ic2('link')}</span><span class="grow"><b>Connected health apps</b><span class="cap" style="display:block">${Object.keys(S.health).length ? Object.keys(S.health).length + ' connected' : 'Apple Health, Health Connect, Strava, Fitbit'}</span></span>${ic('chev', 'chev')}</button>
       <div class="li"><span class="dot tint-sage">${ic('chat')}</span><span class="grow"><b>Dost remembers our chats</b><span class="cap" style="display:block">So it can ask how things went</span></span><button class="toggle" role="switch" aria-checked="${S.memory}" aria-label="Dost memory" data-a="memory"></button></div>
-      <button class="li" data-a="sheet" data-v="privacy"><span class="dot tint-violet">${ic('shield')}</span><span class="grow"><b>Privacy and your data</b><span class="cap" style="display:block">What ${esc(S.company)} sees: group totals only</span></span>${ic('chev', 'chev')}</button>
+      <button class="li" data-a="sheet" data-v="privacy"><span class="dot tint-violet">${ic('shield')}</span><span class="grow"><b>Privacy and your data</b><span class="cap" style="display:block">What your employer sees: group totals only</span></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="help"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Get help now</b></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="tour-again"><span class="dot tint-sun">${ic('spark')}</span><span class="grow"><b>Take the app tour again</b><span class="cap" style="display:block">A quick guide to every feature</span></span>${ic('chev', 'chev')}</button>
-      <div class="li" style="display:grid;gap:8px"><span><b>Prototype: preview Home as…</b><span class="cap" style="display:block">The top card on Home changes with each person's situation</span></span><div class="row wrap" style="gap:6px">${HOME_STATES.map(([k, l]) => `<button class="chip" style="min-height:34px;font-size:13px" data-a="home-state" data-v="${k}">${l}</button>`).join('')}</div></div>
+      ${location.hash === '#tools' ? `      <div class="li" style="display:grid;gap:8px"><span><b>Prototype: preview Home as…</b><span class="cap" style="display:block">The top card on Home changes with each person's situation</span></span><div class="row wrap" style="gap:6px">${HOME_STATES.map(([k, l]) => `<button class="chip" style="min-height:34px;font-size:13px" data-a="home-state" data-v="${k}">${l}</button>`).join('')}</div></div>
       <div class="li" style="display:grid;gap:8px"><span class="row between"><b>Prototype: Spotlight &amp; Reminders performance</b><button class="link" data-a="nstats-reset" style="padding:0">Reset</button></span>
         <span class="cap">Views and taps on this phone. Action rate = taps ÷ views.</span>
         <div class="nperf">${Object.entries(S.nstats || {}).length ? Object.entries(S.nstats).map(([k, r]) => `<span>${esc(k)}</span><span>${r.seen} views</span><span>${r.tap} taps</span><b>${r.seen ? Math.round(r.tap / r.seen * 100) : 0}%</b>`).join('') : '<span class="cap" style="grid-column:1/-1">No data yet. Open Home and tap a card.</span>'}</div></div>
-      <button class="li" data-a="restart"><span class="dot" style="background:var(--surface-sunken)">${ic('back')}</span><span class="grow"><b>Prototype: start over</b><span class="cap" style="display:block">Replays onboarding and clears this demo</span></span></button>
+` : ''}
+      <button class="li" data-a="restart"><span class="dot" style="background:var(--surface-sunken)">${ic('back')}</span><span class="grow"><b>Log out</b><span class="cap" style="display:block">Clears this device and returns to sign in</span></span></button>
     </div></div>${tabbar()}`;
 };
 
@@ -1224,7 +1225,7 @@ function sheetHTML() {
       <div class="stack" style="gap:8px">${['Not really', 'Somewhat', 'Yes, a lot'].map((l, i) => `<button class="qopt" data-a="sess-fb" data-v="${i}">${l}</button>`).join('')}</div><span class="cap">Only you and YourDOST see this. If it wasn't a good fit, we'll help you find someone else.</span>`; }
   if (s.name === 'hconnect') { const h = HAPPS.find(x => x[0] === s.k);
     body = `<div class="row"><span class="happ" style="background:${h[3]}">${esc(h[1][0])}</span><h2 class="t1">Connect ${esc(h[1])}</h2></div>
-      <p class="muted" style="margin:0">YourDOST will read this data once a day. We never write to ${esc(h[1])}, and ${esc(S.company)} never sees it.</p>
+      <p class="muted" style="margin:0">YourDOST will read this data once a day. We never write to ${esc(h[1])}, and your employer never sees it.</p>
       <div class="list">${['Sleep', 'Steps', 'Workouts', 'Heart rate', 'Mindful minutes'].map((t, i) => `<div class="li"><span class="grow"><b>${t}</b></span><button class="toggle" role="switch" aria-checked="${i < 3}" aria-label="${t}" data-a="toast" data-v="You can change this any time."></button></div>`).join('')}</div>
       <button class="btn primary block" data-a="h-ok">Allow read access</button><button class="btn ghost block" data-a="close">Not now</button>`; }
   if (s.name === 'filter') { const f = S.filt; const grp = (k, label, opts) => `<div class="stack" style="gap:8px"><span class="lbl">${label}</span><div class="row wrap">${opts.map(o => `<button class="chip" data-a="filt" data-k="${k}" data-v="${o}" aria-pressed="${f[k].includes(o)}">${o}</button>`).join('')}</div></div>`;
@@ -1253,11 +1254,11 @@ function sheetHTML() {
         <div class="cal">${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(w => `<span class="wd">${w}</span>`).join('')}${cells.join('')}</div>
         <div class="row" style="gap:14px;flex-wrap:wrap"><span class="cap row" style="gap:6px"><i class="lgd lgd-av"></i>Free</span><span class="cap row" style="gap:6px"><i class="lgd lgd-sel"></i>Selected</span><span class="cap row" style="gap:6px"><i class="lgd lgd-no"></i>Not available</span></div></div>
       ${sel ? `<div class="stack" style="gap:8px"><span class="lbl">Times on ${lab}</span><div class="row wrap">${times.map(t => `<button class="slot" data-a="slot" data-v="${lab}|${t}" aria-pressed="${X.slot === lab + '|' + t}">${t}</button>`).join('')}</div></div>` : `<span class="muted">Pick a highlighted date to see times.</span>`}
-      <div class="row between" style="align-items:flex-start"><span><b>Share my Dost summary</b><span class="cap" style="display:block">So you don't start from zero. Never shared with ${esc(S.company)}.</span></span><button class="toggle" role="switch" aria-checked="${S.shareSummary}" aria-label="Share summary" data-a="share"></button></div>
+      <div class="row between" style="align-items:flex-start"><span><b>Share my Dost summary</b><span class="cap" style="display:block">So you don't start from zero. Never shared with your employer.</span></span><button class="toggle" role="switch" aria-checked="${S.shareSummary}" aria-label="Share summary" data-a="share"></button></div>
       <button class="btn primary block" data-a="book-ok" ${X.slot ? '' : 'disabled style="opacity:.45"'}>${X.slot ? 'Book ' + esc(X.slot.replace('|', ', ')) : 'Pick a date and time'}</button>`;
   }
   if (s.name === 'privacy') body = `<h2 class="t1">Privacy and your data</h2><div class="list">
-    <div class="li"><span class="dot tint-violet">${ic('eye')}</span><span class="grow"><b>What ${esc(S.company)} sees</b><span class="cap" style="display:block">Group totals only, and only when 10 or more people are in a group.</span></span></div>
+    <div class="li"><span class="dot tint-violet">${ic('eye')}</span><span class="grow"><b>What your employer sees</b><span class="cap" style="display:block">Group totals only, and only when 10 or more people are in a group.</span></span></div>
     <div class="li"><span class="dot tint-sun">${ic('mic')}</span><span class="grow"><b>Your voice</b><span class="cap" style="display:block">Turned into text on your phone; audio is never uploaded.</span></span></div>
     <div class="li"><span class="dot tint-sage">${ic('lock')}</span><span class="grow"><b>Your chats with Dost</b><span class="cap" style="display:block">Names and numbers removed before the AI; nothing stored on our servers.</span></span></div></div>
     <button class="btn helpbtn block" data-a="restart">${ic('trash')}Delete all my data</button>`;
@@ -1388,7 +1389,7 @@ V.tests = () => `<div class="screen notab">${top('Check yourself')}
   <div class="stack" style="gap:10px">${TEST_ORDER.map(id => { const t = TESTS[id], h = (S.tests[id] || []).slice(-1)[0];
     return `<button class="tcard tint-${t.tint}" data-a="test" data-v="${id}"><span class="stack" style="gap:2px;flex:1"><b class="t2" style="font-size:17px">${t.name}</b><span class="cap">${t.qs.length} questions · ${t.tool}</span></span>
       ${h ? `<span class="tag" style="background:var(--surface-raised)">${esc(testBand(t, h.s).b[1])}</span>` : `<span class="go">${ic('chev')}</span>`}</button>`; }).join('')}</div>
-  <p class="cap" style="margin:0">${ic('lock')} Answers stay on this phone. ${esc(S.company)} never sees them.</p></div>`;
+  <p class="cap" style="margin:0">${ic('lock')} Answers stay on this phone. Your employer never sees them.</p></div>`;
 V.test = () => {
   const id = S.params.id, t = TESTS[id], st = X.t || (X.t = { a: S.params.a ? S.params.a.slice() : [] }), i = st.a.length, vis = S.params.vis || [];
   if (i >= t.qs.length) {
@@ -1484,7 +1485,7 @@ const POMO_MIN = 25;
 function pomoBody() {
   const p = X.p || (X.p = { s: 'list', tasks: ['', '', ''], cur: 0, n: 0, parked: [], demo: true });
   if (p.s === 'list') return `<span class="eyebrow">Step 1</span><h2 class="rq">Write a list of key tasks to complete</h2>${p.tasks.map((t, i) => `<input class="field ptask" data-k="${i}" value="${esc(t)}" placeholder="Task ${i + 1}">`).join('')}
-    <label class="row between card" style="box-shadow:none;background:var(--surface-sunken)"><span><b>Quick demo</b><span class="cap" style="display:block">25 seconds instead of 25 minutes</span></span><button class="toggle" role="switch" aria-checked="${p.demo}" data-a="p-demo" aria-label="Quick demo"></button></label>
+    <label class="row between card" style="box-shadow:none;background:var(--surface-sunken)"><span><b>Quick try</b><span class="cap" style="display:block">25 seconds instead of 25 minutes</span></span><button class="toggle" role="switch" aria-checked="${p.demo}" data-a="p-demo" aria-label="Quick demo"></button></label>
     <div style="flex:1"></div><button class="btn primary block" data-a="p-start">${ic2('timer')}Set a timer for 25 minutes</button>`;
   const tasks = p.tasks.filter(Boolean), task = tasks[p.cur];
   if (p.s === 'run') return `<div class="pring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="var(--peach-100)" stroke-width="8"/><circle id="parc" cx="60" cy="60" r="54" fill="none" stroke="var(--peach-400)" stroke-width="8" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0" transform="rotate(-90 60 60)"/></svg><b id="ptime">25:00</b><span class="cap">Pomodoro ${p.n + 1}</span></div>
@@ -1538,7 +1539,7 @@ V.read = () => {
   return `<div class="screen notab">${top('Read')}
     <button class="artfeat tint-${f.tint}" data-a="art" data-v="${ids[0]}"><span class="tag" style="background:var(--surface-raised)">${f.tag} · ${f.mins} min</span><b class="arthead">${esc(f.t)}</b><span class="cap">Featured</span></button>
     <div class="list">${ids.slice(1).map(id => { const a = ARTS[id]; return `<button class="li" data-a="art" data-v="${id}"><span class="artthumb tint-${a.tint}">${ic('book')}</span><span class="grow"><b style="font-size:15px;line-height:20px;display:block">${esc(a.t)}</b><span class="cap">${a.tag} · ${a.mins} min read${S.reads.includes(id) ? ' · read' : ''}</span></span></button>`; }).join('')}</div>
-    <p class="cap" style="margin:0">Sample articles for this prototype, written in the style of the YourDOST blog.</p></div>`;
+    <p class="cap" style="margin:0">From the YourDOST team. New reads every week.</p></div>`;
 };
 V.art = () => {
   const id = S.params.id, a = ARTS[id], act = a.act;
@@ -1661,7 +1662,7 @@ V.rx = () => {
       <div class="rxsec"><span class="lbl">Your plan</span>${r.plan.map(([t, link]) => `<div class="row rxrow" style="align-items:flex-start"><span class="rxtick">${ic('check')}</span><span style="flex:1">${esc(t)}</span>${link ? `<button class="btn soft sm" data-a="rx-go" data-v="${link}">Open</button>` : ''}</div>`).join('')}</div>
       <div class="rxsec"><span class="lbl">Medicines</span><p class="muted">None. Counselling psychologists don't prescribe medicines. If they're ever needed, ${esc(fnm(e.name))} will refer you to a psychiatrist.</p></div>
       <div class="row between"><span class="cap">Next review: ${esc(r.review)}</span><button class="link" data-a="toast" data-v="Saved as a PDF to your phone.">${ic2('file')}PDF</button></div></section>`; }).join('')}
-    <p class="cap" style="margin:0">${ic('lock')} Only you and your counsellor can see this. ${esc(S.company)} never does.</p></div>`;
+    <p class="cap" style="margin:0">${ic('lock')} Only you and your counsellor can see this. Your employer never does.</p></div>`;
 };
 
 /* ---------- Connected health apps ---------- */
@@ -1669,12 +1670,12 @@ const HAPPS = [['apple', 'Apple Health', 'Sleep, steps, heart rate, mindful minu
 V.health = () => {
   const on = HAPPS.filter(([k]) => S.health[k]);
   return `<div class="screen notab">${top('Connected health apps')}
-    <p class="muted" style="margin:0">Link your health apps to see how sleep and movement relate to your mood. Read-only. ${esc(S.company)} never sees it.</p>
-    ${on.length ? `<div class="card stack" style="background:var(--sage-100);box-shadow:none"><span class="eyebrow">What we're noticing · sample data</span>
+    <p class="muted" style="margin:0">Link your health apps to see how sleep and movement relate to your mood. Read-only. Your employer never sees it.</p>
+    ${on.length ? `<div class="card stack" style="background:var(--sage-100);box-shadow:none"><span class="eyebrow">What we're noticing</span>
       <b class="t2">On days you walk 7,000+ steps, your mood score is about 12 points higher.</b>
       <div class="row between"><span class="stack" style="gap:0"><b class="t1">6h 40m</b><span class="cap">avg sleep this week</span></span><span class="stack" style="gap:0"><b class="t1">6,820</b><span class="cap">avg steps</span></span><span class="stack" style="gap:0"><b class="t1">3</b><span class="cap">workouts</span></span></div></div>` : ''}
     <div class="list">${HAPPS.map(([k, n, d, c]) => `<div class="li"><span class="happ" style="background:${c}">${esc(n[0])}</span><span class="grow"><b>${esc(n)}</b><span class="cap" style="display:block">${S.health[k] ? 'Connected · syncing daily' : esc(d)}</span></span>${S.health[k] ? `<button class="btn ghost sm" data-a="h-off" data-v="${k}">Disconnect</button>` : `<button class="btn primary sm" data-a="h-on" data-v="${k}">Connect</button>`}</div>`).join('')}</div>
-    <p class="cap" style="margin:0">${ic('lock')} You choose what to share and can disconnect any time. This prototype uses sample data.</p></div>`;
+    <p class="cap" style="margin:0">${ic('lock')} You choose what to share and can disconnect any time.</p></div>`;
 };
 
 /* ---------- The Grow hub: everything on one screen ---------- */
