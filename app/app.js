@@ -728,6 +728,72 @@ function todayStep() {
   }
   return null;
 }
+/* ---- Home "Now" slot: one card, chosen by what matters most for this person today ----
+   Priority: 1 a session coming up (don't miss it) → 2 a rough day (offer a person)
+   → 3 a session just happened (reflect, rate the fit) → 4 a plan step → 5 brand-new user (Dost intro) → 6 no sessions yet (free sessions)
+   → 7 a check-in is due → otherwise nothing (the daily ritual below is enough). */
+function sessAt(b) {
+  if (!b || !b.day) return null; const m = b.day.match(/(\d+)\s+([A-Za-z]{3})/), t = (b.time || '').match(/(\d+)(?::(\d+))?\s*(am|pm)/i); if (!m || !t) return null;
+  const now = new Date(), mo = MON.indexOf(m[2]); let y = now.getFullYear(); if (mo < now.getMonth() - 1) y++;
+  let h = +t[1] % 12; if (/pm/i.test(t[3])) h += 12; return new Date(y, mo, +m[1], h, +(t[2] || 0));
+}
+const dayDiff = d => { const a = new Date(); a.setHours(0, 0, 0, 0); const b = new Date(d); b.setHours(0, 0, 0, 0); return Math.round((b - a) / 86400000); };
+function whenLabel(d) { const n = dayDiff(d); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n < 7 ? DAYS[d.getDay()] : dayLabel(d); }
+function homeNow() {
+  const b = S.booked, e = b && EXM[b.id], at = sessAt(b), now = Date.now();
+  // 1. a session in the next 7 days
+  if (e && at && at - now > -50 * 60000 && dayDiff(at) <= 7) {
+    const mins = Math.round((at - now) / 60000), live = mins <= 10, inP = b.mode === 'In person';
+    const chip = live ? (mins > 0 ? `Starts in ${mins} min` : 'Happening now') : dayDiff(at) === 0 ? `Today · in ${mins >= 60 ? Math.round(mins / 60) + ' h' : mins + ' min'}` : `${whenLabel(at)} · ${b.time}`;
+    return `<section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Up next</h2><span class="tag ${live ? 'sage' : 'violet'}">${chip}</span></div>
+      <div class="nowcard sess"><div class="row" style="gap:12px"><span class="nowav">${faceImg(e)}</span><div style="flex:1;min-width:0"><b class="t2" style="font-size:17px">Session ${b.n || 1} with ${esc(fnm(e.name))}</b><div class="cap">${esc(b.day)}, ${esc(b.time)} · ${inP ? 'In person' : esc(b.mode)} · 50 min</div>${inP && b.loc ? `<div class="cap">${ic('home')} ${esc(b.loc)}</div>` : ''}</div></div>
+        <div class="nowtip">${ic('pen')} Before you go: what's one thing you'd like to talk about?</div>
+        <div class="row" style="gap:8px">${inP ? `<button class="btn primary sm" style="flex:1" data-a="toast" data-v="Opening directions in Maps.">Directions</button>` : live ? `<button class="btn primary sm" style="flex:1" data-a="toast" data-v="Joining your session room…">${ic('video')}Join now</button>` : `<button class="btn primary sm" style="flex:1" data-a="toast" data-v="Added to your calendar. We'll remind you an hour before.">${ic('cal')}Add to calendar</button>`}
+          <button class="btn soft sm" style="flex:1" data-a="tab" data-v="experts" data-seg="mine">Reschedule</button></div></div></section>`;
+  }
+  // 2. a rough day today (safety first)
+  const tm = S.moods.find(m => m.d === dkey(new Date()));
+  if (tm && tm.v <= 0) return `<section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">For you today</h2></div>
+      <div class="nowcard soft"><b class="t2" style="font-size:17px">Rough days are easier with someone to talk to.</b><span class="muted">A counsellor is free tonight, or you can start with Dost.</span>
+        <div class="row" style="gap:8px"><button class="btn primary sm" style="flex:1" data-a="tab" data-v="experts">Talk to a counsellor</button><button class="btn soft sm" style="flex:1" data-a="dost">${ic('mic')}Dost</button></div></div></section>`;
+  // 3. a session just happened: reflect while it's fresh
+  const last = S.history[S.history.length - 1], ld = last && sessAt({ day: last.date, time: '6 pm' });
+  if (last && ld && dayDiff(ld) >= -2 && dayDiff(ld) <= 0 && !(S.fb || {})[last.n]) { const le = EXM[last.id];
+    return `<section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">How did it go?</h2><span class="cap">${esc(last.date)}</span></div>
+      <div class="nowcard"><div class="row" style="gap:12px"><span class="nowav">${faceImg(le)}</span><div style="flex:1"><b>Session ${last.n} with ${esc(fnm(le.name))}</b><div class="cap">Did you feel heard?</div></div></div>
+        <div class="row" style="gap:8px;justify-content:space-between">${['Not really', 'Somewhat', 'Yes, a lot'].map((l, i) => `<button class="chip" style="flex:1;justify-content:center" data-a="sess-fb" data-v="${i}">${l}</button>`).join('')}</div>
+        <button class="link" data-a="rx" data-v="${last.n}" style="justify-self:start;padding:0">See your care plan from this session ›</button></div></section>`; }
+  // 4. a step from the plan
+  const step = todayStep();
+  if (step) return `<section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2><span class="tag violet">Step ${step.n} of ${S.plan.steps.length}</span></div>${stepCard(step)}</section>`;
+  // 5. brand-new: let Dost find the right support
+  if (!S.dostUsed && !S.history.length) return `<section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Start here</h2><span class="cap">2 minutes</span></div>
+      <button class="card glow row" data-a="dost" style="border:0;text-align:left;box-shadow:var(--shadow-card)"><span class="orb sm" style="flex:none;width:64px;height:64px"></span><span class="stack" style="gap:4px"><b>Not sure where to start?</b><span class="cap">Talk to Dost for 2 minutes. It asks a few questions and finds the right support for you.</span></span></button></section>`;
+  // 6. never booked: make the free benefit visible
+  if (!b && !S.history.length) return `<section class="sec" id="t-step"><div class="nowcard soft row" style="gap:12px"><span class="dot" style="background:var(--surface-raised);width:48px;height:48px">${ic('gift')}</span><div style="flex:1"><b>You have ${S.sessionsLeft} free sessions</b><div class="cap">Covered by ${esc(S.company)}. Private, and ${esc(S.company)} never knows.</div></div><button class="btn primary sm" data-a="tab" data-v="experts">Find</button></div></section>`;
+  // 7. a check-in is due (2 weeks since the last one)
+  const lt = Object.values(S.tests || {}).flat().map(x => x.d).sort().pop();
+  if (!lt || dayDiff(new Date(lt + 'T12:00')) <= -14) return `<section class="sec" id="t-step"><button class="nowcard soft row" data-a="go-tests" style="gap:12px;border:0;text-align:left"><span class="dot" style="background:var(--surface-raised);width:48px;height:48px">${ic2('clip')}</span><div style="flex:1"><b>2-minute check-in</b><div class="cap">${lt ? 'It has been 2 weeks. See how you\'re doing.' : 'See where you are with a short, clinical check.'}</div></div>${ic('chev', 'chev')}</button></section>`;
+  return '';
+}
+/* prototype: preview Home in each state */
+const HOME_STATES = [['new', 'Brand-new user'], ['booked', 'Session tomorrow'], ['soon', 'Session in 8 minutes'], ['after', 'Just had a session'], ['rough', 'Rough day'], ['plan', 'On a plan'], ['quiet', 'Nothing pending']];
+function setHomeState(k) {
+  const t = new Date(), tm = new Date(Date.now() + 8 * 60000), tom = new Date(); tom.setDate(tom.getDate() + 1);
+  const lbl = d => `${DAYS[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`, hm = d => { let h = d.getHours() % 12 || 12; const m = d.getMinutes(); return `${h}${m ? ':' + String(m).padStart(2, '0') : ''} ${d.getHours() < 12 ? 'am' : 'pm'}`; };
+  const yest = new Date(); yest.setDate(yest.getDate() - 1);
+  const base = fresh(); S.fb = k === 'after' ? {} : { 1: 2, 2: 2 }; S.moods = S.moods.filter(m => m.d !== dkey(t)); S.lastCheck = Date.now(); S.plan = null; S.dostUsed = true;
+  S.history = base.history; S.booked = null; S.tests = {};
+  if (k === 'new') { S.history = []; S.dostUsed = false; }
+  if (k === 'booked') S.booked = { id: 'e1', day: lbl(tom), time: '6 pm', mode: 'Video', n: 3 };
+  if (k === 'soon') S.booked = { id: 'e1', day: lbl(tm), time: hm(tm), mode: 'Video', n: 3 };
+  if (k === 'after') S.history[1].date = lbl(yest);
+  if (k === 'rough') S.moods.push({ d: dkey(t), v: 0 });
+  if (k === 'plan') S.plan = { priority: 'low', ex: 'ex_box', pg: 'pg_calm', tags: ['work'], steps: [{ kind: 'ex', id: 'ex_box', n: 1 }, { kind: 'pg', id: 'pg_calm', n: 2 }, { kind: 'book', id: 'e1', n: 3 }] };
+  if (k === 'quiet') S.tests = { gad7: [{ d: dkey(t), s: 3 }] };
+  save(); go('home'); toast('Home now shows: ' + HOME_STATES.find(x => x[0] === k)[1]);
+}
+
 V.home = () => {
   const step = todayStep(), bk = S.booked && EXM[S.booked.id];
   const care = (S.plan && S.plan.ex) ? [S.plan.ex, 'ex_good', 'ex_ground'] : ['ex_box', 'ex_good', 'ex_ground'];
@@ -735,9 +801,7 @@ V.home = () => {
   <div class="stack" style="gap:10px"><div class="row between"><img src="/yd-logo.png" alt="YourDOST" class="homelogo"><div class="row" style="gap:8px">${bell()}${moodChip()}</div></div>
     <h1 class="hello1">${greet()}, <b>${esc(S.name)}</b></h1></div>
   ${moodCard()}
-  <section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
-    ${step ? stepCard(step) : `<button class="card glow row" data-a="dost" style="border:0;text-align:left;box-shadow:var(--shadow-card)"><span class="orb sm" style="animation:none;flex:none;width:64px;height:64px;box-shadow:0 0 0 6px color-mix(in srgb,var(--violet-200) 70%,transparent)"></span><span class="stack" style="gap:4px"><b>Talk to Dost for 2 minutes</b><span class="cap">Dost asks a few questions and finds the right support for you.</span></span></button>`}</section>
-  ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(fnm(bk.name))}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
+  ${homeNow()}
   <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2><span class="cap">free · online</span></div>
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
     <div class="dotsrow">${sosPill()}<div class="dots evdots" id="evdots">${EVENTS.map((e, i) => `<button class="${i === 0 ? 'on' : ''}" data-a="evdot" data-v="${i}" aria-label="Show event ${i + 1} of ${EVENTS.length}"></button>`).join('')}</div></div></section>
@@ -1003,6 +1067,7 @@ async function dostClose(d) {
   d.msgs.push({ role: 'assistant', content: w.summary }); d.closing = { steps, nudge: w.nudge };
 }
 V.dost = () => {
+  if (!S.dostUsed) { S.dostUsed = true; save(); }
   if (!X.d) dostStart();
   const d = X.d, last = [...d.msgs].reverse().find(m => m.role === 'assistant');
   return `<div class="screen notab dostscr" style="gap:14px;padding-bottom:16px">
@@ -1096,6 +1161,7 @@ V.me = () => {
       <button class="li" data-a="sheet" data-v="privacy"><span class="dot tint-violet">${ic('shield')}</span><span class="grow"><b>Privacy and your data</b><span class="cap" style="display:block">What ${esc(S.company)} sees: group totals only</span></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="help"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Get help now</b></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="tour-again"><span class="dot tint-sun">${ic('spark')}</span><span class="grow"><b>Take the app tour again</b><span class="cap" style="display:block">A quick guide to every feature</span></span>${ic('chev', 'chev')}</button>
+      <div class="li" style="display:grid;gap:8px"><span><b>Prototype: preview Home as…</b><span class="cap" style="display:block">The top card on Home changes with each person's situation</span></span><div class="row wrap" style="gap:6px">${HOME_STATES.map(([k, l]) => `<button class="chip" style="min-height:34px;font-size:13px" data-a="home-state" data-v="${k}">${l}</button>`).join('')}</div></div>
       <button class="li" data-a="restart"><span class="dot" style="background:var(--surface-sunken)">${ic('back')}</span><span class="grow"><b>Prototype: start over</b><span class="cap" style="display:block">Replays onboarding and clears this demo</span></span></button>
     </div></div>${tabbar()}`;
 };
@@ -1599,6 +1665,8 @@ $app.addEventListener('click', e => {
   if (act === 'scrim' && e.target !== a) return;
   switch (act) {
     case 'go-tests': go('tests'); break;
+    case 'sess-fb': { const last = S.history[S.history.length - 1]; S.fb = S.fb || {}; S.fb[last.n] = +v; save(); toast(+v === 0 ? 'Thanks for telling us. You can try someone else, no awkwardness.' : 'Thanks. We\'ll share this with your counsellor.'); if (+v === 0) { S.seg = 'browse'; go('experts'); } else render(); break; }
+    case 'home-state': setHomeState(v); break;
     case 'go-acts': go('acts'); break;
     case 'go-read': go('read'); break;
     case 'go-games': go('games'); break;
@@ -1705,7 +1773,7 @@ $app.addEventListener('click', e => {
       const id = S.params.id; if (!S.regs.includes(id)) S.regs.push(id); save(); go('evdone', { id }, false); X.nm = nm; render(); break; }
     case 'ev-cancel': S.regs = S.regs.filter(x => x !== S.params.id); save(); toast('Your spot is cancelled.'); render(); break;
     case 'tour-again': S.tour = 0; save(); go('home'); break;
-    case 'tab': go(v); break;
+    case 'tab': if (a.dataset.seg) S.seg = a.dataset.seg; go(v); break;
     case 'back': back(); break;
     case 'dost': go('dost'); break;
     case 'dchip': dostSend(v); break;
