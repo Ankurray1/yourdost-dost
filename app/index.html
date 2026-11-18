@@ -369,6 +369,26 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .scale5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
 .scale5 button{aspect-ratio:1;max-width:100%;border:1.5px solid var(--line);border-radius:var(--r-md);background:var(--surface-raised);font:700 22px/1 var(--f-display);color:var(--ink)}
 .scale5 button:hover{border-color:var(--violet-600);background:var(--violet-100)}
+/* daily ritual */
+.ritual{border:0;border-radius:var(--r-lg);padding:16px;display:grid;gap:14px;text-align:left;color:var(--ink)}
+.rsteps{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.rstep{display:grid;justify-items:center;gap:3px;text-align:center}
+.rstep i{width:30px;height:30px;border-radius:50%;background:var(--surface-raised);display:grid;place-items:center;font:700 13px/1 var(--f-display);font-style:normal;color:var(--ink)}
+.rstep i svg{width:14px;height:14px;color:var(--sage-600)}
+.rstep b{font:600 13px/16px var(--f-body)}
+.rstep span{color:var(--ink-muted);font:500 11px/14px var(--f-body)}
+.ritualscr .rbig{font:800 40px/1.06 var(--f-display);letter-spacing:-1.4px;margin:0}
+.ritualscr .rbig .swash{white-space:nowrap}
+.rq{font:700 26px/1.2 var(--f-display);margin:0;letter-spacing:-.5px;text-wrap:balance}
+.rlist{margin:0;padding-left:20px;display:grid;gap:6px}
+.rprog{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.rprog i{height:4px;border-radius:2px;background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.rprog i.on{background:var(--primary)}
+.rwhy{display:flex;gap:6px;align-items:flex-start;margin:0}
+.rwhy svg{margin-top:1px}
+.rtext{min-height:150px;font:500 18px/1.5 var(--f-body);background:var(--surface-raised)}
+.helpdot{color:var(--help-600)}
+.ritualscr .breath{background:var(--surface-raised)}
 .proto{position:fixed;left:16px;bottom:16px;font:500 12px/16px var(--f-body);color:var(--ink-muted);max-width:220px}
 @media (max-width:900px){.proto{display:none}}
 </style>

@@ -91,7 +91,7 @@ const KEY = 'yd-app-v3';
 const fresh = () => ({
   onboarded: false, ob: 0, name: 'Riya', email: 'riya.sharma@acme.com', company: 'Acme Corp', concerns: [], lang: 'English',
   view: 'home', params: {}, stack: [], tab: 'home',
-  moods: seedMoods(), lastCheck: null, tour: null, regs: [], notifs: NOTIF_SEED(), leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
+  moods: seedMoods(), lastCheck: null, tour: null, regs: [], notifs: NOTIF_SEED(), rituals: [], leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
   plan: null, sessionsLeft: 3, favs: ['e1'], seg: 'browse', sort: 'match', quiz: null,
   booked: { id: 'e1', day: 'Mon 24 Nov', time: '6 pm', mode: 'Video', n: 3 },
   history: [{ id: 'e1', n: 1, date: 'Mon 10 Nov', mode: 'Video', fit: 4, note: 'Mapped what drains my evenings: late calls and checking Slack in bed.', task: 'Try a switch-off ritual' }, { id: 'e1', n: 2, date: 'Mon 17 Nov', mode: 'Video', fit: 5, note: 'The ritual helped on 3 of 5 nights. Next: saying no to one late meeting.', task: 'Box breathing before stand-up' }],
@@ -101,6 +101,7 @@ let S;
 try { S = Object.assign(fresh(), JSON.parse(localStorage.getItem(KEY) || '{}')); } catch { S = fresh(); }
 if (!Array.isArray(S.notifs)) S.notifs = NOTIF_SEED();
 if (!Array.isArray(S.regs)) S.regs = [];
+if (!Array.isArray(S.rituals)) S.rituals = [];
 const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch {} };
 let SHEET = null, TOAST = null, X = {}; // transient: open sheet, toast, screen-local state
 
@@ -233,6 +234,7 @@ const TOUR = [
   { sel: '.bell', title: 'Notifications', text: 'Reminders, event nudges and the odd quick survey. The number shows what you haven\'t read yet.' },
   { sel: '.moodchip', title: 'Your mood score', text: 'Your average for the week, out of 100. Tap it to see your week, month and year, and what lifts you.' },
   { sel: '#t-step', title: "Today's one step", text: 'One small thing to do today, picked by Dost from your plan. Never a long to-do list.' },
+  { sel: '#t-ritual', title: 'Your 5 minutes today', text: 'A short morning reset or evening wind-down: breathe, write one line, name your feelings, then see how you are doing.' },
   { sel: '#t-events', title: 'Live events, free', text: 'Webinars and community circles, like Cheers to Men tomorrow. Register in seconds; join anonymously if you like.' },
   { sel: '.tab[data-v="experts"]', title: 'Experts', text: 'Find your counsellor. Take the smart match, swipe through profiles and book a time from their calendar.' },
   { sel: '.orbbtn', title: 'Dost, your AI guide', text: "Talk or type anytime. Dost listens, asks a few questions and finds the right next step. It's not a doctor." },
@@ -383,6 +385,105 @@ V.survey = () => {
     <div style="flex:1"></div><p class="cap" style="margin:0">${ic('lock')} Anonymous · about 1 minute</p></div>`;
 };
 
+/* ---- Daily ritual: about 5 minutes, morning reset or evening wind-down ----
+   Arrive (mood now) → Breathe 2 min (a different exercise each day) → Write (intention or gratitude)
+   → Feel (name it, mood now) → Close (before/after, kind words, help always one tap away).
+   Research lines are fixed and cited; nothing here is written by the AI. */
+const R_BREATH = {
+  box: { name: 'Box breathing', how: 'In 4, hold 4, out 4, hold 4.', pattern: [['Breathe in', 4], ['Hold', 4], ['Breathe out', 4], ['Hold', 4]] },
+  sigh: { name: 'Cyclic sighing', how: 'A deep breath in, a short top-up, then a long, slow sigh out.', pattern: [['Breathe in', 3], ['Sip in a little more', 1], ['Long breath out', 6]] },
+  slow: { name: 'Slow, even breathing', how: 'In for 5, out for 5. About six breaths a minute.', pattern: [['Breathe in', 5], ['Breathe out', 5]] },
+  b478: { name: '4-7-8 wind-down', how: 'In 4, hold 7, out slowly for 8.', pattern: [['Breathe in', 4], ['Hold', 7], ['Breathe out', 8]] },
+};
+const R_SLOTS = {
+  morning: { name: 'Morning reset', icon: 'sun', tint: 'sun', breaths: ['box', 'sigh', 'slow'],
+    prompts: ["What's one thing you want to make time for today?", 'What would make today a good day, even a little?', "Who could you be kind to today, including yourself?"],
+    hint: 'Be specific: when, where, how.', why: 'Planning when and how you will do something makes you more likely to follow through (Gollwitzer, American Psychologist, 1999).',
+    close: 'Have a gentle day. Come back tonight to wind down.' },
+  evening: { name: 'Evening wind-down', icon: 'moon', tint: 'violet', breaths: ['b478', 'sigh', 'slow'],
+    prompts: ["What's one good thing that happened today, and why did it happen?", "What's one thing you're letting go of tonight?", 'What did you handle well today, even if it was small?'],
+    hint: 'One or two lines is plenty.', why: 'Writing down good things each day lifted happiness and eased low mood for up to six months (Seligman et al., American Psychologist, 2005).',
+    close: 'Rest well. Come back tomorrow morning.' },
+};
+const FEELS = ['Calm', 'Hopeful', 'Grateful', 'Light', 'Proud', 'Tired', 'Anxious', 'Low', 'Irritable', 'Overwhelmed', 'Lonely', 'Okay'];
+const ritualSlot = () => new Date().getHours() < 15 ? 'morning' : 'evening';
+const doy = () => { const d = new Date(), s = new Date(d.getFullYear(), 0, 0); return Math.floor((d - s) / 86400000); };
+function ritualToday() { const sl = ritualSlot(), R = R_SLOTS[sl]; return { sl, R, bk: R.breaths[doy() % 3], prompt: R.prompts[doy() % R.prompts.length] }; }
+const ritualDone = sl => S.rituals.some(r => r.d === dkey(new Date()) && r.slot === sl);
+function ritualCard() {
+  const { sl, R, bk } = ritualToday(), done = ritualDone(sl), week = S.rituals.filter(r => r.d > dkey(new Date(Date.now() - 7 * 86400000))).length;
+  const steps = [['Breathe', '2 min'], ['Write', '1 line'], ['Feel', 'name it'], ['Close', 'your recap']];
+  return `<section class="sec" id="t-ritual"><div class="sec-h"><h2 class="t2">Your 5 minutes today</h2><span class="cap">${week ? week + ' this week' : 'about 5 min'}</span></div>
+    <button class="ritual tint-${R.tint} ${done ? 'done' : ''}" data-a="ritual" aria-label="${R.name}${done ? ', done today' : ''}">
+      <span class="row between"><span class="row" style="gap:8px"><span class="dot" style="background:var(--surface-raised)">${ic(R.icon)}</span><span class="stack" style="gap:0;text-align:left"><b class="t2" style="font-size:19px">${R.name}</b><span class="cap">Today: ${esc(R_BREATH[bk].name.toLowerCase())}</span></span></span>
+        ${done ? `<span class="tag sage">${ic('check')}Done</span>` : ''}</span>
+      <span class="rsteps">${steps.map(([a, b], i) => `<span class="rstep"><i>${done ? ic('check') : i + 1}</i><b>${a}</b><span>${b}</span></span>`).join('')}</span>
+      <span class="btn ${done ? 'ghost' : 'primary'} block">${done ? 'See today\'s recap' : 'Start · about 5 minutes'}</span></button>
+    <p class="cap" style="margin:0">Best in the morning or before sleep. For more exercises, see <button class="link" data-a="tab" data-v="grow" style="padding:0">Grow</button>.</p></section>`;
+}
+V.ritual = () => {
+  const T = ritualToday(), { sl, R } = T, B = R_BREATH[T.bk];
+  const r = X.r || (X.r = ritualDone(sl) ? Object.assign({ step: 4, review: true }, S.rituals.filter(x => x.slot === sl).slice(-1)[0]) : { step: 0, pre: null, post: null, feels: [], text: '' });
+  const nav = (lbl, act = 'r-next', dis = false) => `<button class="btn primary block" data-a="${act}" ${dis ? 'disabled style="opacity:.45"' : ''}>${lbl}</button>`;
+  const head = `<div class="row between">${r.step === 0 || r.review ? `<button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button>` : `<button class="iconbtn" data-a="r-prev" aria-label="Back">${ic('back')}</button>`}
+      <span class="lbl">${R.name}</span><button class="iconbtn helpdot" data-a="help" aria-label="Talk to someone now">${ic('phone')}</button></div>
+    <div class="rprog" aria-hidden="true">${[0, 1, 2, 3, 4].map(k => `<i class="${k <= r.step ? 'on' : ''}"></i>`).join('')}</div>`;
+  const faces = (key) => `<div class="moods">${MOODS.map((m, i) => `<button class="mood ${r[key] === i ? 'sel' : ''}" data-a="r-mood" data-k="${key}" data-v="${i}" aria-pressed="${r[key] === i}"><span class="mface" style="--mf:${MOOD_FILL[i]};${r[key] === i ? 'background:var(--mf)' : ''}">${face(i)}</span><span>${m[0]}</span></button>`).join('')}</div>`;
+  let body = '';
+  if (r.step === 0) body = `<div class="stack" style="gap:6px"><span class="eyebrow">${sl === 'morning' ? 'Good morning' : 'Good evening'}, ${esc(S.name)}</span><h1 class="rbig">Let's take<br><span class="swash">5 minutes</span><br>for you.</h1></div>
+      <ol class="rlist"><li><b>Breathe</b> · 2 min of ${esc(B.name.toLowerCase())}</li><li><b>Write</b> · one line, just for you</li><li><b>Feel</b> · name what's there</li><li><b>Close</b> · see how you're doing</li></ol>
+      <div class="card stack" style="box-shadow:none;background:var(--surface-raised)"><b>First, how are you right now?</b>${faces('pre')}</div>
+      <div style="flex:1"></div>${nav('Begin', 'r-next', r.pre === null)}<button class="link" data-a="r-next" style="justify-self:center">Skip this question</button>`;
+  if (r.step === 1) body = `<div class="stack" style="gap:6px;text-align:center"><span class="eyebrow">Step 1 · Breathe</span><h2 class="t1">${esc(B.name)}</h2><p class="muted" style="margin:0">${esc(B.how)}</p></div>
+      <div class="breath ${X.rb ? '' : 'idle'}" id="rbreath"><i></i><b id="rphase">${X.rb ? '' : 'Ready when you are'}</b></div>
+      <p class="cap" style="text-align:center;margin:0" id="rtime">${X.rbDone ? 'Nicely done.' : X.rb ? '' : '2 minutes · follow the circle'}</p>
+      <p class="cap rwhy">${ic('book')} Slow breathing for a few minutes a day lifted mood in a month-long study (Balban et al., Cell Reports Medicine, 2023).</p>
+      <div style="flex:1"></div>${X.rbDone ? nav('Next: write') : X.rb ? `<button class="btn ghost block" data-a="r-bdone">I'm done</button>` : `<button class="btn sage block" data-a="r-brun">${ic('play')}Start breathing</button><button class="link" data-a="r-next" style="justify-self:center">Skip</button>`}`;
+  if (r.step === 2) body = `<div class="stack" style="gap:6px"><span class="eyebrow">Step 2 · Write</span><h2 class="rq">${esc(T.prompt)}</h2><span class="note" style="font-size:18px">${esc(R.hint)}</span></div>
+      <label class="sr" for="rtext">Your answer</label><textarea id="rtext" class="field rtext" rows="5" placeholder="Just for you. No one else reads this.">${esc(r.text || '')}</textarea>
+      <p class="cap rwhy">${ic('book')} ${esc(R.why)}</p>
+      <div style="flex:1"></div>${nav('Next: feel')}<button class="link" data-a="r-next" style="justify-self:center">Skip writing today</button>`;
+  if (r.step === 3) body = `<div class="stack" style="gap:6px"><span class="eyebrow">Step 3 · Feel</span><h2 class="rq">What are you feeling right now?</h2><span class="muted">Pick up to 3. Every feeling is allowed.</span></div>
+      <div class="row wrap">${FEELS.map(f => `<button class="chip" data-a="r-feel" data-v="${f}" aria-pressed="${r.feels.includes(f)}">${f}</button>`).join('')}</div>
+      <div class="card stack" style="box-shadow:none;background:var(--surface-raised)"><b>And overall?</b>${faces('post')}</div>
+      <p class="cap rwhy">${ic('book')} Putting feelings into words can calm the brain's stress response (Lieberman et al., Psychological Science, 2007).</p>
+      <div style="flex:1"></div>${nav('See my recap', 'r-finish')}`;
+  if (r.step === 4) {
+    const up = r.pre !== null && r.post !== null ? r.post - r.pre : null, heavy = r.post !== null && r.post <= 0 || (up !== null && up < 0);
+    const wk = S.rituals.filter(x => x.d > dkey(new Date(Date.now() - 7 * 86400000))).length;
+    const line = heavy ? "It's okay if today felt heavy. You still showed up for yourself, and that matters." : up > 0 ? 'You feel a little lighter than when you started. That\'s the breath and the words working.' : 'Steady is good. Small, regular moments like this add up over weeks.';
+    body = `<span class="burst" aria-hidden="true">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span>
+      <h1 class="rbig">${heavy ? 'Thank you<br>for <span class="swash">showing up</span>.' : 'Well done,<br><span class="swash">' + esc(S.name) + '</span>.'}</h1>
+      <p class="lg" style="margin:0">${esc(line)}</p>
+      <div class="card stack" style="gap:10px">
+        ${r.pre !== null && r.post !== null ? `<div class="row between"><span class="row" style="gap:6px"><span class="mface" style="--mf:${MOOD_FILL[r.pre]};background:var(--mf);width:32px;height:32px">${face(r.pre, 20)}</span><span class="cap">${MOODS[r.pre][0]}</span></span><span class="cap">→</span><span class="row" style="gap:6px"><span class="mface" style="--mf:${MOOD_FILL[r.post]};background:var(--mf);width:32px;height:32px">${face(r.post, 20)}</span><span class="cap">${MOODS[r.post][0]}</span></span></div>` : ''}
+        ${r.feels.length ? `<span><span class="lbl muted">You named</span><br>${r.feels.map(f => `<span class="tag violet" style="margin:4px 4px 0 0">${f}</span>`).join('')}</span>` : ''}
+        ${r.text ? `<span><span class="lbl muted">You wrote</span><br><span class="note" style="font-size:19px;color:var(--ink)">“${esc(r.text.slice(0, 140))}${r.text.length > 140 ? '…' : ''}”</span></span>` : ''}
+        <span class="cap">${wk} ritual${wk === 1 ? '' : 's'} this week · saved only on this phone</span></div>
+      <p class="note" style="font-size:20px;margin:0">${esc(R.close)} I'm here whenever you need me. · Dost</p>
+      ${heavy ? `<button class="btn helpbtn block" data-a="help">${ic('phone')}Talk to someone now</button><button class="btn primary block" data-a="dost">Talk it through with Dost</button>`
+        : `<button class="btn primary block" data-a="tab" data-v="home">Back to Today</button><div class="row" style="gap:10px"><button class="btn soft" style="flex:1" data-a="dost">${ic('mic')}Talk to Dost</button><button class="btn helpbtn" style="flex:1" data-a="help">${ic('phone')}SOS</button></div>`}`;
+  }
+  return `<div class="screen notab ritualscr tint-${R.tint}" style="gap:18px">${head}${body}</div>`;
+};
+let RB = null;
+function runRitualBreath() {
+  if (RB) return;
+  const B = R_BREATH[ritualToday().bk], total = 120, t0 = Date.now(); let step = 0;
+  const tick = () => {
+    const el = document.getElementById('rbreath'), ph = document.getElementById('rphase'), tm = document.getElementById('rtime');
+    if (!el || S.view !== 'ritual' || !X.rb) { RB = null; return; }
+    const left = Math.max(0, total - Math.round((Date.now() - t0) / 1000));
+    if (left <= 0) { RB = null; X.rbDone = true; X.rb = false; render(); return; }
+    const [label, secs] = B.pattern[step]; ph.textContent = label;
+    const ring = el.querySelector('i'); ring.style.transitionDuration = secs + 's';
+    if (/in|Sip/.test(label) && !/out/.test(label)) ring.style.transform = label.startsWith('Sip') ? 'scale(1.08)' : 'scale(1)'; else if (/out/.test(label)) ring.style.transform = 'scale(.55)';
+    step = (step + 1) % B.pattern.length; RB = setTimeout(tick, secs * 1000);
+  };
+  const clock = setInterval(() => { const tm = document.getElementById('rtime'); if (!tm || !X.rb) return clearInterval(clock); const left = Math.max(0, total - Math.round((Date.now() - t0) / 1000)); tm.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} left`; }, 1000);
+  tick();
+}
+
 /* ---- Home ---- */
 /* ---- Mood: one check-in every 24 hours, a score out of 100, history by week, month and year ---- */
 const MOODS = [
@@ -488,8 +589,7 @@ V.home = () => {
   <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2><span class="cap">free · online</span></div>
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
     <div class="dots" id="evdots" aria-hidden="true">${EVENTS.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div></section>
-  <section class="sec"><div class="sec-h"><h2 class="t2">Today's care</h2><button class="link" data-a="tab" data-v="grow">See all</button></div>
-    <div class="hscroll">${care.map((id, i) => actCard(id, i === 0 ? 'For you' : '')).join('')}</div></section>
+  ${ritualCard()}
   <button class="card row" id="t-help" data-a="help" style="border:0;text-align:left"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span style="flex:1"><b>Need to talk now?</b><span class="cap" style="display:block">A counsellor is on call, 24×7.</span></span>${ic('chev', 'chev')}</button>
 </div>${tabbar()}`;
 };
@@ -860,6 +960,7 @@ function render() {
   if (S.view === 'ex' && X.ex && X.ex.running) runBreath();
   if (S.view === 'deck') bindSwipe();
   if (S.view === 'intro') bindIntro();
+  if (S.view === 'ritual' && X.rb) runRitualBreath();
   drawTour();
   if (S.view === 'home') autoSlide(); else { clearInterval(EVT); EVT = null; }
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
@@ -919,6 +1020,21 @@ $app.addEventListener('click', e => {
     case 'tour-skip': S.tour = null; save(); drawTour(); break;
     case 'tour-noop': break;
     case 'event': go('event', { id: v }); break;
+    case 'ritual': go('ritual'); break;
+    case 'r-mood': X.r[a.dataset.k] = +v; render(); break;
+    case 'r-next': { const r = X.r; const ta = document.getElementById('rtext'); if (ta) r.text = ta.value.trim();
+      if (r.step === 1) { clearTimeout(RB); RB = null; X.rb = false; }
+      if (r.step === 2 && r.text && RISK.test(r.text)) { sheet('help', { urgent: true }); }
+      r.step = Math.min(3, r.step + 1); render(); $app.querySelector('.screen').scrollTop = 0; break; }
+    case 'r-prev': { const r = X.r; const ta = document.getElementById('rtext'); if (ta) r.text = ta.value.trim(); if (r.step === 1) { clearTimeout(RB); RB = null; X.rb = false; } r.step = Math.max(0, r.step - 1); render(); break; }
+    case 'r-brun': X.rb = true; X.rbDone = false; render(); break;
+    case 'r-bdone': clearTimeout(RB); RB = null; X.rb = false; X.rbDone = true; render(); break;
+    case 'r-feel': { const f = X.r.feels; X.r.feels = f.includes(v) ? f.filter(x => x !== v) : f.length >= 3 ? f : [...f, v]; render(); break; }
+    case 'r-finish': { const r = X.r, today = dkey(new Date()), sl = ritualSlot();
+      S.rituals = S.rituals.filter(x => !(x.d === today && x.slot === sl)); S.rituals.push({ d: today, slot: sl, pre: r.pre, post: r.post, feels: r.feels, text: r.text });
+      if (r.post !== null && moodDue()) { S.moods = S.moods.filter(m => m.d !== today); S.moods.push({ d: today, v: r.post, care: true }); S.lastCheck = Date.now(); }
+      if (!S.doneToday.ritual) { S.doneToday.ritual = true; S.wins.push(`${R_SLOTS[sl].name} today`); }
+      save(); r.step = 4; render(); $app.querySelector('.screen').scrollTop = 0; break; }
     case 'notifs': go('notifs'); break;
     case 'notif': { const n = S.notifs.find(x => x.id === v); if (!n) break; n.read = true; save(); const [act, arg] = n.go;
       if (act === 'tab') { if (arg === 'experts') S.seg = 'mine'; go(arg); } else if (act === 'event') go('event', { id: arg }); else go(act); break; }
