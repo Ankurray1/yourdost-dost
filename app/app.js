@@ -839,11 +839,12 @@ V.experts = () => {
         <div class="row"><button class="btn primary sm" style="flex:1" data-a="toast" data-v="Your session room opens 10 minutes before.">${ic('video')}Join</button><button class="btn soft sm" style="flex:1" data-a="toast" data-v="Message sent to ${esc(up.name.split(' ')[0])}. Replies within a few hours.">${ic('chat')}Message</button></div>
         <button class="link" data-a="cancel" style="justify-self:start">Reschedule or cancel</button></div></section>`
       : `<div class="card stack" style="text-align:center"><b>No upcoming session</b><button class="btn primary sm" data-a="seg" data-v="browse">Find an expert</button></div>`}
+      ${S.history.length ? `<button class="card row" style="border:0;text-align:left;background:var(--violet-100);box-shadow:none" data-a="rx"><span class="rxbadge" style="background:var(--surface-raised)">Rx</span><span style="flex:1"><b>Prescriptions &amp; care plans</b><span class="cap" style="display:block">${S.history.length} sessions · what you shared and your plan</span></span>${ic('chev', 'chev')}</button>` : ''}
       ${S.history.length ? `<section class="sec"><span class="eyebrow">Past sessions</span><div class="tl">${S.history.slice().reverse().map(h => { const e = EXM[h.id]; return `<div class="tl-item"><span class="tl-dot">${ic('check')}</span><div class="card stack" style="gap:6px">
           <div class="row between"><b>Session ${h.n} · ${esc(e.name.split(' ')[0])}</b><span class="cap">${esc(h.date)}</span></div>
           <span class="cap">${esc(h.mode)} · 50 min · you rated the fit ${h.fit}/5</span>
           <p style="margin:0"><span class="lbl muted">Your takeaway</span><br>${esc(h.note)}</p>
-          ${h.task ? `<span class="tag sage" style="justify-self:start">${ic('grow')}${esc(h.task)}</span>` : ''}</div></div>`; }).join('')}</div></section>` : ''}
+          ${h.task ? `<span class="tag sage" style="justify-self:start">${ic('grow')}${esc(h.task)}</span>` : ''}<button class="link" data-a="rx" data-v="${h.n}" style="justify-self:start;padding:0">View prescription ›</button></div></div>`; }).join('')}</div></section>` : ''}
       <div class="card row" style="box-shadow:none;background:var(--surface-sunken)">${ic('gift')}<span>${S.sessionsLeft} of 6 free sessions left this year, covered by ${esc(S.company)}.</span></div>`;
   }
   return `<div class="screen"><h1 class="t1">Experts</h1>
@@ -1051,6 +1052,7 @@ V.me = () => {
       <span>${S.sessionsLeft} of 6 counselling sessions left this year</span><div class="bar"><i style="width:${S.sessionsLeft / 6 * 100}%;background:var(--violet-600)"></i></div><span class="cap">Dost, Grow and quick checks are unlimited.</span></section>
     <div class="list">
       <button class="li" data-a="journal"><span class="dot tint-sun">${ic('pen')}</span><span class="grow"><b>Journal</b></span>${ic('chev', 'chev')}</button>
+      <button class="li" data-a="go-health"><span class="dot tint-sage">${ic2('link')}</span><span class="grow"><b>Connected health apps</b><span class="cap" style="display:block">${Object.keys(S.health).length ? Object.keys(S.health).length + ' connected' : 'Apple Health, Health Connect, Strava, Fitbit'}</span></span>${ic('chev', 'chev')}</button>
       <div class="li"><span class="dot tint-sage">${ic('chat')}</span><span class="grow"><b>Dost remembers our chats</b><span class="cap" style="display:block">So it can ask how things went</span></span><button class="toggle" role="switch" aria-checked="${S.memory}" aria-label="Dost memory" data-a="memory"></button></div>
       <button class="li" data-a="sheet" data-v="privacy"><span class="dot tint-violet">${ic('shield')}</span><span class="grow"><b>Privacy and your data</b><span class="cap" style="display:block">What ${esc(S.company)} sees: group totals only</span></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="help"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Get help now</b></span>${ic('chev', 'chev')}</button>
@@ -1069,6 +1071,11 @@ function sheetHTML() {
     <div class="list"><div class="li"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Tele-MANAS · 14416</b><span class="cap" style="display:block">Free, 24×7, in your language</span></span></div>
       <div class="li"><span class="dot tint-help" style="color:var(--help-600)">${ic('shield')}</span><span class="grow"><b>Emergency · 112</b><span class="cap" style="display:block">If you're in danger right now</span></span></div></div>
     <button class="btn ghost block" data-a="close">I'm safe for now</button>`;
+  if (s.name === 'hconnect') { const h = HAPPS.find(x => x[0] === s.k);
+    body = `<div class="row"><span class="happ" style="background:${h[3]}">${esc(h[1][0])}</span><h2 class="t1">Connect ${esc(h[1])}</h2></div>
+      <p class="muted" style="margin:0">YourDOST will read this data once a day. We never write to ${esc(h[1])}, and ${esc(S.company)} never sees it.</p>
+      <div class="list">${['Sleep', 'Steps', 'Workouts', 'Heart rate', 'Mindful minutes'].map((t, i) => `<div class="li"><span class="grow"><b>${t}</b></span><button class="toggle" role="switch" aria-checked="${i < 3}" aria-label="${t}" data-a="toast" data-v="You can change this any time."></button></div>`).join('')}</div>
+      <button class="btn primary block" data-a="h-ok">Allow read access</button><button class="btn ghost block" data-a="close">Not now</button>`; }
   if (s.name === 'filter') { const f = S.filt; const grp = (k, label, opts) => `<div class="stack" style="gap:8px"><span class="lbl">${label}</span><div class="row wrap">${opts.map(o => `<button class="chip" data-a="filt" data-k="${k}" data-v="${o}" aria-pressed="${f[k].includes(o)}">${o}</button>`).join('')}</div></div>`;
     const n = expertList().length;
     body = `<div class="row between"><h2 class="t1">Filter &amp; sort</h2><button class="link" data-a="filt-clear">Reset</button></div>
@@ -1120,7 +1127,7 @@ function render() {
   if (S.view === 'deck') bindSwipe();
   if (S.view === 'intro') bindIntro();
   if (S.view === 'ritual' && X.rb) runRitualBreath();
-  if (!((S.view === 'ritual' && X.r && X.r.step === 3 && X.ls) || (S.view === 'grow' && X.gs))) stopSound();
+  growAfter();
   if (S.view === 'ritual' && X.ls) runListen();
   if (S.view === 'sos' && X.sos && ['connect', 'call'].includes(X.sos.phase)) runSos();
 
@@ -1170,11 +1177,441 @@ function finishEx() {
 }
 
 /* ---------------- events ---------------- */
+/* =====================================================================
+   GROW 2: one-screen hub → Check yourself · Do something · Read · Journal · Train your mind
+   Everything clinical uses published, validated questionnaires with their standard wording and scoring.
+   ===================================================================== */
+if (!S.tests || typeof S.tests !== 'object') S.tests = {};
+if (!Array.isArray(S.acts)) S.acts = [];
+if (!S.games || typeof S.games !== 'object') S.games = { days: [], best: {} };
+if (!S.health || typeof S.health !== 'object') S.health = {};
+if (!Array.isArray(S.reads)) S.reads = [];
+const todayK = () => dkey(new Date());
+const P2 = {
+  flame: '<path d="M12 21c-3.9 0-6.5-2.6-6.5-6.2 0-3.3 2.3-5.3 3.6-7.8.3 1.6 1.1 2.8 2.2 3.4.2-2.9 1.8-5.6 4.2-7.4-.3 2.6.6 4.6 2 6.3 1.1 1.4 1.9 3 1.9 5.2C19.4 18.3 16 21 12 21z"/>',
+  drop: '<path d="M12 3.5c3 3.8 6 7.3 6 10.6a6 6 0 0 1-12 0c0-3.3 3-6.8 6-10.6z"/>',
+  puzzle: '<path d="M9 4h3.2a1.8 1.8 0 1 1 3.6 0H19v4.2a1.8 1.8 0 1 1 0 3.6V16h-3.2a1.8 1.8 0 1 0-3.6 0H9v-4.2a1.8 1.8 0 1 0 0-3.6z"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  file: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
+  clip: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5h6v2.5H9zM9 12l2 2 4-4"/>',
+  timer: '<circle cx="12" cy="13" r="7"/><path d="M12 13V9.5M10 3h4"/>',
+};
+const ic2 = (n, x = '') => P2[n] ? `<svg class="i ${x}" viewBox="0 0 24 24" aria-hidden="true">${P2[n]}</svg>` : ic(n, x);
+
+/* ---------- Check yourself: validated screeners ---------- */
+const OPT_PHQ = ['Not at all', 'Several days', 'More than half the days', 'Nearly every day'];
+const TESTS = {
+  gad7: { name: 'Am I anxious?', tool: 'GAD-7', cite: 'Spitzer et al., 2006', tint: 'violet', tag: 'anx', lead: 'Over the last 2 weeks, how often have you been bothered by…', opts: OPT_PHQ, vals: [0, 1, 2, 3],
+    qs: ['Feeling nervous, anxious, or on edge', 'Not being able to stop or control worrying', 'Worrying too much about different things', 'Trouble relaxing', 'Being so restless that it is hard to sit still', 'Becoming easily annoyed or irritable', 'Feeling afraid, as if something awful might happen'],
+    max: 21, bands: [[4, 'Minimal anxiety', 'Very few signs of anxiety right now. Keep doing what helps.'], [9, 'Mild anxiety', 'Some worry is showing up. Short daily calming habits can help a lot.'], [14, 'Moderate anxiety', 'Anxiety is getting in the way. Talking to a counsellor is a good next step.'], [21, 'Severe anxiety', 'This is a lot to carry. Please talk to a counsellor soon. You don\'t have to manage it alone.']] },
+  phq9: { name: 'Am I feeling low?', tool: 'PHQ-9', cite: 'Kroenke et al., 2001', tint: 'peach', tag: 'low', lead: 'Over the last 2 weeks, how often have you been bothered by…', opts: OPT_PHQ, vals: [0, 1, 2, 3], risk: 8,
+    qs: ['Little interest or pleasure in doing things', 'Feeling down, depressed, or hopeless', 'Trouble falling or staying asleep, or sleeping too much', 'Feeling tired or having little energy', 'Poor appetite or overeating', 'Feeling bad about yourself, or that you are a failure or have let yourself or your family down', 'Trouble concentrating on things, such as reading or watching television', 'Moving or speaking so slowly that other people could have noticed, or being so fidgety or restless that you have been moving around a lot more than usual', 'Thoughts that you would be better off dead, or of hurting yourself in some way'],
+    max: 27, bands: [[4, 'Minimal low mood', 'Very few signs of low mood right now.'], [9, 'Mild low mood', 'Some low days. Small daily steps and a check-in in two weeks can help.'], [14, 'Moderate low mood', 'Low mood is affecting your days. A counsellor can help you work through it.'], [19, 'Moderately severe low mood', 'This is weighing on you a lot. Please book a counsellor this week.'], [27, 'Severe low mood', 'Please talk to someone soon. A counsellor is available today.']] },
+  pss10: { name: 'Am I stressed?', tool: 'PSS-10', cite: 'Cohen et al., 1983', tint: 'sun', tag: 'work', lead: 'In the last month, how often have you…', opts: ['Never', 'Almost never', 'Sometimes', 'Fairly often', 'Very often'], vals: [0, 1, 2, 3, 4], rev: [3, 4, 6, 7],
+    qs: ['been upset because of something that happened unexpectedly?', 'felt that you were unable to control the important things in your life?', 'felt nervous and stressed?', 'felt confident about your ability to handle your personal problems?', 'felt that things were going your way?', 'found that you could not cope with all the things that you had to do?', 'been able to control irritations in your life?', 'felt that you were on top of things?', 'been angered because of things that happened that were outside of your control?', 'felt difficulties were piling up so high that you could not overcome them?'],
+    max: 40, bands: [[13, 'Low stress', 'Your stress looks manageable right now.'], [26, 'Moderate stress', 'Stress is building. Regular breaks and a wind-down routine can help.'], [40, 'High stress', 'You\'re under a lot of pressure. A counsellor can help you find some room to breathe.']] },
+  who5: { name: 'How is my emotional wellbeing?', tool: 'WHO-5', cite: 'Topp et al., 2015', tint: 'sage', tag: 'low', lead: 'Over the last 2 weeks…', opts: ['At no time', 'Some of the time', 'Less than half of the time', 'More than half of the time', 'Most of the time', 'All of the time'], vals: [0, 1, 2, 3, 4, 5], good: true, mult: 4,
+    qs: ['I have felt cheerful and in good spirits', 'I have felt calm and relaxed', 'I have felt active and vigorous', 'I woke up feeling fresh and rested', 'My daily life has been filled with things that interest me'],
+    max: 100, bands: [[28, 'Low wellbeing', 'Your wellbeing is low right now. Talking to a counsellor is a good idea.'], [50, 'Wellbeing could be better', 'Some things are wearing you down. Small daily care can lift this.'], [100, 'Good wellbeing', 'You\'re in a good place. Notice what\'s helping and keep it going.']] },
+  bsmas: { name: 'Is social media taking over?', tool: 'BSMAS', cite: 'Andreassen et al., 2016', tint: 'violet', tag: 'work', lead: 'Over the last year, how often have you…', opts: ['Very rarely', 'Rarely', 'Sometimes', 'Often', 'Very often'], vals: [1, 2, 3, 4, 5],
+    qs: ['spent a lot of time thinking about social media or planning to use it?', 'felt an urge to use social media more and more?', 'used social media to forget about personal problems?', 'tried to cut down on social media without success?', 'become restless or troubled if you couldn\'t use social media?', 'used social media so much that it hurt your job or studies?'],
+    min: 6, max: 30, bands: [[18, 'Healthy use', 'Social media doesn\'t seem to be taking over.'], [23, 'Some warning signs', 'A few habits are worth watching. Try phone-free times in your day.'], [30, 'Strong signs of problem use', 'Social media may be taking over. A counsellor can help you reset the habit.']] },
+  cage: { name: 'Alcohol or drugs?', tool: 'CAGE-AID', cite: 'Brown & Rounds, 1995', tint: 'peach', tag: 'low', lead: 'Answer yes or no.', opts: ['No', 'Yes'], vals: [0, 1],
+    qs: ['Have you ever felt you ought to cut down on your drinking or drug use?', 'Have people annoyed you by criticising your drinking or drug use?', 'Have you felt bad or guilty about your drinking or drug use?', 'Have you ever had a drink or used drugs first thing in the morning to steady your nerves or get rid of a hangover?'],
+    max: 4, bands: [[0, 'No warning signs', 'No signs of a problem with alcohol or drugs.'], [1, 'Worth keeping an eye on', 'One sign showed up. It may help to notice when and why you drink or use.'], [4, 'Signs of a possible problem', 'Your answers suggest alcohol or drug use may be a problem. A counsellor can help, without judgement.']] },
+};
+const TEST_ORDER = ['gad7', 'phq9', 'pss10', 'who5', 'bsmas', 'cage'];
+function testScore(t, ans) {
+  let s = ans.reduce((sum, v, i) => sum + (t.rev && t.rev.includes(i) ? (t.vals[t.vals.length - 1] + t.vals[0]) - v : v), 0);
+  if (t.mult) s *= t.mult; return s;
+}
+const testBand = (t, s) => { const i = t.bands.findIndex(b => s <= b[0]); return { i, b: t.bands[i] }; };
+V.tests = () => `<div class="screen notab">${top('Check yourself')}
+  <p class="muted" style="margin:0">Short, clinically tested questionnaires that counsellors use. Each takes about 2 minutes. They're a check-in, not a diagnosis.</p>
+  <div class="stack" style="gap:10px">${TEST_ORDER.map(id => { const t = TESTS[id], h = (S.tests[id] || []).slice(-1)[0];
+    return `<button class="tcard tint-${t.tint}" data-a="test" data-v="${id}"><span class="stack" style="gap:2px;flex:1"><b class="t2" style="font-size:17px">${t.name}</b><span class="cap">${t.qs.length} questions · ${t.tool}</span></span>
+      ${h ? `<span class="tag" style="background:var(--surface-raised)">${esc(testBand(t, h.s).b[1])}</span>` : `<span class="go">${ic('chev')}</span>`}</button>`; }).join('')}</div>
+  <p class="cap" style="margin:0">${ic('lock')} Answers stay on this phone. ${esc(S.company)} never sees them.</p></div>`;
+V.test = () => {
+  const id = S.params.id, t = TESTS[id], st = X.t || (X.t = { a: [] }), i = st.a.length;
+  if (i >= t.qs.length) {
+    const s = testScore(t, st.a), { i: bi, b } = testBand(t, s), prev = (S.tests[id] || []).slice(-2, -1)[0];
+    const lo = t.min || 0, pct = (s - lo) / (t.max - lo), heavy = t.good ? bi === 0 : bi >= Math.max(2, t.bands.length - 2), risk = t.risk !== undefined && st.a[t.risk] > 0;
+    const ex = EX_FOR[t.tag] || 'ex_box', pg = PG_FOR[t.tag] || 'pg_calm';
+    return `<div class="screen notab">${top(t.name)}
+      ${risk ? `<div class="card tint-help stack" style="box-shadow:none;gap:8px"><b>Thank you for being honest about this.</b><span class="muted">You said you've had thoughts of being better off dead or hurting yourself. You deserve support right now.</span><button class="btn helpbtn block" data-a="sos" style="background:var(--surface-raised)">${ic('phone')}Talk to someone now</button></div>` : ''}
+      <div class="tresult tint-${t.tint}"><span class="eyebrow">Your result</span>
+        <div class="meter ${t.good ? 'good' : ''}"><i style="width:${Math.max(4, pct * 100)}%"></i></div><div class="row between"><span class="cap">${t.good ? 'Low' : 'Fewer signs'}</span><span class="cap">${t.good ? 'High' : 'More signs'}</span></div>
+        <h2 class="rq">${esc(b[1])}</h2><p style="margin:0">${esc(b[2])}</p>
+        <span class="cap">Score ${s} of ${t.max}${prev ? ` · last time ${prev.s}` : ''} · ${t.tool} (${t.cite})</span></div>
+      <p class="cap" style="margin:0">This is a screening questionnaire, not a diagnosis. Only a professional can diagnose.</p>
+      <h2 class="t2">What might help</h2>
+      ${heavy || risk ? `<button class="btn primary block" data-a="tab" data-v="experts">${ic('people')}Talk to a counsellor</button>` : ''}
+      <div class="list"><button class="li" data-a="ex" data-v="${ex}"><span class="dot tint-sage">${ic('play')}</span><span class="grow"><b>${esc(EX[ex].name)}</b><span class="cap" style="display:block">${EX[ex].mins} min · try it now</span></span>${ic('chev', 'chev')}</button>
+        <button class="li" data-a="pg" data-v="${pg}"><span class="dot tint-sun">${ic('grow')}</span><span class="grow"><b>${esc(PG[pg].name)}</b><span class="cap" style="display:block">7-day program</span></span>${ic('chev', 'chev')}</button>
+        <button class="li" data-a="dost"><span class="dot tint-violet">${ic('mic')}</span><span class="grow"><b>Talk it through with Dost</b></span>${ic('chev', 'chev')}</button></div>
+      <button class="link" data-a="test-again" style="justify-self:center">Take it again in 2 weeks to see how you're doing</button></div>`;
+  }
+  return `<div class="screen notab">${top(t.name)}<div class="bar"><i style="width:${i / t.qs.length * 100}%;background:var(--violet-600)"></i></div>
+    <span class="cap">Question ${i + 1} of ${t.qs.length}</span><span class="muted">${esc(t.lead)}</span>
+    <h2 class="rq">${esc(t.qs[i])}</h2><div class="stack" style="gap:8px">${t.opts.map((o, k) => `<button class="qopt" data-a="tans" data-v="${t.vals[k]}">${o}</button>`).join('')}</div>
+    <div style="flex:1"></div>${i ? `<button class="link" data-a="tprev" style="justify-self:center">Back a question</button>` : ''}</div>`;
+};
+
+/* ---------- Do something: activities ---------- */
+const ACTS = {
+  balloon: { name: 'Balloon belly breathing', kind: 'Breathe', mins: 2, tint: 'peach', icon: 'play', sub: 'Animated guide · breathe along' },
+  water: { name: 'Water and a 1-minute pause', kind: 'Calm', mins: 1, tint: 'sage', icon: 'drop', sub: 'Sip slowly, do nothing else' },
+  still: { name: '1-minute stillness', kind: 'Calm', mins: 1, tint: 'violet', icon: 'moon', sub: 'Sit, breathe, notice' },
+  listen: { name: 'Listen and settle', kind: 'Calm', mins: 1, tint: 'violet', icon: 'play', sub: 'Rain, ocean or a warm hum' },
+  worry: { name: 'The Worry Tree', kind: 'Mind', mins: 4, tint: 'sun', icon: 'grow', sub: 'Sort a worry: act on it or let it go' },
+  pomo: { name: 'Pomodoro focus', kind: 'Focus', mins: 25, tint: 'peach', icon: 'timer', sub: '25 minutes on, then a break' },
+};
+const ACT_EX = ['ex_box', 'ex_478', 'ex_ground', 'ex_body', 'ex_good'];
+const ACT_KINDS = ['All', 'Breathe', 'Calm', 'Focus', 'Mind'];
+const exKind = id => EX[id].kind === 'breath' ? 'Breathe' : EX[id].kind === 'journal' ? 'Mind' : 'Calm';
+V.acts = () => {
+  const k = X.ak || 'All', fit = c => k === 'All' || c === k;
+  const rows = [...Object.entries(ACTS).filter(([, a]) => fit(a.kind)).map(([id, a]) => `<button class="li" data-a="act" data-v="${id}"><span class="dot tint-${a.tint}">${ic2(a.icon)}</span><span class="grow"><b>${esc(a.name)}</b><span class="cap" style="display:block">${a.mins} min · ${esc(a.sub)}</span></span>${S.acts.some(x => x.id === id && x.d === todayK()) ? `<span class="tag sage">${ic('check')}</span>` : ic('chev', 'chev')}</button>`),
+    ...ACT_EX.filter(id => fit(exKind(id))).map(id => `<button class="li" data-a="ex" data-v="${id}"><span class="dot tint-${EX[id].tint}">${ic(EX[id].kind === 'journal' ? 'pen' : 'play')}</span><span class="grow"><b>${esc(EX[id].name)}</b><span class="cap" style="display:block">${EX[id].mins} min · ${esc(EX[id].why)}</span></span>${S.doneToday[id] ? `<span class="tag sage">${ic('check')}</span>` : ic('chev', 'chev')}</button>`)];
+  return `<div class="screen notab">${top('Do something')}
+    <div class="row chipsx" style="gap:8px;overflow-x:auto;flex-wrap:nowrap;margin:0 -16px;padding:0 16px">${ACT_KINDS.map(c => `<button class="chip" style="flex:none" data-a="akind" data-v="${c}" aria-pressed="${k === c}">${c}</button>`).join('')}</div>
+    <div class="list">${rows.join('')}</div>
+    <p class="cap" style="margin:0">After each one, you'll note how you feel. It helps you see what works for you.</p></div>`;
+};
+const BAL = [['Breathe in through your nose', 4], ['The balloon fills… and out slowly', 6]];
+V.act = () => {
+  const id = S.params.id, A = ACTS[id], st = X.a || (X.a = { on: false, done: false });
+  let body = '';
+  if (id === 'balloon') body = `<div class="balloon ${st.on ? 'on' : ''}" aria-hidden="true">
+      <svg viewBox="0 0 200 220"><circle cx="100" cy="46" r="26" fill="#F5C9A6"/><path d="M90 44h.01M110 44h.01" stroke="#2F2663" stroke-width="5" stroke-linecap="round"/><path d="M92 56c5 4 11 4 16 0" stroke="#2F2663" stroke-width="3" fill="none" stroke-linecap="round"/>
+        <path d="M58 210c0-58 18-118 42-118s42 60 42 118z" fill="#C7B8F5"/>
+        <g class="bal"><ellipse cx="100" cy="150" rx="26" ry="28" fill="#E5484D"/><ellipse cx="91" cy="140" rx="7" ry="9" fill="#FFFFFF" opacity=".35"/></g>
+        <path class="hand" d="M60 128c14 2 26 10 34 20l-6 6c-8-8-18-14-30-16z" fill="#F5C9A6"/></svg></div>
+    <p class="rq" style="text-align:center;font-size:22px;min-height:56px" id="bcap">${st.on ? '' : 'Put one hand on your stomach. Imagine a red balloon inside.'}</p>
+    <p class="cap rwhy">${ic('book')} Slow belly breathing activates the body's calming system and lowers stress (Ma et al., Frontiers in Psychology, 2017).</p>
+    <div style="flex:1"></div>${st.done ? `<button class="btn primary block" data-a="act-done">I'm done</button>` : st.on ? `<button class="btn ghost block" data-a="act-done">I'm done</button>` : `<button class="btn sage block" data-a="act-go">${ic('play')}Play · 2 minutes</button>`}`;
+  if (id === 'water' || id === 'still' || id === 'listen') {
+    const tips = { water: ['Get a glass of water.', 'Take a slow sip. Notice how it feels.', 'Put the glass down. Just sit.', 'Another sip. Nothing else to do.'], still: ['Sit comfortably. Let your shoulders drop.', 'Notice your breath. Don\'t change it.', 'If your mind wanders, that\'s okay. Come back.', 'Notice one sound around you.'], listen: ['Close your eyes if that feels okay.', 'Let the sound fill the room.', 'Breathe a little slower than usual.', 'Stay with the sound.'] }[id];
+    body = `${id === 'listen' ? `<div class="row" style="gap:8px;justify-content:center">${Object.entries(SOUNDS).map(([k, o]) => `<button class="chip" data-a="act-snd" data-v="${k}" aria-pressed="${(X.snd || 'rain') === k}">${o.name}</button>`).join('')}</div>` : ''}
+      <div class="atimer ${id} ${st.on ? 'on' : ''}" aria-hidden="true">${id === 'water' ? '<span class="glass"><i></i></span>' : id === 'listen' ? `<span class="lwave ${st.on ? 'on' : ''}">${[0, 1, 2, 3, 4].map(j => `<i style="--k:${j}"></i>`).join('')}</span>` : '<span class="stillring"></span>'}<b id="atime">${st.done ? 'Done' : '1:00'}</b></div>
+      <p class="rq" style="text-align:center;font-size:22px;min-height:56px" id="atip">${esc(tips[0])}</p>
+      <div style="flex:1"></div>${st.done ? `<button class="btn primary block" data-a="act-done">Next: how do you feel?</button>` : st.on ? `<button class="btn ghost block" data-a="act-done">I'm done</button>` : `<button class="btn sage block" data-a="act-go">${ic('play')}Start · 1 minute</button>`}`;
+    X.tips = tips;
+  }
+  if (id === 'worry') body = worryBody();
+  if (id === 'pomo') body = pomoBody();
+  return `<div class="screen notab">${top(A.name)}${body}</div>`;
+};
+/* Worry Tree (from the YourDOST worksheet) */
+function worryBody() {
+  const w = X.w || (X.w = { s: 'notice', text: '', opts: ['', '', ''] }), crumb = { notice: 1, can: 2, plan: 3, now: 3, doit: 4, later: 4, letgo: 5 }[w.s];
+  const tree = `<div class="wcrumb">${['Notice', 'Can I act?', 'Plan', 'Act or schedule', 'Let it go'].map((l, i) => `<span class="${i + 1 <= crumb ? 'on' : ''}">${l}</span>`).join('')}</div>`;
+  const yesno = (y, n) => `<div class="row" style="gap:10px"><button class="btn primary" style="flex:1" data-a="w-go" data-v="${y}">Yes</button><button class="btn soft" style="flex:1" data-a="w-go" data-v="${n}">No</button></div>`;
+  let b = '';
+  if (w.s === 'notice') b = `<span class="eyebrow">Notice the worry</span><h2 class="rq">What am I worrying about?</h2><textarea id="wtext" class="field" rows="4" placeholder="Put it in one or two lines">${esc(w.text)}</textarea><div style="flex:1"></div><button class="btn primary block" data-a="w-go" data-v="can">Next</button>`;
+  if (w.s === 'can') b = `<span class="eyebrow">Ask the question</span>${w.text ? `<p class="note" style="font-size:20px;color:var(--ink)">“${esc(w.text)}”</p>` : ''}<h2 class="rq">Can I do something about it?</h2><div style="flex:1"></div>${yesno('plan', 'letgo')}`;
+  if (w.s === 'plan') b = `<span class="eyebrow">Action plan</span><h2 class="rq">List your options</h2><span class="muted">Even small ones count.</span>${w.opts.map((o, i) => `<input class="field wopt" data-k="${i}" value="${esc(o)}" placeholder="Option ${i + 1}">`).join('')}<div style="flex:1"></div><button class="btn primary block" data-a="w-go" data-v="now">Next</button>`;
+  if (w.s === 'now') b = `<span class="eyebrow">Action plan</span><h2 class="rq">Is there anything I can do right now?</h2>${w.opts.filter(Boolean).length ? `<ul class="rlist">${w.opts.filter(Boolean).map(o => `<li>${esc(o)}</li>`).join('')}</ul>` : ''}<div style="flex:1"></div>${yesno('doit', 'later')}`;
+  if (w.s === 'doit') b = `<span class="eyebrow">Do it!</span><h2 class="rq">Go and do it now. Come back when you're done.</h2><span class="muted">Then let the worry go. If it comes back, set a 20-minute “worry period” later in the day and write your worries down then.</span><div style="flex:1"></div><button class="btn primary block" data-a="w-go" data-v="letgo">Done. Let it go</button>`;
+  if (w.s === 'later') b = `<span class="eyebrow">Schedule it for later</span><h2 class="rq">When will you do it?</h2><div class="row wrap">${['This evening', 'Tomorrow', 'This weekend'].map(t => `<button class="chip" data-a="w-when" data-v="${t}" aria-pressed="${w.when === t}">${t}</button>`).join('')}</div>
+    <div class="card stack" style="box-shadow:none;background:var(--violet-100)"><b>Plan what you can do, and how</b><span class="muted">Don't ask “Why am I missing deadlines?” Ask “How can I manage my time better?” Then make a to-do list and work on it bit by bit.</span></div><div style="flex:1"></div><button class="btn primary block" data-a="w-go" data-v="letgo" ${w.when ? '' : 'disabled style="opacity:.5"'}>Scheduled. Let it go</button>`;
+  if (w.s === 'letgo') b = `<span class="eyebrow">Let the worry go</span><h2 class="rq">Now, change the focus of your attention.</h2>
+    <div class="card stack" style="box-shadow:none;background:var(--peach-100)"><b>Focus on the future</b><span class="muted">Ask: “How can I make the most of this?” or “What's my next best move?”</span></div>
+    <div class="card stack" style="box-shadow:none;background:var(--sun-100)"><b>Focus on good moments</b><span class="muted">Ask yourself about your favourite part of today, rather than the worst.</span></div>
+    <div style="flex:1"></div><button class="btn primary block" data-a="act-done">Finish</button>`;
+  return `${tree}${b}<p class="cap" style="margin:0">From the YourDOST Worry Tree worksheet.</p>`;
+}
+/* Pomodoro (from the YourDOST worksheet) */
+const POMO_MIN = 25;
+function pomoBody() {
+  const p = X.p || (X.p = { s: 'list', tasks: ['', '', ''], cur: 0, n: 0, parked: [], demo: true });
+  if (p.s === 'list') return `<span class="eyebrow">Step 1</span><h2 class="rq">Write a list of key tasks to complete</h2>${p.tasks.map((t, i) => `<input class="field ptask" data-k="${i}" value="${esc(t)}" placeholder="Task ${i + 1}">`).join('')}
+    <label class="row between card" style="box-shadow:none;background:var(--surface-sunken)"><span><b>Quick demo</b><span class="cap" style="display:block">25 seconds instead of 25 minutes</span></span><button class="toggle" role="switch" aria-checked="${p.demo}" data-a="p-demo" aria-label="Quick demo"></button></label>
+    <div style="flex:1"></div><button class="btn primary block" data-a="p-start">${ic2('timer')}Set a timer for 25 minutes</button>`;
+  const tasks = p.tasks.filter(Boolean), task = tasks[p.cur];
+  if (p.s === 'run') return `<div class="pring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="54" fill="none" stroke="var(--peach-100)" stroke-width="8"/><circle id="parc" cx="60" cy="60" r="54" fill="none" stroke="var(--peach-400)" stroke-width="8" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="0" transform="rotate(-90 60 60)"/></svg><b id="ptime">25:00</b><span class="cap">Pomodoro ${p.n + 1}</span></div>
+    <div class="card stack" style="gap:4px"><span class="lbl muted">Working on</span><b class="t2">${esc(task || 'Your list')}</b></div>
+    <div class="row" style="gap:8px"><input id="ppark" class="field" placeholder="Distracted? Park it here and keep working"><button class="iconbtn" data-a="p-park" aria-label="Park it" style="background:var(--surface-sunken)">${ic('check')}</button></div>
+    ${p.parked.length ? `<span class="cap">Parked for later: ${p.parked.map(esc).join(' · ')}</span>` : ''}
+    <div style="flex:1"></div><button class="btn sage block" data-a="p-task">${ic('check')}Finished this task · next one</button>`;
+  if (p.s === 'ding') { const long = p.n % 4 === 0; return `<span class="burst" aria-hidden="true" style="align-self:center">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span>
+    <h1 class="rbig" style="text-align:center">Congrats!<br><span class="swash">${p.n} Pomodoro${p.n > 1 ? 's' : ''}</span> done.</h1>
+    <p class="lg" style="text-align:center;margin:0">${long ? 'Four in a row. Take a longer 20 to 30 minute break.' : 'Take a 5 minute break. Stand up, stretch, look far away.'}</p>
+    <div style="flex:1"></div><button class="btn primary block" data-a="p-again">Start the next Pomodoro</button><button class="btn soft block" data-a="act-done">I've finished my essential tasks</button>`; }
+  return '';
+}
+let AT = null;
+function runAct() {
+  clearInterval(AT); AT = null;
+  const id = S.params.id, st = X.a; if (S.view !== 'act' || !st) return;
+  if (id === 'balloon' && st.on) { const t0 = st.t0; AT = setInterval(() => { const c = document.getElementById('bcap'); if (!c || S.view !== 'act') { clearInterval(AT); return; } const e = ((Date.now() - t0) / 1000); if (e > 120) { st.on = false; st.done = true; clearInterval(AT); render(); return; } c.textContent = (e % 10) < 4 ? 'Breathe in through your nose. The balloon fills.' : 'Breathe out slowly. The balloon gets smaller.'; }, 250); }
+  if (['water', 'still', 'listen'].includes(id) && st.on) { const t0 = st.t0; AT = setInterval(() => { const el = document.getElementById('atime'), tp = document.getElementById('atip'); if (!el || S.view !== 'act') { clearInterval(AT); return; } const left = Math.max(0, 60 - Math.floor((Date.now() - t0) / 1000)); el.textContent = `0:${String(left).padStart(2, '0')}`; if (tp && X.tips) tp.textContent = X.tips[Math.min(3, Math.floor((60 - left) / 15))]; if (!left) { st.on = false; st.done = true; clearInterval(AT); stopSound(); render(); } }, 250); }
+  if (id === 'pomo' && X.p && X.p.s === 'run') { const p = X.p, total = (p.demo ? POMO_MIN : POMO_MIN * 60) * 1000, t0 = p.t0; AT = setInterval(() => { const el = document.getElementById('ptime'), arc = document.getElementById('parc'); if (!el || S.view !== 'act') { clearInterval(AT); return; } const left = Math.max(0, total - (Date.now() - t0)), secs = Math.ceil(left / 1000) * (p.demo ? 60 : 1); el.textContent = `${String(Math.floor(secs / 60)).padStart(2, '0')}:${String(secs % 60).padStart(2, '0')}`; arc.style.strokeDashoffset = 339.3 * (1 - left / total); if (!left) { clearInterval(AT); p.n++; p.s = 'ding'; render(); } }, 200); }
+}
+/* after any activity: how did it feel, plus a note */
+V.reflect = () => {
+  const r = X.rf || (X.rf = { m: null }), id = S.params.id, name = ACTS[id] ? ACTS[id].name : EX[id] ? EX[id].name : 'That';
+  return `<div class="screen notab glow" style="gap:16px">
+    <span class="burst" aria-hidden="true" style="align-self:center">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span>
+    <h1 class="rbig" style="text-align:center;font-size:36px">Nice work.<br><span class="swash">That counts.</span></h1>
+    <p class="muted" style="text-align:center;margin:0">${esc(name)} · done</p>
+    <div class="card stack"><b>How do you feel now?</b><div class="moods">${MOODS.map((m, i) => `<button class="mood ${r.m === i ? 'sel' : ''}" data-a="rf-m" data-v="${i}" aria-pressed="${r.m === i}"><span class="mface" style="--mf:${MOOD_FILL[i]};${r.m === i ? 'background:var(--mf)' : ''}">${face(i)}</span><span>${m[0]}</span></button>`).join('')}</div>
+      <label class="lbl" for="rfnote">A quick note for yourself</label><textarea id="rfnote" class="field" rows="3" placeholder="What did you notice? Did it help?"></textarea></div>
+    ${r.m === 0 ? `<div class="card tint-help row" style="box-shadow:none"><span style="flex:1">Rough moment? A counsellor is here.</span><button class="btn helpbtn sm" data-a="sos" style="background:var(--surface-raised)">Talk now</button></div>` : ''}
+    <div style="flex:1"></div><button class="btn primary block" data-a="rf-save">Save</button><button class="link" data-a="rf-skip" style="justify-self:center">Skip</button></div>`;
+};
+V.exdone = () => { S.params.id = S.params.from; return V.reflect(); };
+
+/* ---------- Read ---------- */
+const ARTS = {
+  night: { t: 'Why your mind races at night, and how to slow it down', tag: 'Sleep', mins: 4, tint: 'violet',
+    body: [['', 'You finally lie down, the room goes quiet, and your mind gets louder. It is one of the most common things people tell counsellors. The good news: a racing mind at night is a habit, and habits can be changed.'], ['Why it happens', 'During the day, tasks and people keep your attention busy. At night, there is nothing to hold it, so unfinished thoughts come back. Tiredness also makes worries feel bigger than they are.'], ['Try this tonight', '1. Write a “tomorrow list” an hour before bed, so your brain knows nothing will be forgotten.\n2. Keep your phone outside arm\'s reach.\n3. If you can\'t sleep after 20 minutes, get up, do something dull in dim light, and go back when sleepy.\n4. Try a long out-breath: in for 4, out for 8.'], ['When to get help', 'If poor sleep lasts more than a few weeks or affects your work, talk to a counsellor. Sleep problems respond well to support.']], act: 'ex_478' },
+  worry: { t: 'The Worry Tree: a simple way to sort your worries', tag: 'Anxiety', mins: 3, tint: 'sun',
+    body: [['', 'Some worries need action. Others just need to be put down. The Worry Tree helps you tell which is which, in a few minutes.'], ['How it works', 'Notice the worry and name it. Then ask: can I do something about it? If not, let it go and turn your attention to something else. If yes, list your options and ask whether you can act right now. If you can, do it. If not, schedule it for later.'], ['Why it helps', 'Worry feels endless because it loops. Making a decision, act now, act later, or let go, breaks the loop and gives your mind permission to rest.'], ['Make a worry period', 'Give yourself 20 minutes a day to worry on purpose. When a worry pops up at other times, write it down and save it for then.']], act: 'worry' },
+  pomo: { t: 'Focus in 25 minutes: the Pomodoro way', tag: 'Focus', mins: 3, tint: 'peach',
+    body: [['', 'Texts, emails, a colleague with a quick question. Focus is hard. The Pomodoro technique protects it in small, kind chunks.'], ['The steps', 'Write a list of key tasks. Set a timer for 25 minutes and start. If something distracts you, note it down and keep working. When the timer goes off, take a 5 minute break. After four rounds, take a longer 20 to 30 minute break.'], ['Why it works', 'A short, fixed time makes starting easier, and regular breaks stop you from burning out. You\'ll often get more done in fewer hours.'], ['Be kind to yourself', 'At the end of the day, be proud of what you did, not upset about what\'s left.']], act: 'pomo' },
+  burnout: { t: 'Tired or burnt out? How to tell the difference', tag: 'Work', mins: 4, tint: 'sage',
+    body: [['', 'Everyone gets tired. Burnout is different: rest doesn\'t fix it.'], ['Signs of burnout', 'Feeling drained even after a weekend. Feeling distant or cynical about work. Feeling that nothing you do makes a difference. Dreading Sunday evenings.'], ['What helps', 'Small boundaries: a fixed time to stop work, one evening a week with no screens, saying no to one thing. Talk to your manager about workload if you can. And talk to someone, a friend or a counsellor, about how you feel.'], ['Check yourself', 'The “Am I stressed?” check in Grow takes 2 minutes and can show you where you are.']], act: 'ex_box' },
+  friend: { t: 'How to be there for a friend who is struggling', tag: 'Relationships', mins: 3, tint: 'peach',
+    body: [['', 'You don\'t need the perfect words. Showing up matters more.'], ['Do', 'Ask “How are you, really?” and wait. Listen more than you talk. Say “That sounds hard.” Offer something specific, like a walk or a call on Thursday.'], ['Avoid', 'Jumping to advice. Comparing with your own problems. Saying “just think positive”.'], ['If you\'re worried about their safety', 'Ask directly if they are thinking of hurting themselves. It does not put the idea in their head. Help them call Tele-MANAS 14416, or 112 in an emergency.']], act: null },
+};
+V.read = () => {
+  const ids = Object.keys(ARTS), f = ARTS[ids[0]];
+  return `<div class="screen notab">${top('Read')}
+    <button class="artfeat tint-${f.tint}" data-a="art" data-v="${ids[0]}"><span class="tag" style="background:var(--surface-raised)">${f.tag} · ${f.mins} min</span><b class="arthead">${esc(f.t)}</b><span class="cap">Featured</span></button>
+    <div class="list">${ids.slice(1).map(id => { const a = ARTS[id]; return `<button class="li" data-a="art" data-v="${id}"><span class="artthumb tint-${a.tint}">${ic('book')}</span><span class="grow"><b style="font-size:15px;line-height:20px;display:block">${esc(a.t)}</b><span class="cap">${a.tag} · ${a.mins} min read${S.reads.includes(id) ? ' · read' : ''}</span></span></button>`; }).join('')}</div>
+    <p class="cap" style="margin:0">Sample articles for this prototype, written in the style of the YourDOST blog.</p></div>`;
+};
+V.art = () => {
+  const id = S.params.id, a = ARTS[id], act = a.act;
+  return `<div class="screen notab">${top(a.tag)}
+    <div class="arthero tint-${a.tint}"><span class="cap">${a.tag} · ${a.mins} min read</span><h1 class="arthead" style="font-size:28px;line-height:34px">${esc(a.t)}</h1><span class="cap">By the YourDOST team</span></div>
+    <article class="artbody">${a.body.map(([h, p]) => `${h ? `<h2 class="t2">${esc(h)}</h2>` : ''}${p.split('\n').map(x => `<p>${esc(x)}</p>`).join('')}`).join('')}</article>
+    ${act ? `<button class="card row" style="border:0;text-align:left;background:var(--violet-100);box-shadow:none" data-a="${ACTS[act] ? 'act' : 'ex'}" data-v="${act}"><span class="dot" style="background:var(--surface-raised)">${ic('play')}</span><span style="flex:1"><b>Try it now</b><span class="cap" style="display:block">${esc(ACTS[act] ? ACTS[act].name : EX[act].name)}</span></span>${ic('chev', 'chev')}</button>` : ''}
+    <div class="row between"><span class="lbl">Was this helpful?</span><span class="row" style="gap:8px"><button class="chip" data-a="toast" data-v="Thanks. We'll show you more like this.">Yes</button><button class="chip" data-a="toast" data-v="Thanks for telling us.">Not really</button></span></div></div>`;
+};
+
+/* ---------- Journal: one place, three gentle ways in ---------- */
+const JPROMPTS = ["What's on your mind right now?", 'What is one thing you are grateful for today?', 'What went well today, and why?', 'What is something you would like to let go of?', 'How did you take care of yourself today?', 'What would you tell a friend who felt like you do?'];
+V.journal = () => {
+  const j = X.j || (X.j = { open: false, p: null, m: null });
+  const groups = {}; S.journal.slice().reverse().forEach(e => { (groups[e.d] = groups[e.d] || []).push(e); });
+  if (j.open) return `<div class="screen notab" style="gap:14px">${top('New entry')}
+    <span class="cap">${new Date().toDateString()}</span>
+    ${j.p !== null ? `<h2 class="rq">${esc(JPROMPTS[j.p])}</h2>` : `<h2 class="rq">Write anything.</h2>`}
+    <textarea id="jtext" class="field rtext" rows="7" placeholder="${j.p !== null ? 'Take your time…' : 'No rules. Just write.'}"></textarea>
+    <button class="link" data-a="j-nudge" style="justify-self:start">${ic('spark')}${j.p === null ? 'Give me a prompt' : 'Another prompt'}</button>
+    <div class="stack" style="gap:6px"><span class="lbl">How are you feeling? <span class="cap">optional</span></span><div class="moods">${MOODS.map((m, i) => `<button class="mood ${j.m === i ? 'sel' : ''}" data-a="j-m" data-v="${i}" aria-pressed="${j.m === i}"><span class="mface" style="--mf:${MOOD_FILL[i]};${j.m === i ? 'background:var(--mf)' : ''}">${face(i)}</span><span>${m[0]}</span></button>`).join('')}</div></div>
+    <div style="flex:1"></div><button class="btn primary block" data-a="jsave">Save entry</button><p class="cap" style="text-align:center;margin:0">${ic('lock')} Saved only on this phone</p></div>`;
+  return `<div class="screen notab">${top('Journal')}
+    <div class="jhero"><span class="note" style="font-size:22px;color:var(--ink)">a quiet place for your thoughts</span><span class="cap">${S.journal.length} entr${S.journal.length === 1 ? 'y' : 'ies'} · only on this phone</span></div>
+    <div class="stack" style="gap:8px"><span class="lbl">Start writing</span>
+      <button class="jstart" data-a="j-open" data-v="free"><span class="dot tint-sun">${ic('pen')}</span><span class="grow"><b>Just write</b><span class="cap" style="display:block">A blank page, no rules</span></span>${ic('chev', 'chev')}</button>
+      <button class="jstart" data-a="j-open" data-v="1"><span class="dot tint-sage">${ic('heart')}</span><span class="grow"><b>Something good</b><span class="cap" style="display:block">One thing you're grateful for</span></span>${ic('chev', 'chev')}</button>
+      <button class="jstart" data-a="j-open" data-v="0"><span class="dot tint-violet">${ic('spark')}</span><span class="grow"><b>Untangle a thought</b><span class="cap" style="display:block">A gentle question to help you reflect</span></span>${ic('chev', 'chev')}</button>
+      <button class="jstart" data-a="dost"><span class="dot tint-peach">${ic('mic')}</span><span class="grow"><b>Say it out loud</b><span class="cap" style="display:block">Talk it through with Dost</span></span>${ic('chev', 'chev')}</button></div>
+    ${S.journal.length ? `<span class="lbl">Your entries</span>${Object.entries(groups).slice(0, 5).map(([d, es]) => `<div class="stack" style="gap:6px"><span class="cap">${esc(d)}</span>${es.map(e => `<div class="card jentry">${e.m !== undefined && e.m !== null ? `<span class="mface" style="--mf:${MOOD_FILL[e.m]};background:var(--mf);width:28px;height:28px;flex:none">${face(e.m, 18)}</span>` : ''}<span class="stack" style="gap:2px">${e.p ? `<span class="cap">${esc(e.p)}</span>` : ''}<span>${esc(e.t)}</span></span></div>`).join('')}</div>`).join('')}` : ''}</div>`;
+};
+
+/* ---------- Train your mind: short brain games with a daily streak ---------- */
+const GAMES = {
+  seq: { name: 'Bubble sequence', sub: 'Remember the order', tint: 'violet' },
+  recall: { name: 'Number recall', sub: 'Hold digits in mind', tint: 'sun' },
+  pairs: { name: 'Simply pairs', sub: 'Find matching cards', tint: 'peach' },
+  flank: { name: 'Flanker focus', sub: 'Ignore the noise', tint: 'sage' },
+  stroop: { name: 'Word traps', sub: 'Tap the ink, not the word', tint: 'violet' },
+  sudoku: { name: 'Mini sudoku', sub: '4 × 4 logic', tint: 'sun' },
+};
+function gStreak() { const d = new Set(S.games.days); let n = 0; const t = new Date(); if (!d.has(dkey(t))) t.setDate(t.getDate() - 1); while (d.has(dkey(t))) { n++; t.setDate(t.getDate() - 1); } return n; }
+const gPick = () => Object.keys(GAMES)[doy() % 6];
+V.games = () => {
+  const n = gStreak(), wk = []; for (let i = 6; i >= 0; i--) { const t = new Date(); t.setDate(t.getDate() - i); wk.push([DAYS[t.getDay()][0], S.games.days.includes(dkey(t))]); }
+  const pick = gPick(), played = S.games.days.includes(todayK());
+  return `<div class="screen notab">${top('Train your mind')}
+    <div class="streak"><span class="flame ${n ? 'on' : ''}">${ic2('flame')}</span><span class="stack" style="gap:2px;flex:1"><b class="t2">${n ? `${n}-day streak` : 'Start a streak today'}</b><span class="cap">${played ? 'Played today. See you tomorrow.' : 'One game a day keeps it going.'}</span></span></div>
+    <div class="wkdots">${wk.map(([d, on]) => `<span class="${on ? 'on' : ''}"><i>${on ? ic('check') : ''}</i>${d}</span>`).join('')}</div>
+    <button class="card row" style="border:0;text-align:left;background:var(--primary);color:var(--on-primary)" data-a="game" data-v="${pick}"><span class="stack" style="gap:2px;flex:1"><span class="cap" style="color:inherit;opacity:.8">Today's pick</span><b class="t2">${GAMES[pick].name}</b></span><span class="btn sm" style="background:var(--sun-400);color:#2F2663">Play</span></button>
+    <div class="grid2">${Object.entries(GAMES).map(([id, g]) => `<button class="gtile tint-${g.tint}" data-a="game" data-v="${id}">${gameArt(id)}<b>${g.name}</b><span class="cap">${S.games.best[id] !== undefined ? 'Best: ' + S.games.best[id] : g.sub}</span></button>`).join('')}</div>
+    <p class="cap" style="margin:0">Short games that train memory, focus and attention. Just for fun and practice, not a test.</p></div>`;
+};
+function gameArt(id) {
+  const a = { seq: '<circle cx="14" cy="14" r="7" fill="var(--violet-400)"/><circle cx="34" cy="14" r="7" fill="var(--surface-raised)"/><circle cx="14" cy="34" r="7" fill="var(--surface-raised)"/><circle cx="34" cy="34" r="7" fill="var(--violet-600)"/>', recall: '<text x="24" y="31" text-anchor="middle" font-family="Poppins" font-weight="800" font-size="17" fill="#2F2663">4 7 2</text>', pairs: '<rect x="6" y="8" width="16" height="22" rx="4" fill="var(--peach-400)"/><rect x="26" y="18" width="16" height="22" rx="4" fill="var(--surface-raised)"/>', flank: '<text x="24" y="31" text-anchor="middle" font-family="Poppins" font-weight="800" font-size="16" fill="#2F2663">‹‹›‹‹</text>', stroop: '<text x="24" y="30" text-anchor="middle" font-family="Poppins" font-weight="800" font-size="14" fill="#E5484D">BLUE</text>', sudoku: '<rect x="8" y="8" width="32" height="32" rx="4" fill="var(--surface-raised)"/><path d="M24 8v32M8 24h32" stroke="#2F2663" stroke-width="2"/><text x="16" y="21" text-anchor="middle" font-size="10" font-weight="700" fill="#2F2663">3</text><text x="32" y="37" text-anchor="middle" font-size="10" font-weight="700" fill="#2F2663">1</text>' }[id];
+  return `<svg viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">${a}</svg>`;
+}
+function gEnd(score, label) { const g = X.g, id = S.params.id; g.over = true; g.score = score; g.label = label; if (!S.games.days.includes(todayK())) S.games.days.push(todayK()); const better = S.games.best[id] === undefined || (id === 'pairs' ? score < S.games.best[id] : score > S.games.best[id]); if (better) S.games.best[id] = score; g.newBest = better; save(); render(); }
+V.game = () => {
+  const id = S.params.id, G = GAMES[id], g = X.g || (X.g = gInit(id));
+  if (g.over) return `<div class="screen notab glow" style="gap:16px;text-align:center">${top(G.name)}
+    <span class="burst" aria-hidden="true" style="align-self:center">${[0, 1, 2, 3, 4, 5, 6, 7].map(k => `<i class="b${k}"></i>`).join('')}</span>
+    <span class="eyebrow">${esc(g.label)}</span><b class="gscore">${g.score}</b>${g.newBest ? '<span class="tag sage" style="align-self:center">New best</span>' : `<span class="cap">Best: ${S.games.best[id]}</span>`}
+    <div class="streak" style="text-align:left"><span class="flame on">${ic2('flame')}</span><b class="t2">${gStreak()}-day streak</b></div>
+    <div style="flex:1"></div><button class="btn primary block" data-a="g-again">Play again</button><button class="btn ghost block" data-a="back">More games</button></div>`;
+  return `<div class="screen notab">${top(G.name)}${gameBody(id, g)}</div>`;
+};
+function gInit(id) {
+  if (id === 'seq') return { len: 3, seq: [], pos: 0, show: -1, phase: 'ready' };
+  if (id === 'recall') return { len: 4, num: '', phase: 'ready', inp: '' };
+  if (id === 'pairs') { const sym = ['sun', 'moon', 'heart', 'spark', 'drop', 'flame']; const deck = [...sym, ...sym].sort(() => Math.random() - .5); return { deck, open: [], found: [], moves: 0 }; }
+  if (id === 'flank') return { n: 0, ok: 0, t: [], cur: null, phase: 'ready' };
+  if (id === 'stroop') return { n: 0, ok: 0, cur: null, phase: 'ready', t0: 0 };
+  if (id === 'sudoku') { const sol = SUDOKUS[doy() % SUDOKUS.length]; const holes = [1, 2, 4, 7, 8, 9, 11, 13, 14]; return { sol, grid: sol.map((v, i) => holes.includes(i) ? 0 : v), fixed: sol.map((v, i) => !holes.includes(i)), sel: null }; }
+}
+const SUDOKUS = [[1, 2, 3, 4, 3, 4, 1, 2, 2, 1, 4, 3, 4, 3, 2, 1], [2, 4, 1, 3, 1, 3, 2, 4, 4, 2, 3, 1, 3, 1, 4, 2], [3, 1, 4, 2, 4, 2, 3, 1, 1, 3, 2, 4, 2, 4, 1, 3]];
+const SCOL = [['Red', '#E5484D'], ['Blue', '#3B6FE0'], ['Green', '#2F9E6B'], ['Purple', '#7A4FC9']];
+function gameBody(id, g) {
+  const start = (lbl, how) => `<div class="stack" style="gap:10px;text-align:center;flex:1;justify-content:center"><p class="lg" style="margin:0">${how}</p><button class="btn primary block" data-a="g-start">${lbl}</button></div>`;
+  if (id === 'seq') {
+    if (g.phase === 'ready') return start('Start', 'Watch the bubbles light up, then tap them in the same order.');
+    return `<span class="cap" style="text-align:center">${g.phase === 'show' ? 'Watch…' : `Your turn · ${g.pos} of ${g.len}`}</span><div class="bubbles">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(k => `<button class="bub9 ${g.show === k ? 'lit' : ''}" data-a="seq-tap" data-v="${k}" ${g.phase === 'show' ? 'disabled' : ''} aria-label="Bubble ${k + 1}"></button>`).join('')}</div><span class="cap" style="text-align:center">Length ${g.len}</span>`;
+  }
+  if (id === 'recall') {
+    if (g.phase === 'ready') return start('Start', 'A number will flash for a few seconds. Type it back from memory.');
+    if (g.phase === 'show') return `<div class="stack" style="flex:1;justify-content:center;text-align:center"><b class="gscore" style="letter-spacing:6px">${g.num}</b><span class="cap">Remember it</span></div>`;
+    return `<div class="stack" style="flex:1;justify-content:center;gap:14px"><b class="gscore" style="text-align:center;letter-spacing:6px;min-height:60px">${g.inp || '·'.repeat(g.len)}</b><div class="numpad">${[1, 2, 3, 4, 5, 6, 7, 8, 9, 'del', 0, 'ok'].map(k => `<button data-a="rc-key" data-v="${k}">${k === 'del' ? '⌫' : k === 'ok' ? '✓' : k}</button>`).join('')}</div></div>`;
+  }
+  if (id === 'pairs') return `<span class="cap" style="text-align:center">Moves: ${g.moves} · Pairs: ${g.found.length / 2} of 6</span><div class="pairs">${g.deck.map((s, k) => { const up = g.open.includes(k) || g.found.includes(k); return `<button class="pcard ${up ? 'up' : ''} ${g.found.includes(k) ? 'found' : ''}" data-a="pair" data-v="${k}" aria-label="${up ? s : 'Hidden card'}">${up ? ic2(s) : ''}</button>`; }).join('')}</div>`;
+  if (id === 'flank') {
+    if (g.phase === 'ready') return start('Start', 'Which way does the <b>middle</b> arrow point? Ignore the others. 20 rounds.');
+    const c = g.cur; return `<span class="cap" style="text-align:center">${g.n + 1} of 20</span><div class="flank">${c ? c.s : ''}</div><div class="row" style="gap:12px"><button class="btn soft" style="flex:1;font-size:26px" data-a="fl" data-v="L">←</button><button class="btn soft" style="flex:1;font-size:26px" data-a="fl" data-v="R">→</button></div>`;
+  }
+  if (id === 'stroop') {
+    if (g.phase === 'ready') return start('Start', 'Tap the <b>colour of the ink</b>, not what the word says. 15 rounds.');
+    const c = g.cur; return `<span class="cap" style="text-align:center">${g.n + 1} of 15</span><div class="flank" style="color:${SCOL[c.ink][1]};letter-spacing:2px">${SCOL[c.word][0].toUpperCase()}</div><div class="grid2">${SCOL.map(([n, col], k) => `<button class="btn" style="background:var(--surface-raised);box-shadow:inset 0 0 0 2px ${col};color:var(--ink)" data-a="st" data-v="${k}">${n}</button>`).join('')}</div>`;
+  }
+  if (id === 'sudoku') return `<span class="muted" style="text-align:center">Each row, column and 2×2 box has 1, 2, 3 and 4.</span><div class="sudo">${g.grid.map((v, k) => `<button class="sc ${g.fixed[k] ? 'fx' : ''} ${g.sel === k ? 'sel' : ''} c${k}" data-a="sd-cell" data-v="${k}" ${g.fixed[k] ? 'disabled' : ''}>${v || ''}</button>`).join('')}</div><div class="numpad" style="grid-template-columns:repeat(5,1fr)">${[1, 2, 3, 4, 0].map(k => `<button data-a="sd-num" data-v="${k}">${k || '⌫'}</button>`).join('')}</div>`;
+  return '';
+}
+function seqShow() { const g = X.g; g.seq = Array.from({ length: g.len }, () => Math.floor(Math.random() * 9)); g.phase = 'show'; g.pos = 0; let k = 0; render(); const step = () => { if (S.view !== 'game' || X.g !== g) return; if (k >= g.seq.length) { g.show = -1; g.phase = 'input'; render(); return; } g.show = g.seq[k]; render(); setTimeout(() => { g.show = -1; render(); k++; setTimeout(step, 220); }, 560); }; setTimeout(step, 500); }
+function flNext() { const g = X.g, mid = Math.random() < .5 ? 'L' : 'R', same = Math.random() < .5, side = same ? mid : (mid === 'L' ? 'R' : 'L'), a = d => d === 'L' ? '←' : '→'; g.cur = { mid, s: `${a(side)}${a(side)}${a(mid)}${a(side)}${a(side)}`, t0: Date.now() }; }
+function stNext() { const g = X.g, word = Math.floor(Math.random() * 4); let ink = Math.floor(Math.random() * 4); if (Math.random() < .75) while (ink === word) ink = Math.floor(Math.random() * 4); g.cur = { word, ink }; }
+
+/* ---------- Prescriptions and care plans (from completed sessions) ---------- */
+const RX = {
+  1: { shared: ['Feeling tired and on edge most evenings', 'Late calls and Slack in bed, so sleep starts after 1 am', 'Snapping at family, then feeling guilty'], noted: 'Work stress spilling into evenings, with no clear switch-off point. Sleep is short, which is making worry and irritability worse. No signs of a mood disorder at this stage.',
+    plan: [['Switch-off ritual at 9 pm: laptop shut, phone on charge outside the bedroom', 'ritual'], ['4-7-8 breathing in bed, 4 rounds', 'ex_478'], ['Note late-meeting requests this week, to discuss next time', null]], review: 'Session 2 · Mon 17 Nov' },
+  2: { shared: ['Ritual worked on 3 of 5 nights', 'Still accepting late meetings out of guilt', 'Mornings feel rushed and anxious before stand-up'], noted: 'Good progress on sleep. The main remaining trigger is difficulty saying no at work, linked to a fear of seeming uncommitted. Morning anxiety is mild.',
+    plan: [['Say no to one late meeting this week, using the script we practised', null], ['Box breathing for 2 minutes before stand-up', 'ex_box'], ['Take “Am I anxious?” again before session 3', 'gad7']], review: 'Session 3 · Mon 24 Nov' },
+};
+V.rx = () => {
+  const only = S.params.n ? [S.history.find(h => h.n === +S.params.n)].filter(Boolean) : S.history.slice().reverse();
+  return `<div class="screen notab">${top('Prescriptions & care plans')}
+    <p class="muted" style="margin:0">What you shared, what your counsellor noticed, and what to do until next time.</p>
+    ${only.map(h => { const e = EXM[h.id], r = RX[h.n]; if (!r) return ''; return `<section class="rxcard">
+      <div class="row"><span class="mphoto" style="width:48px;height:56px">${img(e, '', 's')}</span><div style="flex:1"><b class="t2">Session ${h.n} · ${esc(h.date)}</b><div class="cap">${esc(e.name)}, ${esc(e.title)} · ${esc(h.mode)}</div></div><span class="rxbadge">Rx</span></div>
+      <div class="rxsec"><span class="lbl">What you shared</span><ul>${r.shared.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
+      <div class="rxsec"><span class="lbl">What ${esc(e.name.split(' ')[0])} noticed</span><p>${esc(r.noted)}</p></div>
+      <div class="rxsec"><span class="lbl">Your plan</span>${r.plan.map(([t, link]) => `<div class="row rxrow" style="align-items:flex-start"><span class="rxtick">${ic('check')}</span><span style="flex:1">${esc(t)}</span>${link ? `<button class="btn soft sm" data-a="rx-go" data-v="${link}">Open</button>` : ''}</div>`).join('')}</div>
+      <div class="rxsec"><span class="lbl">Medicines</span><p class="muted">None. Counselling psychologists don't prescribe medicines. If they're ever needed, ${esc(e.name.split(' ')[0])} will refer you to a psychiatrist.</p></div>
+      <div class="row between"><span class="cap">Next review: ${esc(r.review)}</span><button class="link" data-a="toast" data-v="Saved as a PDF to your phone.">${ic2('file')}PDF</button></div></section>`; }).join('')}
+    <p class="cap" style="margin:0">${ic('lock')} Only you and your counsellor can see this. ${esc(S.company)} never does.</p></div>`;
+};
+
+/* ---------- Connected health apps ---------- */
+const HAPPS = [['apple', 'Apple Health', 'Sleep, steps, heart rate, mindful minutes', '#E5484D'], ['hc', 'Health Connect', 'Android: sleep, steps, heart rate', '#2F9E6B'], ['strava', 'Strava', 'Runs, rides and workouts', '#F2711C'], ['fitbit', 'Fitbit', 'Sleep, activity and heart rate', '#00A3AD']];
+V.health = () => {
+  const on = HAPPS.filter(([k]) => S.health[k]);
+  return `<div class="screen notab">${top('Connected health apps')}
+    <p class="muted" style="margin:0">Link your health apps to see how sleep and movement relate to your mood. Read-only. ${esc(S.company)} never sees it.</p>
+    ${on.length ? `<div class="card stack" style="background:var(--sage-100);box-shadow:none"><span class="eyebrow">What we're noticing · sample data</span>
+      <b class="t2">On days you walk 7,000+ steps, your mood score is about 12 points higher.</b>
+      <div class="row between"><span class="stack" style="gap:0"><b class="t1">6h 40m</b><span class="cap">avg sleep this week</span></span><span class="stack" style="gap:0"><b class="t1">6,820</b><span class="cap">avg steps</span></span><span class="stack" style="gap:0"><b class="t1">3</b><span class="cap">workouts</span></span></div></div>` : ''}
+    <div class="list">${HAPPS.map(([k, n, d, c]) => `<div class="li"><span class="happ" style="background:${c}">${esc(n[0])}</span><span class="grow"><b>${esc(n)}</b><span class="cap" style="display:block">${S.health[k] ? 'Connected · syncing daily' : esc(d)}</span></span>${S.health[k] ? `<button class="btn ghost sm" data-a="h-off" data-v="${k}">Disconnect</button>` : `<button class="btn primary sm" data-a="h-on" data-v="${k}">Connect</button>`}</div>`).join('')}</div>
+    <p class="cap" style="margin:0">${ic('lock')} You choose what to share and can disconnect any time. This prototype uses sample data.</p></div>`;
+};
+
+/* ---------- The Grow hub: everything on one screen ---------- */
+V.grow = () => {
+  const { sl, R } = ritualToday(), rdone = ritualDone(sl), n = gStreak(), lastT = TEST_ORDER.map(id => (S.tests[id] || []).length).reduce((a, b) => a + b, 0);
+  const tile = (act, tint, icon, title, sub, id = '') => `<button class="htile tint-${tint}" data-a="${act}" ${id ? `id="${id}"` : ''}><span class="hic">${ic2(icon)}</span><b>${title}</b><span class="cap">${sub}</span></button>`;
+  return `<div class="screen" style="gap:16px">
+    <div class="row between"><div><h1 class="t1">Grow</h1><p class="note" style="font-size:17px">a little every day</p></div>${n ? `<span class="tag" style="background:var(--sun-100);color:var(--ink)">${ic2('flame')}${n}-day streak</span>` : ''}</div>
+    <button class="rstrip tint-${R.tint}" data-a="ritual" data-v="${sl}"><span class="dot" style="background:var(--surface-raised)">${ic(R.icon)}</span><span class="grow" style="text-align:left"><b>${R.name}</b><span class="cap" style="display:block">${rdone ? 'Done today · see your recap' : 'Breathe · write · listen · feel · 5 min'}</span></span><span class="btn ${rdone ? 'ghost' : 'primary'} sm">${rdone ? 'View' : 'Start'}</span></button>
+    <div class="hgrid">
+      ${tile('go-tests', 'violet', 'clip', 'Check yourself', lastT ? `${lastT} done · 6 checks` : '6 clinical checks')}
+      ${tile('go-acts', 'sage', 'play', 'Do something', 'Breathe, pause, focus')}
+      ${tile('go-read', 'peach', 'book', 'Read', `${Object.keys(ARTS).length} short reads`)}
+      ${tile('journal', 'sun', 'pen', 'Journal', S.journal.length ? `${S.journal.length} entries` : 'Write it down')}
+    </div>
+    <button class="gbanner" data-a="go-games"><span class="stack" style="gap:2px;flex:1;text-align:left"><span class="cap" style="color:inherit;opacity:.8">${ic2('puzzle')} Train your mind</span><b class="t2" style="color:inherit">6 brain games</b><span class="cap" style="color:inherit;opacity:.8">Memory, focus, attention</span></span><span class="flame big ${n ? 'on' : ''}">${ic2('flame')}<b>${n ? n + ' day' + (n > 1 ? 's' : '') : 'Play'}</b></span></button>
+    <button class="li card" style="padding:12px 16px" data-a="go-pgs"><span class="dot tint-sage">${ic('grow')}</span><span class="grow"><b>7-day programs</b><span class="cap" style="display:block">Calm at Work, Sleep Reset, Lift and more</span></span>${ic('chev', 'chev')}</button>
+  </div>${tabbar()}`;
+};
+V.pgs = () => `<div class="screen notab">${top('7-day programs')}<div class="list">${Object.entries(PG).map(([id, g]) => { const dn = S.pg[id] || 0; return `<button class="li" data-a="pg" data-v="${id}"><span class="dot tint-sage">${ic('grow')}</span><span class="grow"><b>${esc(g.name)}</b><span class="cap" style="display:block">${esc(g.blurb)}</span>${dn ? `<span class="bar" style="display:block;margin-top:8px"><i style="width:${dn / 7 * 100}%"></i></span>` : ''}</span><span class="cap">${dn ? dn + '/7' : '7 days'}</span>${ic('chev', 'chev')}</button>`; }).join('')}</div></div>`;
+
+function growAfter() {
+  if (S.view === 'act') runAct(); else { clearInterval(AT); AT = null; }
+  if (S.view === 'act' && S.params.id === 'listen' && X.a && X.a.on) { if (!SND) playSound(X.snd || 'rain'); }
+  else if (!((S.view === 'ritual' && X.r && X.r.step === 3 && X.ls) || (S.view === 'grow' && X.gs))) stopSound();
+  document.querySelectorAll('.wopt').forEach(i => { i.oninput = () => { X.w.opts[+i.dataset.k] = i.value; }; });
+  document.querySelectorAll('.ptask').forEach(i => { i.oninput = () => { X.p.tasks[+i.dataset.k] = i.value; }; });
+  const wt = document.getElementById('wtext'); if (wt) wt.oninput = () => { X.w.text = wt.value; };
+}
+
 $app.addEventListener('click', e => {
   const a = e.target.closest('[data-a]'); if (!a) return;
   const act = a.dataset.a, v = a.dataset.v;
   if (act === 'scrim' && e.target !== a) return;
   switch (act) {
+    case 'go-tests': go('tests'); break;
+    case 'go-acts': go('acts'); break;
+    case 'go-read': go('read'); break;
+    case 'go-games': go('games'); break;
+    case 'go-pgs': go('pgs'); break;
+    case 'test': go('test', { id: v }); break;
+    case 'tans': { const t = TESTS[S.params.id]; X.t.a.push(+v); if (X.t.a.length >= t.qs.length) { (S.tests[S.params.id] = S.tests[S.params.id] || []).push({ d: todayK(), s: testScore(t, X.t.a) }); if (!S.doneToday['t_' + S.params.id]) { S.doneToday['t_' + S.params.id] = true; S.wins.push(`Checked in: ${t.name}`); } save(); }
+      render(); $app.querySelector('.screen').scrollTop = 0; break; }
+    case 'tprev': X.t.a.pop(); render(); break;
+    case 'test-again': X.t = { a: [] }; render(); break;
+    case 'akind': X.ak = v; X.keep = true; render(); break;
+    case 'act': go('act', { id: v }); break;
+    case 'act-go': X.a.on = true; X.a.t0 = Date.now(); if (S.params.id === 'listen') playSound(X.snd || 'rain'); render(); break;
+    case 'act-snd': X.snd = v; if (X.a.on) playSound(v); render(); break;
+    case 'act-done': { clearInterval(AT); AT = null; stopSound(); go('reflect', { id: S.params.id }, false); break; }
+    case 'rf-m': X.rf.m = +v; X.keep = true; render(); break;
+    case 'rf-save': case 'rf-skip': { const id = S.params.id, note = act === 'rf-save' ? ((document.getElementById('rfnote') || {}).value || '').trim() : '';
+      S.acts.push({ id, d: todayK(), m: X.rf.m, note }); if (ACTS[id] && !S.doneToday[id]) { S.doneToday[id] = true; S.wins.push(`${ACTS[id].name} today`); }
+      if (X.rf.m !== null && moodDue()) { S.moods = S.moods.filter(m => m.d !== todayK()); S.moods.push({ d: todayK(), v: X.rf.m, care: true }); S.lastCheck = Date.now(); }
+      save(); toast(act === 'rf-save' ? 'Saved. You can see what works for you over time.' : 'Nice work today.'); back(); break; }
+    case 'w-go': { const w = X.w, ta = document.getElementById('wtext'); if (ta) w.text = ta.value.trim(); if (v === 'can' && !w.text) { toast('Write the worry in a line first.'); break; } w.s = v; render(); $app.querySelector('.screen').scrollTop = 0; break; }
+    case 'w-when': X.w.when = v; render(); break;
+    case 'p-demo': X.p.demo = !X.p.demo; render(); break;
+    case 'p-start': { const p = X.p; if (!p.tasks.some(Boolean)) { toast('Add at least one task.'); break; } p.s = 'run'; p.cur = 0; p.t0 = Date.now(); render(); break; }
+    case 'p-park': { const i = document.getElementById('ppark'); if (i && i.value.trim()) { X.p.parked.push(i.value.trim()); render(); toast('Parked. Back to it.'); } break; }
+    case 'p-task': { const p = X.p, n = p.tasks.filter(Boolean).length; if (p.cur < n - 1) { p.cur++; toast('Nice. On to the next one.'); render(); } else { toast('All tasks done. Be proud of that.'); clearInterval(AT); AT = null; go('reflect', { id: 'pomo' }, false); } break; }
+    case 'p-again': X.p.s = 'run'; X.p.t0 = Date.now(); render(); break;
+    case 'art': if (!S.reads.includes(v)) { S.reads.push(v); save(); } go('art', { id: v }); break;
+    case 'j-open': X.j = { open: true, p: v === 'free' ? null : +v, m: null }; render(); break;
+    case 'j-nudge': { const j = X.j, ta = document.getElementById('jtext'); const keep = ta ? ta.value : ''; j.p = j.p === null ? 0 : (j.p + 1) % JPROMPTS.length; render(); const n = document.getElementById('jtext'); if (n) n.value = keep; break; }
+    case 'j-m': { const ta = document.getElementById('jtext'), keep = ta ? ta.value : ''; X.j.m = +v; render(); const n = document.getElementById('jtext'); if (n) n.value = keep; break; }
+    case 'jsave': { const ta = document.getElementById('jtext'), t = ta ? ta.value.trim() : ''; if (!t) { toast('Write a line first.'); break; }
+      if (RISK.test(t)) sheet('help', { urgent: true });
+      const j = X.j || {}; S.journal.push({ d: new Date().toDateString(), t, m: j.m ?? null, p: j.p !== null && j.p !== undefined ? JPROMPTS[j.p] : null });
+      if (!S.doneToday.journal) { S.doneToday.journal = true; S.leaves = Math.min(7, S.leaves + 1); S.wins.push('Wrote in your journal'); }
+      X.j = { open: false, p: null, m: null }; save(); toast('Saved. Writing it down helps.'); render(); break; }
+    case 'game': go('game', { id: v }); break;
+    case 'g-again': X.g = gInit(S.params.id); render(); break;
+    case 'g-start': { const g = X.g, id = S.params.id;
+      if (id === 'seq') seqShow();
+      if (id === 'recall') { g.num = Array.from({ length: g.len }, () => Math.floor(Math.random() * 10)).join(''); g.phase = 'show'; g.inp = ''; render(); setTimeout(() => { if (X.g === g) { g.phase = 'input'; render(); } }, 1200 + g.len * 450); }
+      if (id === 'flank') { g.phase = 'go'; flNext(); render(); }
+      if (id === 'stroop') { g.phase = 'go'; g.t0 = Date.now(); stNext(); render(); }
+      break; }
+    case 'seq-tap': { const g = X.g; if (g.phase !== 'input') break; if (g.seq[g.pos] === +v) { g.pos++; if (g.pos >= g.len) { g.len++; toast('Correct!'); setTimeout(seqShow, 700); } else render(); } else gEnd(g.len - 1, 'Longest sequence'); break; }
+    case 'rc-key': { const g = X.g; if (v === 'del') g.inp = g.inp.slice(0, -1); else if (v === 'ok') { if (g.inp === g.num) { g.len++; toast('Correct! One more digit.'); g.num = Array.from({ length: g.len }, () => Math.floor(Math.random() * 10)).join(''); g.phase = 'show'; g.inp = ''; render(); setTimeout(() => { if (X.g === g) { g.phase = 'input'; render(); } }, 1200 + g.len * 450); break; } else { gEnd(g.len - 1, 'Digits remembered'); break; } } else if (g.inp.length < g.len) g.inp += v; render(); break; }
+    case 'pair': { const g = X.g, k = +v; if (g.open.length === 2 || g.open.includes(k) || g.found.includes(k)) break; g.open.push(k);
+      if (g.open.length === 2) { g.moves++; const [a, b] = g.open; if (g.deck[a] === g.deck[b]) { g.found.push(a, b); g.open = []; if (g.found.length === 12) { setTimeout(() => gEnd(g.moves, 'Moves to find all pairs (fewer is better)'), 400); } } else setTimeout(() => { g.open = []; if (X.g === g) render(); }, 750); }
+      render(); break; }
+    case 'fl': { const g = X.g; if (v === g.cur.mid) { g.ok++; g.t.push(Date.now() - g.cur.t0); } g.n++; if (g.n >= 20) gEnd(g.ok, `Correct out of 20 · ${Math.round(g.t.reduce((a, b) => a + b, 0) / Math.max(1, g.t.length))} ms average`); else { flNext(); render(); } break; }
+    case 'st': { const g = X.g; if (+v === g.cur.ink) g.ok++; g.n++; if (g.n >= 15) gEnd(g.ok, `Correct out of 15 · ${Math.round((Date.now() - g.t0) / 1000)} seconds`); else { stNext(); render(); } break; }
+    case 'sd-cell': X.g.sel = +v; render(); break;
+    case 'sd-num': { const g = X.g; if (g.sel === null) { toast('Tap an empty square first.'); break; } g.grid[g.sel] = +v; if (g.grid.every((x, i) => x === g.sol[i])) { gEnd(1, 'Puzzle solved'); break; } if (g.grid.every(Boolean)) toast('Not quite. Check the rows and boxes.'); render(); break; }
+    case 'rx': go('rx', v ? { n: v } : {}); break;
+    case 'rx-go': if (v === 'ritual') go('ritual'); else if (TESTS[v]) go('test', { id: v }); else go('ex', { id: v }); break;
+    case 'go-health': go('health'); break;
+    case 'h-on': sheet('hconnect', { k: v }); break;
+    case 'h-ok': S.health[SHEET.k] = true; SHEET = null; save(); toast('Connected. Your first insights will appear here.'); render(); break;
+    case 'h-off': delete S.health[v]; save(); toast('Disconnected. We deleted the data we had synced.'); render(); break;
     case 'login': { const em = (document.getElementById('lg-email') || {}).value || ''; if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em)) { toast('Enter your work or college email, or continue as guest.'); break; }
       S.email = em; const nm = em.split('@')[0].split(/[._-]/)[0]; S.name = nm ? nm[0].toUpperCase() + nm.slice(1) : 'Riya'; S.guest = false; S.view = 'intro'; X = { slide: 0 }; save(); render(); break; }
     case 'guest': S.guest = true; S.name = 'Friend'; S.email = 'Guest'; S.view = 'intro'; X = { slide: 0 }; save(); render(); break;
