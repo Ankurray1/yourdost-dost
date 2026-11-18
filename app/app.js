@@ -70,6 +70,8 @@ const EXPERTS = [
   { id: 'e5', name: 'Priya Iyer', title: 'Clinical psychologist', yrs: 14, rating: 5.0, n: 402, langs: ['English', 'Tamil', 'Malayalam'], focus: ['sleep', 'low', 'anx'], style: 'Gentle, mindfulness-based', gender: 'Woman', modes: ['Video'], today: null, about: 'Brings mindfulness and sleep science together for people who feel worn out.' },
   { id: 'e6', name: 'Kabir Singh', title: 'Counsellor', yrs: 5, rating: 4.8, n: 133, langs: ['English', 'Hindi', 'Punjabi'], focus: ['rel', 'lonely', 'work'], style: 'Friendly, follows your lead', gender: 'Man', modes: ['Chat', 'Call', 'Video'], today: '9 pm', about: 'Easy to talk to; good for a first session if you\'ve never spoken to anyone before.' },
 ];
+const STYLE4 = { e1: [0, 0, 0, 1], e2: [0, 0, 1, 0], e3: [1, 1, 1, 0], e4: [0, 0, 0, 1], e5: [1, 1, 0, 0], e6: [1, 1, 0, 0] }; // tips/space, guide/follow, now/past, gentle/direct
+EXPERTS.forEach(e => { e.style4 = STYLE4[e.id]; });
 const EXM = Object.fromEntries(EXPERTS.map((e, i) => [e.id, { ...e, tint: TINTS[i % 4] }]));
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 function slotsFor(e) {
@@ -84,12 +86,14 @@ function slotsFor(e) {
 }
 
 /* ---------------- state (kept in this browser only) ---------------- */
-const KEY = 'yd-app-v1';
+const KEY = 'yd-app-v2';
 const fresh = () => ({
   onboarded: false, ob: 0, name: 'Riya', email: 'riya.sharma@acme.com', company: 'Acme Corp', concerns: [], lang: 'English',
-  view: 'home', params: {}, stack: [], tab: 'home', theme: 'light',
+  view: 'home', params: {}, stack: [], tab: 'home',
   moodToday: null, moodWeek: [2, 3, 1, 3, 2, 3], leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
-  plan: null, booked: null, sessionsLeft: 6, favs: ['e1'], seg: 'for', sort: 'match',
+  plan: null, sessionsLeft: 3, favs: ['e1'], seg: 'browse', sort: 'match', quiz: null,
+  booked: { id: 'e1', day: 'Mon 24 Nov', time: '6 pm', mode: 'Video', n: 3 },
+  history: [{ id: 'e1', n: 1, date: 'Mon 10 Nov', mode: 'Video', fit: 4, note: 'Mapped what drains my evenings: late calls and checking Slack in bed.', task: 'Try a switch-off ritual' }, { id: 'e1', n: 2, date: 'Mon 17 Nov', mode: 'Video', fit: 5, note: 'The ritual helped on 3 of 5 nights. Next: saying no to one late meeting.', task: 'Box breathing before stand-up' }],
   filt: { lang: [], mode: [], gender: [], today: false }, pg: { pg_calm: 3 }, doneToday: {}, journal: [], shareSummary: true, memory: true,
 });
 let S;
@@ -228,67 +232,137 @@ V.home = () => {
 };
 function stepCard(s) {
   if (s.kind === 'ex') { const x = EX[s.id]; return `<div class="card row"><span class="dot tint-${x.tint}" style="width:52px;height:52px">${ic('play')}</span><div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="cap">${x.mins} min · ${esc(x.why)}</div></div><button class="btn primary sm" data-a="ex" data-v="${s.id}" data-step="${s.n}">Start</button></div>`; }
-  if (s.kind === 'book') { const e = EXM[s.id]; return `<div class="card row"><span class="dot tint-violet" style="width:52px;height:52px">${ic('cal')}</span><div style="flex:1;min-width:0"><b>Book ${esc(e.name.split(' ')[0])} this week</b><div class="cap">${esc(e.title)} · your best match</div></div><button class="btn primary sm" data-a="expert" data-v="${s.id}">Book</button></div>`; }
+  if (s.kind === 'book') { const e = EXM[s.id]; return `<div class="card row"><span class="dot tint-violet" style="width:52px;height:52px">${ic('cal')}</span><div style="flex:1;min-width:0"><b>Book ${esc(e.name.split(' ')[0])} this week</b><div class="cap">${esc(e.title)} · your best match</div></div><button class="btn primary sm" data-a="deck" data-v="${s.id}" data-i="0">Book</button></div>`; }
   if (s.kind === 'pg') { const g = PG[s.id]; return `<div class="card row"><span class="dot tint-sage" style="width:52px;height:52px">${ic('grow')}</span><div style="flex:1;min-width:0"><b>Day ${(S.pg[s.id] || 0) + 1} of ${esc(g.name)}</b><div class="cap">${esc(g.blurb)}</div></div><button class="btn primary sm" data-a="pg" data-v="${s.id}">Open</button></div>`; }
   return '';
 }
 
 /* ---- Experts ---- */
+const STYLE_Q = [['Give me practical tips', 'Give me space to talk'], ['Guide me', 'Follow my lead'], ['Focus on now', 'Explore what led here'], ['Be gentle', 'Be kind but direct']];
+const QUIZ = [
+  { k: 'concerns', q: 'What would you like help with?', sub: 'Pick up to 3. The first one counts most.', type: 'multi', max: 3, opts: CONCERNS.filter(c => c[0] !== 'explore') },
+  { k: 'style', q: 'How do you like to talk?', sub: 'Choose a side, or Either.', type: 'style' },
+  { k: 'langs', q: 'Which languages are you comfortable in?', sub: 'Pick all that apply.', type: 'multi', max: 5, opts: ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu', 'Malayalam', 'Punjabi'].map(l => [l, l]) },
+  { k: 'mode', q: 'How would you like to meet?', sub: 'You can change this for any session.', type: 'one', opts: [['Video', 'Video'], ['Call', 'Call'], ['Chat', 'Chat'], ['any', 'Any of these']] },
+  { k: 'gender', q: 'Do you prefer a woman or a man?', sub: 'Many people do. It\'s fine either way.', type: 'one', opts: [['Woman', 'A woman'], ['Man', 'A man'], ['any', 'No preference']] },
+  { k: 'when', q: 'When would you like to start?', sub: 'Sooner is often easier.', type: 'one', opts: [['today', 'Today'], ['week', 'This week'], ['any', 'Whenever suits']] },
+];
+function quizMatches() {
+  const q = S.quiz || {}, cs = q.concerns || [];
+  return EXPERTS.filter(e => !q.gender || q.gender === 'any' || e.gender === q.gender).map(e => {
+    let pts = 0, max = 0;
+    cs.forEach((c, i) => { const w = i === 0 ? 4 : 2; max += w; if (e.focus.includes(c)) pts += w; });
+    (q.style || []).forEach((v, i) => { if (v === null || v === undefined) return; max += 1.5; if (e.style4[i] === v) pts += 1.5; });
+    max += 2; if ((q.langs || ['English']).some(l => e.langs.includes(l))) pts += 2;
+    max += 1; if (!q.mode || q.mode === 'any' || e.modes.includes(q.mode)) pts += 1;
+    max += 1; if (q.when !== 'today' || e.today) pts += 1;
+    const pct = Math.round(62 + 36 * (max ? pts / max : 0.5));
+    const why = [];
+    const ov = cs.filter(c => e.focus.includes(c)); if (ov.length) why.push(`Helps with ${ov.map(c => CL[c].toLowerCase()).join(' and ')}`);
+    const sm = (q.style || []).map((v, i) => v !== null && v !== undefined && e.style4[i] === v ? STYLE_Q[i][v].toLowerCase() : null).filter(Boolean);
+    if (sm.length) why.push(`Will ${sm[0].replace(/^give me /, 'give you ').replace(/^guide me/, 'guide you').replace(/^follow my lead/, 'follow your lead').replace(/^be /, 'be ')}`);
+    const l = (q.langs || []).find(x => e.langs.includes(x)); if (l) why.push(`Speaks ${l}`);
+    why.push(e.today ? `Free today at ${e.today}` : 'Free tomorrow');
+    return { e: EXM[e.id], pct, why: why.slice(0, 3) };
+  }).sort((a, b) => b.pct - a.pct);
+}
+const img = (e, cls = '') => `<img class="${cls}" src="/app/img/${e.id}.jpg" alt="${esc(e.name)}" loading="lazy">`;
 V.experts = () => {
-  const M = matches(), seg = S.seg;
+  const seg = S.seg;
   let body = '';
-  if (seg === 'for') body = `
+  if (seg === 'for') {
+    const res = S.quiz && S.quiz.done ? quizMatches().slice(0, 3) : null;
+    body = `
     <div class="card tint-help row" style="box-shadow:none"><span class="dot" style="background:var(--surface-raised);color:var(--help-600)">${ic('phone')}</span><div style="flex:1"><b>Talk now</b><div class="cap">An on-call counsellor, usually in under 2 minutes</div></div><button class="btn helpbtn sm" data-a="talknow" style="background:var(--surface-raised)">Call</button></div>
-    <section class="sec"><div class="sec-h"><h2 class="t2">Matched for you</h2><span class="cap">${S.concerns.length ? 'from your answers' : 'popular'}</span></div>
-    <div class="hscroll">${M.slice(0, 3).map(({ e, why }, i) => `<article class="card match">
-      <div class="row"><div class="photo tint-${e.tint}" style="width:72px;flex:none;border-radius:var(--r-sm)">${person(e)}</div><div style="min-width:0"><span class="tag ${i === 0 ? 'peach' : 'violet'}">${i === 0 ? 'Best match' : 'Good match'}</span><h3 class="t2" style="margin-top:6px">${esc(e.name)}</h3><div class="cap">${esc(e.title)} · ${e.yrs} yrs</div></div></div>
-      <ul style="margin:0;padding:0;list-style:none;display:grid;gap:6px">${why.map(w => `<li class="row" style="gap:8px;align-items:flex-start"><span style="color:var(--sage-600)">${ic('check')}</span><span>${esc(w)}</span></li>`).join('')}</ul>
-      <div class="row"><button class="btn primary sm" style="flex:1" data-a="expert" data-v="${e.id}">See times</button><button class="fav" style="position:static;box-shadow:inset 0 0 0 1.5px var(--line)" data-a="fav" data-v="${e.id}" aria-pressed="${S.favs.includes(e.id)}" aria-label="Save ${esc(e.name)}">${ic('heart')}</button></div></article>`).join('')}</div></section>
-    <p class="muted" style="margin:0">Not quite right? <button class="link" data-a="seg" data-v="browse">Browse all experts</button></p>`;
+    ${res ? `<section class="sec"><div class="sec-h"><h2 class="t2">Your top 3</h2><button class="link" data-a="quiz">Retake</button></div>
+      ${res.map(({ e, pct, why }, i) => `<button class="card row" style="border:0;text-align:left;align-items:stretch;gap:14px" data-a="deck" data-v="${res.map(r => r.e.id).join(',')}" data-i="${i}">
+        <span class="mphoto">${img(e)}</span><span class="stack" style="gap:6px;flex:1;min-width:0"><span class="row between"><span class="tag ${i === 0 ? 'peach' : 'violet'}">${i === 0 ? 'Best match' : 'Good match'}</span><b class="pct">${pct}%</b></span>
+        <b style="font:600 17px/22px var(--f-display)">${esc(e.name)}</b><span class="cap">${esc(e.title)} · ${e.yrs} yrs</span>
+        ${why.map(w => `<span class="row" style="gap:6px;align-items:flex-start;font-size:13px;line-height:18px"><span style="color:var(--sage-600)">${ic('check')}</span>${esc(w)}</span>`).join('')}</span></button>`).join('')}</section>`
+    : `<button class="hero" data-a="quiz">
+        <span class="eyebrow">Smart match · 6 quick questions</span>
+        <span class="hero-h">Find the counsellor who <span class="swash">gets you</span>.</span>
+        <span class="note" style="color:var(--ink-muted)">no long forms, just taps</span>
+        <span class="row" style="gap:-8px">${EXPERTS.slice(0, 4).map(e => `<span class="stackph">${img(e)}</span>`).join('')}<span class="cap" style="margin-left:14px">Matched on what you need, how you like to talk, and language</span></span>
+        <span class="btn primary block">Start · about 2 minutes</span></button>`}
+    <p class="muted" style="margin:0">Want to look around first? <button class="link" data-a="seg" data-v="browse">Browse all experts</button></p>`;
+  }
   if (seg === 'browse') {
-    const f = S.filt; let list = M.map(x => x.e);
+    const f = S.filt; let list = matches().map(x => x.e);
     if (f.lang.length) list = list.filter(e => f.lang.some(l => e.langs.includes(l)));
     if (f.mode.length) list = list.filter(e => f.mode.some(m => e.modes.includes(m)));
     if (f.gender.length) list = list.filter(e => f.gender.includes(e.gender));
     if (f.today) list = list.filter(e => e.today);
     if (S.sort === 'rating') list.sort((a, b) => b.rating - a.rating);
     if (S.sort === 'soonest') list.sort((a, b) => (b.today ? 1 : 0) - (a.today ? 1 : 0));
-    const nf = f.lang.length + f.mode.length + f.gender.length + (f.today ? 1 : 0);
-    body = `<div class="row"><button class="btn ghost sm" style="flex:1;background:var(--surface-raised);box-shadow:inset 0 0 0 1.5px var(--line)" data-a="sheet" data-v="sort">${ic('sort')}${S.sort === 'match' ? 'Best match' : S.sort === 'rating' ? 'Top rated' : 'Soonest'}</button><button class="btn sm" style="flex:1;background:var(--violet-600);color:var(--surface-raised)" data-a="sheet" data-v="filter">${ic('filter')}Filter${nf ? ' · ' + nf : ''}</button></div>
-      ${list.length ? `<div class="grid2">${list.map(e => `<div class="tile"><div class="photo tint-${e.tint}">${person(e)}<button class="fav" data-a="fav" data-v="${e.id}" aria-pressed="${S.favs.includes(e.id)}" aria-label="Save ${esc(e.name)}">${ic('heart')}</button><span class="rate"><i></i>${e.rating.toFixed(1)} · ${e.n}</span></div>
-        <button class="tile" data-a="expert" data-v="${e.id}"><b style="font:600 15px/20px var(--f-display)">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(', ')} · ${e.langs.slice(0, 2).join(', ')}</span></button>
+    const nf = f.lang.length + f.mode.length + f.gender.length + (f.today ? 1 : 0), ids = list.map(e => e.id).join(',');
+    body = `<div class="row"><button class="btn sm" style="flex:1;background:var(--surface-raised);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)" data-a="sheet" data-v="sort">${ic('sort')}${S.sort === 'match' ? 'Best match' : S.sort === 'rating' ? 'Top rated' : 'Soonest'}</button><button class="btn sm" style="flex:1;background:var(--violet-600);color:var(--surface-raised)" data-a="sheet" data-v="filter">${ic('filter')}Filter${nf ? ' · ' + nf : ''}</button></div>
+      ${list.length ? `<div class="grid2">${list.map((e, i) => `<div class="tile"><div class="photo">${img(e)}<button class="fav" data-a="fav" data-v="${e.id}" aria-pressed="${S.favs.includes(e.id)}" aria-label="Save ${esc(e.name)}">${ic('heart')}</button><span class="rate"><i></i>${e.rating.toFixed(1)} · ${e.n}</span>
+          <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
+        <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b style="font:600 15px/20px var(--f-display)">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(', ')} · ${e.langs.slice(0, 2).join(', ')}</span></button>
         <span class="tag ${e.today ? 'peach' : ''}" style="justify-self:start">${e.today ? 'Free today ' + e.today : 'Free tomorrow'}</span></div>`).join('')}</div>`
         : `<div class="card stack" style="text-align:center"><b>No one matches all of these</b><span class="muted">Try removing a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear filters</button></div>`}`;
   }
   if (seg === 'mine') {
-    const bk = S.booked && EXM[S.booked.id];
-    body = bk ? `<section class="card stack"><span class="eyebrow">Upcoming</span><div class="row"><div class="photo tint-${bk.tint}" style="width:64px;flex:none;border-radius:var(--r-sm)">${person(bk)}</div><div style="flex:1"><b>${esc(bk.name)}</b><div class="cap">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)}</div></div></div>
-        <div class="row"><button class="btn primary sm" style="flex:1" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button><button class="btn soft sm" style="flex:1" data-a="toast" data-v="Message sent to ${esc(bk.name.split(' ')[0])}. Replies within a few hours.">${ic('chat')}Message</button></div>
-        <button class="link" data-a="cancel" style="justify-self:start">Reschedule or cancel</button></section>`
-      : `<div class="card stack" style="text-align:center"><b>No sessions yet</b><span class="muted">Your matches are ready when you are.</span><button class="btn primary sm" data-a="seg" data-v="for">See my matches</button></div>`;
-    body += `<div class="card row" style="box-shadow:none;background:var(--surface-sunken)">${ic('gift')}<span>${S.sessionsLeft} of 6 free sessions left this year, covered by ${esc(S.company)}.</span></div>`;
+    const up = S.booked && EXM[S.booked.id];
+    body = `${up ? `<section class="sec"><span class="eyebrow">Upcoming</span><div class="card stack">
+        <div class="row"><span class="mphoto" style="width:64px;height:76px">${img(up)}</span><div style="flex:1;min-width:0"><b style="font:600 17px/22px var(--f-display)">Session ${S.booked.n || 1} with ${esc(up.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)} · 50 min</div></div></div>
+        <div class="card tint-violet" style="box-shadow:none;padding:12px;font-size:14px;line-height:20px">${ic('book')} Before you join: what's one thing from last week you'd like to talk about?</div>
+        <div class="row"><button class="btn primary sm" style="flex:1" data-a="toast" data-v="Your session room opens 10 minutes before.">${ic('video')}Join</button><button class="btn soft sm" style="flex:1" data-a="toast" data-v="Message sent to ${esc(up.name.split(' ')[0])}. Replies within a few hours.">${ic('chat')}Message</button></div>
+        <button class="link" data-a="cancel" style="justify-self:start">Reschedule or cancel</button></div></section>`
+      : `<div class="card stack" style="text-align:center"><b>No upcoming session</b><button class="btn primary sm" data-a="seg" data-v="browse">Find an expert</button></div>`}
+      ${S.history.length ? `<section class="sec"><span class="eyebrow">Past sessions</span><div class="tl">${S.history.slice().reverse().map(h => { const e = EXM[h.id]; return `<div class="tl-item"><span class="tl-dot">${ic('check')}</span><div class="card stack" style="gap:6px">
+          <div class="row between"><b>Session ${h.n} · ${esc(e.name.split(' ')[0])}</b><span class="cap">${esc(h.date)}</span></div>
+          <span class="cap">${esc(h.mode)} · 50 min · you rated the fit ${h.fit}/5</span>
+          <p style="margin:0"><span class="lbl muted">Your takeaway</span><br>${esc(h.note)}</p>
+          ${h.task ? `<span class="tag sage" style="justify-self:start">${ic('grow')}${esc(h.task)}</span>` : ''}</div></div>`; }).join('')}</div></section>` : ''}
+      <div class="card row" style="box-shadow:none;background:var(--surface-sunken)">${ic('gift')}<span>${S.sessionsLeft} of 6 free sessions left this year, covered by ${esc(S.company)}.</span></div>`;
   }
   return `<div class="screen"><h1 class="t1">Experts</h1>
-    <div class="seg" role="group" aria-label="Experts view">${[['for', 'For you'], ['browse', 'Browse'], ['mine', 'My sessions']].map(([k, l]) => `<button data-a="seg" data-v="${k}" aria-pressed="${seg === k}">${l}</button>`).join('')}</div>${body}</div>${tabbar()}`;
+    <div class="seg" role="group" aria-label="Experts view">${[['browse', 'Browse'], ['for', 'For you'], ['mine', 'My sessions']].map(([k, l]) => `<button data-a="seg" data-v="${k}" aria-pressed="${seg === k}">${l}</button>`).join('')}</div>${body}</div>${tabbar()}`;
 };
-V.expert = () => {
-  const e = EXM[S.params.id], sl = slotsFor(e), pick = X.slot || null, m = matches().find(x => x.e.id === e.id);
-  return `<div class="screen notab" style="padding-bottom:110px">
-    ${top('', `<button class="iconbtn fav" style="position:static" data-a="fav" data-v="${e.id}" aria-pressed="${S.favs.includes(e.id)}" aria-label="Save">${ic('heart')}</button>`)}
-    <div class="photo tint-${e.tint}" style="aspect-ratio:16/11">${person(e, true)}<span class="rate"><i></i>${e.rating.toFixed(1)} · ${e.n} sessions</span></div>
-    <div class="stack" style="gap:6px"><h1 class="t1">${esc(e.name)}</h1><span class="muted">${esc(e.title)} · ${e.yrs} years · ${e.langs.join(', ')}</span>
-      <div class="row wrap">${e.focus.map(c => `<span class="tag violet">${CL[c]}</span>`).join('')}${e.modes.map(md => `<span class="tag">${md}</span>`).join('')}</div></div>
-    <section class="card tint-sage stack" style="box-shadow:none"><b>Why this match</b>${m.why.map(w => `<div class="row" style="gap:8px">${ic('check')}<span>${esc(w)}</span></div>`).join('')}<div class="row" style="gap:8px">${ic('check')}<span>Style: ${esc(e.style)}</span></div></section>
-    <p class="lg" style="margin:0">${esc(e.about)}</p>
-    <section class="sec"><h2 class="t2">Pick a time</h2>${sl.map(([d, ts]) => `<div class="stack" style="gap:8px"><span class="lbl muted">${d}</span><div class="row wrap">${ts.map(t => `<button class="slot" data-a="slot" data-v="${d}|${t}" aria-pressed="${pick === d + '|' + t}">${t}</button>`).join('')}</div></div>`).join('')}</section>
-  </div>
-  <div style="position:absolute;left:0;right:0;bottom:0;padding:12px 16px calc(16px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line);display:flex;gap:10px;z-index:5">
-    <button class="btn primary" style="flex:1;${pick ? '' : 'opacity:.45'}" data-a="book" ${pick ? '' : 'disabled'}>${pick ? 'Book ' + esc(pick.replace('|', ', ')) : 'Pick a time above'}</button></div>`;
+
+/* the swipe deck: one expert full screen, details in a half sheet; swipe left for next, right for previous */
+V.deck = () => {
+  const ids = S.params.ids, i = S.params.i, e = EXM[ids[i]], nxt = EXM[ids[(i + 1) % ids.length]];
+  const m = (S.quiz && S.quiz.done ? quizMatches() : matches()).find(x => x.e.id === e.id);
+  const sl = slotsFor(e).slice(0, 2);
+  return `<div class="screen flush notab deck tint-${e.tint}">
+    <div class="deck-top"><button class="iconbtn" data-a="back" aria-label="Close">${ic('back')}</button><span class="lbl">${i + 1} of ${ids.length}</span>
+      <button class="iconbtn fav" style="position:static" data-a="fav" data-v="${e.id}" aria-pressed="${S.favs.includes(e.id)}" aria-label="Save ${esc(e.name)}">${ic('heart')}</button></div>
+    <div class="arch-wrap">${ids.length > 1 ? `<div class="arch behind" aria-hidden="true">${img(nxt)}</div>` : ''}
+      <div class="arch" id="swipe" tabindex="0" aria-label="${esc(e.name)}. Swipe left for the next expert.">${img(e)}<span class="rate" style="left:14px;bottom:14px"><i></i>${e.rating.toFixed(1)} · ${e.n} sessions</span></div></div>
+    <div class="dsheet">
+      <div class="grab" aria-hidden="true"></div>
+      <div class="row between" style="align-items:flex-start"><div><h1 class="t1">${esc(e.name)}</h1><span class="muted">${esc(e.title)} · ${e.yrs} years</span></div>${m && m.pct ? `<span class="tag peach">${m.pct}% match</span>` : ''}</div>
+      <div class="row wrap" style="gap:6px">${e.focus.map(c => `<span class="tag violet">${CL[c]}</span>`).join('')}<span class="tag">${e.langs.join(', ')}</span></div>
+      <p style="margin:0">${esc(e.about)}</p>
+      <div class="row wrap" style="gap:6px"><span class="lbl muted" style="width:100%">Style</span><span class="tag sage">${esc(e.style)}</span>${e.modes.map(md => `<span class="tag">${md}</span>`).join('')}</div>
+      ${m ? `<div class="stack" style="gap:6px"><span class="lbl muted">Why this match</span>${m.why.map(w => `<span class="row" style="gap:8px"><span style="color:var(--sage-600)">${ic('check')}</span>${esc(w)}</span>`).join('')}</div>` : ''}
+      <div class="stack" style="gap:6px"><span class="lbl muted">Next free</span><div class="row wrap" style="gap:6px">${sl.flatMap(([d, ts]) => ts.slice(0, 2).map(t => `<span class="tag">${d} ${t}</span>`)).join('')}</div></div>
+    </div>
+    <div class="deck-cta"><div class="row" style="gap:10px"><button class="iconbtn" data-a="deck-move" data-v="-1" aria-label="Previous expert" ${ids.length > 1 ? '' : 'disabled'}>${ic('back')}</button>
+        <button class="btn primary" style="flex:1" data-a="sheet" data-v="book">${ic('cal')}Book ${esc(e.name.split(' ')[0])}</button>
+        <button class="iconbtn" data-a="deck-move" data-v="1" aria-label="Next expert" ${ids.length > 1 ? '' : 'disabled'}>${ic('chev')}</button></div>
+      ${ids.length > 1 ? `<p class="cap" style="text-align:center;margin:0">Swipe the photo left for the next expert</p>` : ''}</div></div>`;
+};
+V.quiz = () => {
+  const q = S.quiz || (S.quiz = {}), step = X.qs || 0, Q = QUIZ[step];
+  if (X.finding) return `<div class="screen notab glow" style="justify-content:center;text-align:center;gap:20px"><div class="orb busy" aria-hidden="true"></div><h1 class="t1">Finding your best matches…</h1><p class="muted" style="margin:0">Checking every counsellor for what you need, how you like to talk, language and time.</p></div>`;
+  let opts = '';
+  if (Q.type === 'multi') { const cur = q[Q.k] || []; opts = `<div class="row wrap">${Q.opts.map(([v, l]) => `<button class="chip" data-a="qpick" data-v="${v}" aria-pressed="${cur.includes(v)}">${cur.includes(v) && Q.k === 'concerns' ? (cur.indexOf(v) + 1) + ' · ' : ''}${l}</button>`).join('')}</div>`; }
+  if (Q.type === 'one') opts = `<div class="stack">${Q.opts.map(([v, l]) => `<button class="qopt" data-a="qpick" data-v="${v}" ${q[Q.k] === v ? 'style="border-color:var(--violet-600);background:var(--violet-100)"' : ''}>${l}</button>`).join('')}</div>`;
+  if (Q.type === 'style') { const st = q.style || [null, null, null, null]; opts = STYLE_Q.map(([a, b], i) => `<div class="seg" role="group" aria-label="${esc(a)} or ${esc(b)}">${[[0, a], [-1, 'Either'], [1, b]].map(([v, l]) => `<button data-a="qstyle" data-i="${i}" data-v="${v}" aria-pressed="${(st[i] === null && v === -1) || st[i] === v}" style="font-size:13px;line-height:16px;padding:0 6px">${esc(l)}</button>`).join('')}</div>`).join(''); }
+  const ok = Q.type === 'multi' ? (q[Q.k] || []).length > 0 : Q.type === 'style' ? true : q[Q.k] !== undefined;
+  return `<div class="screen notab">${top(`Smart match · ${step + 1} of ${QUIZ.length}`)}
+    <div class="bar"><i style="width:${(step + 1) / QUIZ.length * 100}%;background:var(--violet-600)"></i></div>
+    <div class="stack" style="gap:6px"><h2 class="t1">${esc(Q.q)}</h2><span class="muted">${esc(Q.sub)}</span></div>${opts}
+    <div style="flex:1"></div><button class="btn primary block" data-a="qnext" ${ok ? '' : 'disabled style="opacity:.45"'}>${step === QUIZ.length - 1 ? 'Show my matches' : 'Next'}</button></div>`;
 };
 V.booked = () => {
   const e = EXM[S.booked.id];
   return `<div class="screen notab glow" style="justify-content:center;text-align:center;gap:16px">
-    <div class="photo tint-${e.tint}" style="width:120px;justify-self:center;align-self:center;border-radius:50%;aspect-ratio:1">${person(e, true)}</div>
+    <span class="mphoto" style="width:120px;height:120px;border-radius:50%;align-self:center">${img(e)}</span>
     <h1 class="t1">You're booked with ${esc(e.name.split(' ')[0])}</h1>
     <p class="lg muted" style="margin:0">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)}<br>${S.sessionsLeft} free sessions left this year</p>
     ${S.shareSummary ? `<div class="card tint-violet" style="box-shadow:none;text-align:left">${ic('lock')} ${esc(e.name.split(' ')[0])} will see a short summary of what you told Dost, so you don't have to start from zero.</div>` : ''}
@@ -445,7 +519,6 @@ V.me = () => {
       <span>${S.sessionsLeft} of 6 counselling sessions left this year</span><div class="bar"><i style="width:${S.sessionsLeft / 6 * 100}%;background:var(--violet-600)"></i></div><span class="cap">Dost, Grow and quick checks are unlimited.</span></section>
     <div class="list">
       <button class="li" data-a="journal"><span class="dot tint-sun">${ic('pen')}</span><span class="grow"><b>Journal</b></span>${ic('chev', 'chev')}</button>
-      <div class="li"><span class="dot tint-violet">${ic('moon')}</span><span class="grow"><b>Night theme</b><span class="cap" style="display:block">Easier on the eyes at night</span></span><button class="toggle" role="switch" aria-checked="${S.theme === 'dark'}" aria-label="Night theme" data-a="theme"></button></div>
       <div class="li"><span class="dot tint-sage">${ic('chat')}</span><span class="grow"><b>Dost remembers our chats</b><span class="cap" style="display:block">So it can ask how things went</span></span><button class="toggle" role="switch" aria-checked="${S.memory}" aria-label="Dost memory" data-a="memory"></button></div>
       <button class="li" data-a="sheet" data-v="privacy"><span class="dot tint-violet">${ic('shield')}</span><span class="grow"><b>Privacy and your data</b><span class="cap" style="display:block">What ${esc(S.company)} sees: group totals only</span></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="help"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Get help now</b></span>${ic('chev', 'chev')}</button>
@@ -467,10 +540,11 @@ function sheetHTML() {
     body = `<div class="row between"><h2 class="t1">Filter</h2><button class="link" data-a="filt-clear">Clear all</button></div>${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu'])}${grp('mode', 'How to talk', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
       <div class="row between"><span class="lbl">Free today</span><button class="toggle" role="switch" aria-checked="${f.today}" aria-label="Free today" data-a="filt-today"></button></div><button class="btn primary block" data-a="close">Show experts</button>`; }
   if (s.name === 'sort') body = `<h2 class="t1">Sort by</h2><div class="stack">${[['match', 'Best match'], ['rating', 'Rating'], ['soonest', 'Soonest free']].map(([k, l]) => `<button class="qopt" data-a="sort" data-v="${k}" ${S.sort === k ? 'style="border-color:var(--violet-600)"' : ''}>${l}</button>`).join('')}</div>`;
-  if (s.name === 'confirm') { const e = EXM[S.params.id]; const [d, t] = X.slot.split('|');
-    body = `<h2 class="t1">Book ${esc(e.name.split(' ')[0])}?</h2><div class="card row"><span class="dot tint-violet">${ic('cal')}</span><span style="flex:1"><b>${esc(d)}, ${esc(t)}</b><span class="cap" style="display:block">50 min · ${esc(e.modes[0])} · free (uses 1 of ${S.sessionsLeft})</span></span></div>
+  if (s.name === 'book') { const e = EXM[S.params.ids[S.params.i]], sl = slotsFor(e), pick = X.slot;
+    body = `<div class="row"><span class="mphoto" style="width:52px;height:60px">${img(e)}</span><div><h2 class="t2">Book ${esc(e.name.split(' ')[0])}</h2><span class="cap">50 min · free (uses 1 of ${S.sessionsLeft})</span></div></div>
+      ${sl.map(([d, ts]) => `<div class="stack" style="gap:8px"><span class="lbl muted">${d}</span><div class="row wrap">${ts.map(t => `<button class="slot" data-a="slot" data-v="${d}|${t}" aria-pressed="${pick === d + '|' + t}">${t}</button>`).join('')}</div></div>`).join('')}
       <div class="row between" style="align-items:flex-start"><span><b>Share my Dost summary</b><span class="cap" style="display:block">So you don't start from zero. Never shared with ${esc(S.company)}.</span></span><button class="toggle" role="switch" aria-checked="${S.shareSummary}" aria-label="Share summary" data-a="share"></button></div>
-      <button class="btn primary block" data-a="book-ok">Confirm booking</button>`; }
+      <button class="btn primary block" data-a="book-ok" ${pick ? '' : 'disabled style="opacity:.45"'}>${pick ? 'Confirm ' + esc(pick.replace('|', ', ')) : 'Pick a time'}</button>`; }
   if (s.name === 'privacy') body = `<h2 class="t1">Privacy and your data</h2><div class="list">
     <div class="li"><span class="dot tint-violet">${ic('eye')}</span><span class="grow"><b>What ${esc(S.company)} sees</b><span class="cap" style="display:block">Group totals only, and only when 10 or more people are in a group.</span></span></div>
     <div class="li"><span class="dot tint-sun">${ic('mic')}</span><span class="grow"><b>Your voice</b><span class="cap" style="display:block">Turned into text on your phone; audio is never uploaded.</span></span></div>
@@ -482,7 +556,7 @@ function sheetHTML() {
 
 /* ---------------- render ---------------- */
 function render() {
-  document.documentElement.dataset.theme = S.theme;
+  document.documentElement.dataset.theme = 'light';
   if (!S.onboarded) S.view = 'ob';
   const fn = V[S.view] || V.home;
   const keepScroll = $app.querySelector('.screen'); const y = keepScroll ? keepScroll.scrollTop : 0;
@@ -492,6 +566,19 @@ function render() {
   const log = document.getElementById('log'); if (log) log.scrollTop = log.scrollHeight;
   const f = document.getElementById('dform'); if (f) f.onsubmit = e => { e.preventDefault(); const i = document.getElementById('dtext'); const v = i.value; i.value = ''; dostSend(v); };
   if (S.view === 'ex' && X.ex && X.ex.running) runBreath();
+  if (S.view === 'deck') bindSwipe();
+}
+function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; save(); render(); }
+function bindSwipe() {
+  const el = document.getElementById('swipe'); if (!el) return;
+  let x0 = null, dx = 0;
+  el.onpointerdown = e => { x0 = e.clientX; dx = 0; el.setPointerCapture(e.pointerId); el.style.transition = 'none'; };
+  el.onpointermove = e => { if (x0 === null) return; dx = e.clientX - x0; el.style.transform = `translateX(${dx}px) rotate(${dx / 22}deg)`; };
+  const end = () => { if (x0 === null) return; x0 = null; el.style.transition = 'transform .25s ease-out';
+    if (Math.abs(dx) > 70 && S.params.ids.length > 1) { el.style.transform = `translateX(${dx < 0 ? -460 : 460}px) rotate(${dx < 0 ? -14 : 14}deg)`; setTimeout(() => deckMove(dx < 0 ? 1 : -1), 200); }
+    else el.style.transform = ''; };
+  el.onpointerup = end; el.onpointercancel = end;
+  el.onkeydown = e => { if (e.key === 'ArrowLeft') deckMove(-1); if (e.key === 'ArrowRight') deckMove(1); };
 }
 let BT = null;
 function runBreath() {
@@ -545,7 +632,13 @@ $app.addEventListener('click', e => {
     case 'close': case 'scrim': SHEET = null; render(); break;
     case 'toast': toast(v); break;
     case 'seg': S.seg = v; save(); if (S.view !== 'experts') go('experts'); else render(); break;
-    case 'expert': go('expert', { id: v }); break;
+    case 'expert': go('deck', { ids: [v], i: 0 }); break;
+    case 'deck': go('deck', { ids: v.split(','), i: +(a.dataset.i || 0) }); break;
+    case 'deck-move': deckMove(+v); break;
+    case 'quiz': S.quiz = { style: [null, null, null, null] }; go('quiz'); break;
+    case 'qpick': { const Q = QUIZ[X.qs || 0]; if (Q.type === 'multi') { const cur = S.quiz[Q.k] || []; S.quiz[Q.k] = cur.includes(v) ? cur.filter(x => x !== v) : cur.length >= Q.max ? cur : [...cur, v]; } else S.quiz[Q.k] = v; save(); render(); break; }
+    case 'qstyle': { const st = S.quiz.style || (S.quiz.style = [null, null, null, null]); st[+a.dataset.i] = +v === -1 ? null : +v; save(); render(); break; }
+    case 'qnext': if ((X.qs || 0) < QUIZ.length - 1) { X.qs = (X.qs || 0) + 1; render(); $app.querySelector('.screen').scrollTop = 0; } else { X.finding = true; render(); setTimeout(() => { S.quiz.done = true; S.seg = 'for'; X = {}; save(); go('experts', {}, false); }, 1600); } break;
     case 'fav': S.favs = S.favs.includes(v) ? S.favs.filter(x => x !== v) : [...S.favs, v]; save(); render(); break;
     case 'sheet': sheet(v); break;
     case 'filt': { const k = a.dataset.k; S.filt[k] = S.filt[k].includes(v) ? S.filt[k].filter(x => x !== v) : [...S.filt[k], v]; save(); render(); break; }
@@ -553,9 +646,8 @@ $app.addEventListener('click', e => {
     case 'filt-clear': S.filt = { lang: [], mode: [], gender: [], today: false }; save(); render(); break;
     case 'sort': S.sort = v; SHEET = null; save(); render(); break;
     case 'slot': X.slot = v; render(); break;
-    case 'book': if (X.slot) sheet('confirm'); break;
     case 'share': S.shareSummary = !S.shareSummary; save(); render(); break;
-    case 'book-ok': { const [d, t] = X.slot.split('|'), ex = EXM[S.params.id]; S.booked = { id: ex.id, day: d, time: t, mode: ex.modes[0] }; S.sessionsLeft = Math.max(0, S.sessionsLeft - 1); if (S.plan) { const s = S.plan.steps.find(x => x.kind === 'book'); if (s) s.done = true; } go('booked', {}, false); break; }
+    case 'book-ok': { if (!X.slot) break; const [d, t] = X.slot.split('|'), ex = EXM[S.params.ids[S.params.i]]; S.booked = { id: ex.id, day: d, time: t, mode: ex.modes[0], n: S.history.filter(h => h.id === ex.id).length + 1 }; S.sessionsLeft = Math.max(0, S.sessionsLeft - 1); if (S.plan) { const s = S.plan.steps.find(x => x.kind === 'book'); if (s) s.done = true; } go('booked', {}, false); break; }
     case 'cancel': S.booked = null; S.sessionsLeft = Math.min(6, S.sessionsLeft + 1); save(); toast('Session cancelled. Your free session is back.'); break;
     case 'pg': go('pg', { id: v }); break;
     case 'ex': if (a.getAttribute('aria-disabled') === 'true') { toast('Finish the earlier days first, one at a time.'); break; } go('ex', { id: v, pg: a.dataset.pg || null, day: a.dataset.day || null }); break;
@@ -567,7 +659,6 @@ $app.addEventListener('click', e => {
     case 'cans': X.c.a.push(+v); render(); break;
     case 'journal': go('journal'); break;
     case 'jsave': { const t = document.getElementById('jtext').value.trim(); if (!t) { toast('Write a line first.'); break; } S.journal.push({ d: new Date().toDateString(), t }); if (!S.doneToday.journal) { S.doneToday.journal = true; S.leaves = Math.min(7, S.leaves + 1); } save(); toast('Saved. A new plant in your garden.'); render(); break; }
-    case 'theme': S.theme = S.theme === 'dark' ? 'light' : 'dark'; save(); render(); break;
     case 'memory': S.memory = !S.memory; save(); render(); break;
     case 'restart': try { localStorage.removeItem(KEY); } catch {} S = fresh(); SHEET = null; X = {}; render(); break;
   }
