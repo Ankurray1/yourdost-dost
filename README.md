@@ -1,5 +1,7 @@
 # YourDOST · Dost voice guide (prototype)
 
+**New: the YourDOST app built from scratch (Q2)** lives at [`/app`](https://yourdost-dost.vercel.app/app): Home, Experts, Dost, Grow and Me, on the YourDOST App design system. Add `#start` to replay onboarding.
+
 Task 3 of the YourDOST PM assignment: an AI voice guide that helps an employee find the right next step in their mental wellbeing journey, and Task 2's smart counsellor matching behind it.
 
 **Live:** see the Vercel deployment linked in the repo's About section.
