@@ -240,7 +240,7 @@ const TOUR = [
   { sel: '.orbbtn', title: 'Dost, your AI guide', text: "Talk or type anytime. Dost listens, asks a few questions and finds the right next step. It's not a doctor." },
   { sel: '.tab[data-v="grow"]', title: 'Grow', text: 'Short exercises, 7-day programs and quick checks for stress, sleep and mood.' },
   { sel: '.tab[data-v="me"]', title: 'Me', text: 'Your journey, journal, free sessions left and privacy. Only you see what is here.' },
-  { sel: '#t-help', title: 'A person is always one tap away', text: 'If things feel heavy, an on-call counsellor is here 24×7.' },
+  { sel: '#t-sos', title: 'SOS, always here', text: 'For the hardest moments. One tap connects you to a real counsellor within 5 minutes, 24×7.' },
 ];
 function tourSteps() { return TOUR.filter(t => document.querySelector('#app ' + t.sel)); }
 function drawTour() {
@@ -408,11 +408,11 @@ const R_SLOTS = {
 const FEELS = ['Calm', 'Hopeful', 'Grateful', 'Light', 'Proud', 'Tired', 'Anxious', 'Low', 'Irritable', 'Overwhelmed', 'Lonely', 'Okay'];
 const ritualSlot = () => new Date().getHours() < 15 ? 'morning' : 'evening';
 const doy = () => { const d = new Date(), s = new Date(d.getFullYear(), 0, 0); return Math.floor((d - s) / 86400000); };
-function ritualToday() { const sl = ritualSlot(), R = R_SLOTS[sl]; return { sl, R, bk: R.breaths[doy() % 3], prompt: R.prompts[doy() % R.prompts.length] }; }
+function ritualToday(o) { const sl = o || ritualSlot(), R = R_SLOTS[sl]; return { sl, R, bk: R.breaths[doy() % 3], prompt: R.prompts[doy() % R.prompts.length] }; }
 const ritualDone = sl => S.rituals.some(r => r.d === dkey(new Date()) && r.slot === sl);
 function ritualCard() {
   const { sl, R, bk } = ritualToday(), done = ritualDone(sl), week = S.rituals.filter(r => r.d > dkey(new Date(Date.now() - 7 * 86400000))).length;
-  const steps = [['Breathe', '2 min'], ['Write', '1 line'], ['Feel', 'name it'], ['Close', 'your recap']];
+  const steps = [['Breathe', '2 min'], ['Write', '1 line'], ['Listen', '1 min'], ['Feel', 'name it'], ['Close', 'recap']];
   return `<section class="sec" id="t-ritual"><div class="sec-h"><h2 class="t2">Your 5 minutes today</h2><span class="cap">${week ? week + ' this week' : 'about 5 min'}</span></div>
     <button class="ritual tint-${R.tint} ${done ? 'done' : ''}" data-a="ritual" aria-label="${R.name}${done ? ', done today' : ''}">
       <span class="row between"><span class="row" style="gap:8px"><span class="dot" style="background:var(--surface-raised)">${ic(R.icon)}</span><span class="stack" style="gap:0;text-align:left"><b class="t2" style="font-size:19px">${R.name}</b><span class="cap">Today: ${esc(R_BREATH[bk].name.toLowerCase())}</span></span></span>
@@ -422,16 +422,16 @@ function ritualCard() {
     <p class="cap" style="margin:0">Best in the morning or before sleep. For more exercises, see <button class="link" data-a="tab" data-v="grow" style="padding:0">Grow</button>.</p></section>`;
 }
 V.ritual = () => {
-  const T = ritualToday(), { sl, R } = T, B = R_BREATH[T.bk];
-  const r = X.r || (X.r = ritualDone(sl) ? Object.assign({ step: 4, review: true }, S.rituals.filter(x => x.slot === sl).slice(-1)[0]) : { step: 0, pre: null, post: null, feels: [], text: '' });
+  const T = ritualToday(S.params.slot), { sl, R } = T, B = R_BREATH[T.bk];
+  const r = X.r || (X.r = ritualDone(sl) ? Object.assign({ step: 5, review: true }, S.rituals.filter(x => x.slot === sl).slice(-1)[0]) : { step: 0, pre: null, post: null, feels: [], text: '' });
   const nav = (lbl, act = 'r-next', dis = false) => `<button class="btn primary block" data-a="${act}" ${dis ? 'disabled style="opacity:.45"' : ''}>${lbl}</button>`;
-  const head = `<div class="row between">${r.step === 0 || r.review ? `<button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button>` : `<button class="iconbtn" data-a="r-prev" aria-label="Back">${ic('back')}</button>`}
+  const head = `<div class="row between">${r.step === 0 || r.step === 5 || r.review ? `<button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button>` : `<button class="iconbtn" data-a="r-prev" aria-label="Back">${ic('back')}</button>`}
       <span class="lbl">${R.name}</span><button class="iconbtn helpdot" data-a="help" aria-label="Talk to someone now">${ic('phone')}</button></div>
-    <div class="rprog" aria-hidden="true">${[0, 1, 2, 3, 4].map(k => `<i class="${k <= r.step ? 'on' : ''}"></i>`).join('')}</div>`;
+    <div class="rprog" aria-hidden="true">${[0, 1, 2, 3, 4, 5].map(k => `<i class="${k <= r.step ? 'on' : ''}"></i>`).join('')}</div>`;
   const faces = (key) => `<div class="moods">${MOODS.map((m, i) => `<button class="mood ${r[key] === i ? 'sel' : ''}" data-a="r-mood" data-k="${key}" data-v="${i}" aria-pressed="${r[key] === i}"><span class="mface" style="--mf:${MOOD_FILL[i]};${r[key] === i ? 'background:var(--mf)' : ''}">${face(i)}</span><span>${m[0]}</span></button>`).join('')}</div>`;
   let body = '';
   if (r.step === 0) body = `<div class="stack" style="gap:6px"><span class="eyebrow">${sl === 'morning' ? 'Good morning' : 'Good evening'}, ${esc(S.name)}</span><h1 class="rbig">Let's take<br><span class="swash">5 minutes</span><br>for you.</h1></div>
-      <ol class="rlist"><li><b>Breathe</b> · 2 min of ${esc(B.name.toLowerCase())}</li><li><b>Write</b> · one line, just for you</li><li><b>Feel</b> · name what's there</li><li><b>Close</b> · see how you're doing</li></ol>
+      <ol class="rlist"><li><b>Breathe</b> · 2 min of ${esc(B.name.toLowerCase())}</li><li><b>Write</b> · one line, just for you</li><li><b>Listen</b> · a minute of calming sound</li><li><b>Feel</b> · name what's there</li><li><b>Close</b> · see how you're doing</li></ol>
       <div class="card stack" style="box-shadow:none;background:var(--surface-raised)"><b>First, how are you right now?</b>${faces('pre')}</div>
       <div style="flex:1"></div>${nav('Begin', 'r-next', r.pre === null)}<button class="link" data-a="r-next" style="justify-self:center">Skip this question</button>`;
   if (r.step === 1) body = `<div class="stack" style="gap:6px;text-align:center"><span class="eyebrow">Step 1 · Breathe</span><h2 class="t1">${esc(B.name)}</h2><p class="muted" style="margin:0">${esc(B.how)}</p></div>
@@ -442,13 +442,19 @@ V.ritual = () => {
   if (r.step === 2) body = `<div class="stack" style="gap:6px"><span class="eyebrow">Step 2 · Write</span><h2 class="rq">${esc(T.prompt)}</h2><span class="note" style="font-size:18px">${esc(R.hint)}</span></div>
       <label class="sr" for="rtext">Your answer</label><textarea id="rtext" class="field rtext" rows="5" placeholder="Just for you. No one else reads this.">${esc(r.text || '')}</textarea>
       <p class="cap rwhy">${ic('book')} ${esc(R.why)}</p>
-      <div style="flex:1"></div>${nav('Next: feel')}<button class="link" data-a="r-next" style="justify-self:center">Skip writing today</button>`;
-  if (r.step === 3) body = `<div class="stack" style="gap:6px"><span class="eyebrow">Step 3 · Feel</span><h2 class="rq">What are you feeling right now?</h2><span class="muted">Pick up to 3. Every feeling is allowed.</span></div>
+      <div style="flex:1"></div>${nav('Next: listen')}<button class="link" data-a="r-next" style="justify-self:center">Skip writing today</button>`;
+  if (r.step === 3) { const sk = X.snd || SOUND_DAY(), left = X.lsLeft ?? 60;
+    body = `<div class="stack" style="gap:6px"><span class="eyebrow">Step 3 · Listen</span><h2 class="rq">Close your eyes. Just listen for a minute.</h2><span class="muted">Let the sound do the work. Headphones help.</span></div>
+      <div class="row" style="gap:8px;justify-content:center">${Object.entries(SOUNDS).map(([k, o]) => `<button class="chip" data-a="r-snd" data-v="${k}" aria-pressed="${sk === k}">${o.name}</button>`).join('')}</div>
+      <div class="listen ${X.ls ? 'on' : ''}" aria-hidden="true"><span class="lwave">${[0, 1, 2, 3, 4, 5, 6].map(k => `<i style="--k:${k}"></i>`).join('')}</span><b id="ltime">${X.lsDone ? 'Nicely done.' : `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`}</b></div>
+      <p class="cap rwhy">${ic('book')} Listening to nature sounds helped people recover from stress faster than traffic noise (Alvarsson et al., Int. J. Environmental Research and Public Health, 2010).</p>
+      <div style="flex:1"></div>${X.lsDone ? nav('Next: how are you feeling?') : X.ls ? `<button class="btn ghost block" data-a="r-lsdone">I'm done</button>` : `<button class="btn sage block" data-a="r-ls">${ic('play')}Play · 1 minute</button><button class="link" data-a="r-next" style="justify-self:center">Skip</button>`}`; }
+  if (r.step === 4) body = `<div class="stack" style="gap:6px"><span class="eyebrow">Step 4 · Feel</span><h2 class="rq">What are you feeling right now?</h2><span class="muted">Pick up to 3. Every feeling is allowed.</span></div>
       <div class="row wrap">${FEELS.map(f => `<button class="chip" data-a="r-feel" data-v="${f}" aria-pressed="${r.feels.includes(f)}">${f}</button>`).join('')}</div>
       <div class="card stack" style="box-shadow:none;background:var(--surface-raised)"><b>And overall?</b>${faces('post')}</div>
       <p class="cap rwhy">${ic('book')} Putting feelings into words can calm the brain's stress response (Lieberman et al., Psychological Science, 2007).</p>
       <div style="flex:1"></div>${nav('See my recap', 'r-finish')}`;
-  if (r.step === 4) {
+  if (r.step === 5) {
     const up = r.pre !== null && r.post !== null ? r.post - r.pre : null, heavy = r.post !== null && r.post <= 0 || (up !== null && up < 0);
     const wk = S.rituals.filter(x => x.d > dkey(new Date(Date.now() - 7 * 86400000))).length;
     const line = heavy ? "It's okay if today felt heavy. You still showed up for yourself, and that matters." : up > 0 ? 'You feel a little lighter than when you started. That\'s the breath and the words working.' : 'Steady is good. Small, regular moments like this add up over weeks.';
@@ -460,9 +466,11 @@ V.ritual = () => {
         ${r.feels.length ? `<span><span class="lbl muted">You named</span><br>${r.feels.map(f => `<span class="tag violet" style="margin:4px 4px 0 0">${f}</span>`).join('')}</span>` : ''}
         ${r.text ? `<span><span class="lbl muted">You wrote</span><br><span class="note" style="font-size:19px;color:var(--ink)">“${esc(r.text.slice(0, 140))}${r.text.length > 140 ? '…' : ''}”</span></span>` : ''}
         <span class="cap">${wk} ritual${wk === 1 ? '' : 's'} this week · saved only on this phone</span></div>
+      ${affirmCard(heavy)}
       <p class="note" style="font-size:20px;margin:0">${esc(R.close)} I'm here whenever you need me. · Dost</p>
       ${heavy ? `<button class="btn helpbtn block" data-a="help">${ic('phone')}Talk to someone now</button><button class="btn primary block" data-a="dost">Talk it through with Dost</button>`
-        : `<button class="btn primary block" data-a="tab" data-v="home">Back to Today</button><div class="row" style="gap:10px"><button class="btn soft" style="flex:1" data-a="dost">${ic('mic')}Talk to Dost</button><button class="btn helpbtn" style="flex:1" data-a="help">${ic('phone')}SOS</button></div>`}`;
+        : `<div class="row" style="gap:10px"><button class="btn soft" style="flex:1" data-a="dost">${ic('mic')}Talk to Dost</button><button class="btn helpbtn" style="flex:1" data-a="sos">${ic('phone')}SOS</button></div>`}
+      <button class="link" data-a="tab" data-v="home" style="justify-self:center">Done for today</button>`;
   }
   return `<div class="screen notab ritualscr tint-${R.tint}" style="gap:18px">${head}${body}</div>`;
 };
@@ -482,6 +490,134 @@ function runRitualBreath() {
   };
   const clock = setInterval(() => { const tm = document.getElementById('rtime'); if (!tm || !X.rb) return clearInterval(clock); const left = Math.max(0, total - Math.round((Date.now() - t0) / 1000)); tm.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')} left`; }, 1000);
   tick();
+}
+
+/* ---- Kind words to take away (fixed, written by people, not the AI) ---- */
+const AFFIRM = ['I am allowed to take things one step at a time.', 'I am doing better than I think I am.', 'Small steps still move me forward.', 'I can be gentle with myself today.', 'Rest is not a reward. It is something I need.', 'I have handled hard days before. I can handle this one.', 'My feelings make sense, and they will pass.', 'I showed up for myself today. That counts.'];
+const AFFIRM_HEAVY = ["It's okay to not be okay right now.", 'This feeling is real, and it will not last forever.', 'I do not have to fix everything tonight.', 'Asking for help is a strong thing to do.'];
+function affirmCard(heavy) {
+  const a = heavy ? AFFIRM_HEAVY : AFFIRM, i = ((X.af ?? doy()) % a.length + a.length) % a.length;
+  return `<div class="affirm"><span class="row between"><span class="lbl">Take this with you</span><button class="link" data-a="r-af" style="padding:0">Another one</button></span>
+    <p class="affirm-t" aria-live="polite">“${esc(a[i])}”</p>
+    <span class="cap">Read it slowly, twice. Being kind to yourself is linked to less anxiety and stress (MacBeth &amp; Gumley, Clinical Psychology Review, 2012).</span></div>`;
+}
+
+/* ---- Calming sounds, made in the browser (no audio files) ---- */
+const SOUNDS = { rain: { name: 'Soft rain', blurb: 'Steady rain on a window' }, ocean: { name: 'Ocean waves', blurb: 'Slow waves, about 6 a minute' }, hum: { name: 'Warm hum', blurb: 'A low, gentle tone' } };
+const SOUND_DAY = () => Object.keys(SOUNDS)[doy() % 3];
+let AC = null, SND = null;
+function noiseBuf(brown) {
+  const n = AC.sampleRate * 4, b = AC.createBuffer(1, n, AC.sampleRate), d = b.getChannelData(0); let last = 0;
+  for (let i = 0; i < n; i++) { const w = Math.random() * 2 - 1; if (brown) { last = (last + 0.02 * w) / 1.02; d[i] = last * 3.5; } else d[i] = w; }
+  return b;
+}
+function playSound(k) {
+  stopSound(true);
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  if (AC.state === 'suspended') AC.resume();
+  const t = AC.currentTime, out = AC.createGain(), nodes = [];
+  out.gain.setValueAtTime(0, t); out.gain.linearRampToValueAtTime(0.55, t + 2); out.connect(AC.destination);
+  const osc = (f, type = 'sine') => { const o = AC.createOscillator(); o.type = type; o.frequency.value = f; nodes.push(o); return o; };
+  if (k === 'hum') {
+    [[110, .16], [164.8, .09], [220, .05]].forEach(([f, v], i) => { const o = osc(f), g = AC.createGain(); g.gain.value = v; const l = osc(.12 + i * .05), lg = AC.createGain(); lg.gain.value = v * .5; l.connect(lg); lg.connect(g.gain); o.connect(g); g.connect(out); });
+  } else {
+    const src = AC.createBufferSource(); src.buffer = noiseBuf(k === 'ocean'); src.loop = true; nodes.push(src);
+    const lp = AC.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = k === 'ocean' ? 900 : 5200;
+    const hp = AC.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = k === 'ocean' ? 60 : 500;
+    const g = AC.createGain(); g.gain.value = k === 'ocean' ? .5 : .16;
+    src.connect(hp); hp.connect(lp); lp.connect(g); g.connect(out);
+    if (k === 'ocean') { const l = osc(.1), lg = AC.createGain(); lg.gain.value = .42; l.connect(lg); lg.connect(g.gain); }
+  }
+  nodes.forEach(n => n.start());
+  SND = { out, nodes, k };
+}
+function stopSound(now) {
+  if (!SND || !AC) return; const { out, nodes } = SND; SND = null; const t = AC.currentTime;
+  try { out.gain.cancelScheduledValues(t); out.gain.setValueAtTime(out.gain.value, t); out.gain.linearRampToValueAtTime(0, t + (now ? .2 : .8)); } catch (e) {}
+  setTimeout(() => { nodes.forEach(n => { try { n.stop(); } catch (e) {} }); out.disconnect(); }, now ? 250 : 900);
+}
+let LS = null;
+function runListen() {
+  if (LS) return; const t0 = Date.now() - (60 - (X.lsLeft ?? 60)) * 1000;
+  LS = setInterval(() => {
+    const el = document.getElementById('ltime');
+    if (!el || S.view !== 'ritual' || !X.ls) { clearInterval(LS); LS = null; return; }
+    const left = Math.max(0, 60 - Math.round((Date.now() - t0) / 1000)); X.lsLeft = left;
+    el.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+    if (!left) { clearInterval(LS); LS = null; X.ls = false; X.lsDone = true; stopSound(); render(); }
+  }, 1000);
+}
+
+/* ---- SOS: for the hardest moments. One calm screen, then a counsellor within 5 minutes ---- */
+const SOS_OPTS = [['heavy', 'Everything feels too heavy'], ['panic', "I can't calm down"], ['talk', 'I need to talk to someone, now'], ['harm', "I'm having thoughts of hurting myself"]];
+const SOS_STEPS = ['Finding a counsellor who is free right now', 'Sharing only what you chose', 'Ringing your counsellor'];
+const sosPill = () => `<button class="sospill" id="t-sos" data-a="sos" aria-label="SOS: talk to someone now"><i></i>SOS</button>`;
+V.sos = () => {
+  const s = X.sos || (X.sos = { picks: [], phase: S.params.now ? 'connect' : 'ask' });
+  const e = EXM.e3;
+  if (s.phase === 'ask') {
+    const harm = s.picks.includes('harm');
+    return `<div class="screen notab sosscr" style="gap:18px">
+      <div class="row between"><button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button><span class="lbl">SOS · private</span><span style="width:44px"></span></div>
+      <h1 class="sosbig">Some moments<br>are <span class="swash">too heavy</span><br>to hold alone.</h1>
+      <p class="lg" style="margin:0">A real counsellor can talk with you <b>in the next few minutes</b>. Free and private. ${esc(S.company)} never sees this.</p>
+      <div class="stack" style="gap:8px"><span class="lbl muted">Tap what feels true · optional</span>
+        ${SOS_OPTS.map(([k, l]) => `<button class="sosopt" data-a="sos-pick" data-v="${k}" aria-pressed="${s.picks.includes(k)}"><span class="sosck">${ic('check')}</span>${l}</button>`).join('')}</div>
+      ${harm ? `<div class="card tint-help stack" style="box-shadow:none;gap:8px"><b>Thank you for telling us. You matter.</b><span class="muted">If you might act on these thoughts, please call now. Someone will answer.</span>
+        <div class="row" style="gap:8px"><a class="btn helpbtn" style="flex:1;background:var(--surface-raised)" href="tel:112">${ic('phone')}Emergency 112</a><a class="btn helpbtn" style="flex:1;background:var(--surface-raised)" href="tel:14416">Tele-MANAS 14416</a></div></div>` : ''}
+      <div style="flex:1"></div>
+      <button class="btn sosgo block" data-a="sos-go">${ic('phone')}Talk now</button>
+      <p class="cap" style="text-align:center;margin:0">Prefer a helpline? <a href="tel:14416">Tele-MANAS 14416</a>, free, 24×7 · <a href="tel:112">Emergency 112</a></p>
+      <button class="link" data-a="back" style="justify-self:center">I'm okay for now</button></div>`;
+  }
+  if (s.phase === 'connect') return `<div class="screen notab sosscr" style="gap:16px">
+      <div class="row between"><span style="width:44px"></span><span class="lbl">Connecting you</span><span style="width:44px"></span></div>
+      <div class="ripple" aria-hidden="true"><i></i><i></i><i></i><span class="rcore"><b id="sospct">0</b><small>%</small></span></div>
+      <h1 class="sosbig" style="text-align:center;font-size:34px">Someone will be<br>with you <span class="swash">within<br>5 minutes.</span></h1>
+      <p class="note" style="text-align:center;font-size:20px;margin:0" id="sosnote">usually much sooner</p>
+      <ol class="sossteps">${SOS_STEPS.map((t, i) => `<li id="sosst${i}" class="${i === 0 ? 'now' : ''}"><span class="sosck">${ic('check')}</span>${t}</li>`).join('')}</ol>
+      <div class="card stack" style="box-shadow:none;background:var(--surface-raised);text-align:center;gap:4px"><span class="lbl muted">While you wait</span><b class="t2" id="sosbr">Breathe in slowly…</b></div>
+      <div style="flex:1"></div>
+      <p class="cap" style="text-align:center;margin:0">You can put the phone down. It will ring when they join.</p>
+      <button class="link" data-a="sos-cancel" style="justify-self:center">Cancel</button></div>`;
+  if (s.phase === 'here') return `<div class="screen notab sosscr" style="gap:16px;text-align:center">
+      <div class="row between"><span style="width:44px"></span><span class="lbl">Connected</span><span style="width:44px"></span></div>
+      <span class="sosface">${img(e)}</span>
+      <h1 class="sosbig" style="font-size:40px"><span class="swash">${esc(e.name.split(' ')[0])}</span> is here<br>for you.</h1>
+      <p class="muted" style="margin:0">${esc(e.title)} · ${e.yrs} years · ${esc(e.langs.join(', '))}</p>
+      <p class="lg" style="margin:0">Take your time. You can start with “I don’t know where to begin.”</p>
+      <div style="flex:1"></div>
+      <button class="btn sosgo block" data-a="sos-join">${ic('phone')}Join call</button>
+      <button class="link" data-a="sos-cancel" style="justify-self:center">Not now</button></div>`;
+  return `<div class="screen notab sosscr" style="gap:16px;text-align:center">
+      <div class="row between"><span style="width:44px"></span><span class="lbl">On call · private</span><span style="width:44px"></span></div>
+      <span class="sosface live">${img(e)}</span>
+      <h1 class="t1">${esc(e.name)}</h1><b class="t2" id="soscall">00:00</b>
+      <p class="note" style="font-size:20px;margin:0">you're doing the right thing</p>
+      <div style="flex:1"></div>
+      <button class="btn helpbtn block" data-a="sos-end">End call</button></div>`;
+};
+let SOST = null;
+function runSos() {
+  if (SOST) return; const s = X.sos, t0 = Date.now();
+  const brs = ['Breathe in slowly…', 'And out, even slower…'];
+  SOST = setInterval(() => {
+    if (S.view !== 'sos' || !X.sos || X.sos !== s) { clearInterval(SOST); SOST = null; return; }
+    const e = (Date.now() - t0) / 1000;
+    if (s.phase === 'connect') {
+      const pc = document.getElementById('sospct'); if (!pc) return;
+      const p = e >= 8.6 ? 100 : e >= 6.8 ? 99 : Math.min(98, Math.round(99 * (1 - Math.exp(-e / 1.9))));
+      pc.textContent = p;
+      const k = e < 2.6 ? 0 : e < 5 ? 1 : 2;
+      SOS_STEPS.forEach((_, i) => { const li = document.getElementById('sosst' + i); if (li) li.className = i < k ? 'ok' : i === k ? 'now' : ''; });
+      const nt = document.getElementById('sosnote'); if (nt) nt.textContent = p === 100 ? 'connected' : p >= 99 ? "just 1% away. they're picking up" : k === 2 ? 'ringing now' : 'usually much sooner';
+      const br = document.getElementById('sosbr'); if (br) br.textContent = brs[Math.floor(e / 4) % 2];
+      if (e >= 9.2) { s.phase = 'here'; clearInterval(SOST); SOST = null; render(); }
+    } else if (s.phase === 'call') {
+      const c = document.getElementById('soscall'); if (!c) return; const sec = Math.floor((Date.now() - s.c0) / 1000);
+      c.textContent = `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
+    } else { clearInterval(SOST); SOST = null; }
+  }, 200);
 }
 
 /* ---- Home ---- */
@@ -590,8 +726,7 @@ V.home = () => {
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
     <div class="dots" id="evdots" aria-hidden="true">${EVENTS.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div></section>
   ${ritualCard()}
-  <button class="card row" id="t-help" data-a="help" style="border:0;text-align:left"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span style="flex:1"><b>Need to talk now?</b><span class="cap" style="display:block">A counsellor is on call, 24×7.</span></span>${ic('chev', 'chev')}</button>
-</div>${tabbar()}`;
+</div>${sosPill()}${tabbar()}`;
 };
 function stepCard(s) {
   if (s.kind === 'ex') { const x = EX[s.id]; return `<div class="card row"><span class="dot tint-${x.tint}" style="width:52px;height:52px">${ic('play')}</span><div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="cap">${x.mins} min · ${esc(x.why)}</div></div><button class="btn primary sm" data-a="ex" data-v="${s.id}" data-step="${s.n}">Start</button></div>`; }
@@ -837,6 +972,10 @@ V.dost = () => {
 V.grow = () => {
   const care = [S.plan ? S.plan.ex : 'ex_box', 'ex_good', 'ex_ground', 'ex_478'].filter((v, i, a) => a.indexOf(v) === i);
   return `<div class="screen"><div><h1 class="t1">Grow</h1><p class="note">a little every day</p></div>
+    <section class="sec"><div class="sec-h"><h2 class="t2">Daily rituals</h2><span class="cap">about 5 min</span></div>
+      <div class="grid2">${['morning', 'evening'].map(k => { const R = R_SLOTS[k], dn = ritualDone(k); return `<button class="card stack tint-${R.tint}" style="border:0;text-align:left;gap:6px;box-shadow:none" data-a="ritual" data-v="${k}"><span class="row between"><span class="dot" style="background:var(--surface-raised)">${ic(R.icon)}</span>${dn ? `<span class="tag sage">${ic('check')}Done</span>` : ''}</span><b>${R.name}</b><span class="cap">Breathe · write · listen · feel</span></button>`; }).join('')}</div></section>
+    <section class="sec"><div class="sec-h"><h2 class="t2">Calming sounds</h2><span class="cap">tap to play</span></div>
+      <div class="list">${Object.entries(SOUNDS).map(([k, o]) => `<button class="li" data-a="g-snd" data-v="${k}" aria-pressed="${X.gs === k}"><span class="dot tint-violet">${X.gs === k ? `<span class="lwave mini on">${[0, 1, 2].map(j => `<i style="--k:${j}"></i>`).join('')}</span>` : ic('play')}</span><span class="grow"><b>${o.name}</b><span class="cap" style="display:block">${X.gs === k ? 'Playing · tap to stop' : o.blurb}</span></span></button>`).join('')}</div></section>
     <section class="sec"><div class="sec-h"><h2 class="t2">Today's care</h2><span class="cap">${Object.keys(S.doneToday).length} done</span></div>
       <div class="hscroll">${care.map((id, i) => actCard(id, S.plan && i === 0 ? 'From your plan' : '')).join('')}</div></section>
     <section class="sec"><h2 class="t2">7-day programs</h2><div class="list">${Object.entries(PG).map(([id, g]) => { const dn = S.pg[id] || 0; return `<button class="li" data-a="pg" data-v="${id}"><span class="dot tint-sage">${ic('grow')}</span><span class="grow"><b>${esc(g.name)}</b><span class="cap" style="display:block">${esc(g.blurb)}</span>${dn ? `<span class="bar" style="display:block;margin-top:8px"><i style="width:${dn / 7 * 100}%"></i></span>` : ''}</span><span class="cap">${dn ? dn + '/7' : '7 days'}</span>${ic('chev', 'chev')}</button>`; }).join('')}</div></section>
@@ -961,6 +1100,11 @@ function render() {
   if (S.view === 'deck') bindSwipe();
   if (S.view === 'intro') bindIntro();
   if (S.view === 'ritual' && X.rb) runRitualBreath();
+  if (!((S.view === 'ritual' && X.r && X.r.step === 3 && X.ls) || (S.view === 'grow' && X.gs))) stopSound();
+  if (S.view === 'ritual' && X.ls) runListen();
+  if (S.view === 'sos' && X.sos && ['connect', 'call'].includes(X.sos.phase)) runSos();
+  const hs = S.view === 'home' && $app.querySelector('.screen'), pill = document.getElementById('t-sos');
+  if (hs && pill) hs.onscroll = () => { pill.classList.add('tuck'); clearTimeout(hs._t); hs._t = setTimeout(() => pill.classList.remove('tuck'), 700); };
   drawTour();
   if (S.view === 'home') autoSlide(); else { clearInterval(EVT); EVT = null; }
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
@@ -1020,21 +1164,33 @@ $app.addEventListener('click', e => {
     case 'tour-skip': S.tour = null; save(); drawTour(); break;
     case 'tour-noop': break;
     case 'event': go('event', { id: v }); break;
-    case 'ritual': go('ritual'); break;
+    case 'ritual': go('ritual', v ? { slot: v } : {}); break;
+    case 'r-snd': X.snd = v; if (X.ls) playSound(v); render(); break;
+    case 'r-ls': X.ls = true; X.lsDone = false; X.lsLeft = X.lsLeft || 60; playSound(X.snd || SOUND_DAY()); render(); break;
+    case 'r-lsdone': X.ls = false; X.lsDone = true; stopSound(); render(); break;
+    case 'r-af': X.af = (X.af ?? doy()) + 1; render(); break;
+    case 'g-snd': if (X.gs === v) { X.gs = null; stopSound(); } else { X.gs = v; playSound(v); } X.keep = true; render(); break;
+    case 'sos': go('sos'); break;
+    case 'sos-pick': { const p = X.sos.picks; X.sos.picks = p.includes(v) ? p.filter(x => x !== v) : [...p, v]; render(); break; }
+    case 'sos-go': X.sos.phase = 'connect'; render(); break;
+    case 'sos-cancel': clearInterval(SOST); SOST = null; back(); toast("Okay. SOS is always here, any time."); break;
+    case 'sos-join': X.sos.phase = 'call'; X.sos.c0 = Date.now(); render(); break;
+    case 'sos-end': clearInterval(SOST); SOST = null; S.wins.push('Reached out for support'); go('home'); toast('Take care. We will check in on you tomorrow.'); break;
     case 'r-mood': X.r[a.dataset.k] = +v; render(); break;
     case 'r-next': { const r = X.r; const ta = document.getElementById('rtext'); if (ta) r.text = ta.value.trim();
       if (r.step === 1) { clearTimeout(RB); RB = null; X.rb = false; }
       if (r.step === 2 && r.text && RISK.test(r.text)) { sheet('help', { urgent: true }); }
-      r.step = Math.min(3, r.step + 1); render(); $app.querySelector('.screen').scrollTop = 0; break; }
-    case 'r-prev': { const r = X.r; const ta = document.getElementById('rtext'); if (ta) r.text = ta.value.trim(); if (r.step === 1) { clearTimeout(RB); RB = null; X.rb = false; } r.step = Math.max(0, r.step - 1); render(); break; }
+      if (r.step === 3) { X.ls = false; stopSound(); }
+      r.step = Math.min(4, r.step + 1); render(); $app.querySelector('.screen').scrollTop = 0; break; }
+    case 'r-prev': { const r = X.r; const ta = document.getElementById('rtext'); if (ta) r.text = ta.value.trim(); if (r.step === 1) { clearTimeout(RB); RB = null; X.rb = false; } if (r.step === 3) { X.ls = false; stopSound(); } r.step = Math.max(0, r.step - 1); render(); break; }
     case 'r-brun': X.rb = true; X.rbDone = false; render(); break;
     case 'r-bdone': clearTimeout(RB); RB = null; X.rb = false; X.rbDone = true; render(); break;
     case 'r-feel': { const f = X.r.feels; X.r.feels = f.includes(v) ? f.filter(x => x !== v) : f.length >= 3 ? f : [...f, v]; render(); break; }
-    case 'r-finish': { const r = X.r, today = dkey(new Date()), sl = ritualSlot();
+    case 'r-finish': { const r = X.r, today = dkey(new Date()), sl = S.params.slot || ritualSlot();
       S.rituals = S.rituals.filter(x => !(x.d === today && x.slot === sl)); S.rituals.push({ d: today, slot: sl, pre: r.pre, post: r.post, feels: r.feels, text: r.text });
       if (r.post !== null && moodDue()) { S.moods = S.moods.filter(m => m.d !== today); S.moods.push({ d: today, v: r.post, care: true }); S.lastCheck = Date.now(); }
       if (!S.doneToday.ritual) { S.doneToday.ritual = true; S.wins.push(`${R_SLOTS[sl].name} today`); }
-      save(); r.step = 4; render(); $app.querySelector('.screen').scrollTop = 0; break; }
+      save(); r.step = 5; render(); $app.querySelector('.screen').scrollTop = 0; break; }
     case 'notifs': go('notifs'); break;
     case 'notif': { const n = S.notifs.find(x => x.id === v); if (!n) break; n.read = true; save(); const [act, arg] = n.go;
       if (act === 'tab') { if (arg === 'experts') S.seg = 'mine'; go(arg); } else if (act === 'event') go('event', { id: arg }); else go(act); break; }
@@ -1061,8 +1217,8 @@ $app.addEventListener('click', e => {
     case 'per': X.per = v; render(); break;
     case 'mood-again': S.lastCheck = null; save(); toast('The check-in is back on Home.'); break;
     case 'help': sheet('help'); break;
-    case 'call': SHEET.calling = true; render(); break;
-    case 'talknow': sheet('help', { calling: true }); break;
+    case 'call': go('sos', { now: true }); break;
+    case 'talknow': go('sos', { now: true }); break;
     case 'close': case 'scrim': SHEET = null; render(); break;
     case 'toast': toast(v); break;
     case 'seg': S.seg = v; save(); if (S.view !== 'experts') go('experts'); else render(); break;
