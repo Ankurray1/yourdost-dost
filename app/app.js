@@ -1776,12 +1776,10 @@ V.post = () => {
 V.cnew = () => {
   const d = X.cn || (X.cn = { topic: null, ok: false, who: 'anon' });
   return `<div class="screen notab" style="gap:14px">${top('Share your story')}
-    <div class="stack" style="gap:8px"><span class="lbl">How should your name appear?</span>
-      <div class="seg" role="group" aria-label="Name shown"><button data-a="cn-who" data-v="anon" aria-pressed="${d.who !== 'name'}">Anonymous</button><button data-a="cn-who" data-v="name" aria-pressed="${d.who === 'name'}">First name · ${esc(S.name)}</button></div>
-      <div class="row" style="gap:10px">${d.who === 'name' ? avatarA(S.name, 3) : avatarA('Anonymous', 0)}<div><b>${d.who === 'name' ? esc(S.name) : 'Anonymous'}</b><div class="cap">${d.who === 'name' ? 'Only your first name. Colleagues might recognise your story.' : 'No name at all. Recommended if your story is personal.'}</div></div></div></div>
     <div class="stack" style="gap:8px"><span class="lbl">What is it about?</span><div class="row wrap" style="gap:6px">${C_TOPICS.slice(1).map(c => `<button class="chip" data-a="cn-topic" data-v="${c}" aria-pressed="${d.topic === c}">${c}</button>`).join('')}</div></div>
     <input id="cntitle" class="field" placeholder="A short title" maxlength="80" value="${esc(d.title || '')}">
     <textarea id="cnbody" class="field rtext" rows="7" placeholder="What happened, and what helped? Others will read this when they feel the same.">${esc(d.body || '')}</textarea>
+    <div class="row" style="gap:10px;align-items:center"><button class="toggle" role="switch" aria-checked="${d.who === 'name'}" data-a="cn-who" data-v="${d.who === 'name' ? 'anon' : 'name'}" aria-label="Share my first name"></button><span style="font:500 14px/20px var(--f-body)">Share my first name (${esc(S.name)})<span class="cap" style="display:block">Off: your story shows as Anonymous</span></span></div>
     <label class="row" style="gap:10px;align-items:flex-start"><button class="toggle" role="switch" aria-checked="${d.ok}" data-a="cn-ok" aria-label="I agree to the guidelines"></button><span class="cap" style="font-size:13px">No workplaces, other people's names or details that could identify anyone. No medical advice. I've read the <button class="link" data-a="sheet" data-v="cguide" style="padding:0">guidelines</button>.</span></label>
     <div style="flex:1"></div><button class="btn primary block" data-a="cn-post">${d.who === 'name' ? 'Post as ' + esc(S.name) : 'Post anonymously'}</button>
     <p class="cap" style="text-align:center;margin:0">A YourDOST moderator reviews every story, usually within an hour.</p></div>`;
