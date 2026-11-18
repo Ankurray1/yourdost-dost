@@ -1070,7 +1070,7 @@ function localTurn(s0, text) {
 }
 const decide = s => { const score = s.items.reduce((a, b) => a + (b ?? 0), 0); return { score, priority: s.safety === 'yes' || score >= 9 ? 'high' : score >= 6 ? 'medium' : 'low' }; };
 function dostStart() {
-  const hello = `Hi ${S.name}, I'm Dost. I'm not a doctor, just here to help you find the right support. It takes about two minutes. What's been on your mind lately?`;
+  const hello = `Hi ${S.name}, I'm YourDOST AI. I'm not a doctor, just here to help you find the right support. It takes about two minutes. What's been on your mind lately?`;
   X.d = { msgs: [{ role: 'assistant', content: hello }], st: blank(), chips: QQ.concern.chips, busy: false, done: false, live: null, closing: null };
   fetch(DOST_API).catch(() => {});
 }
@@ -1113,7 +1113,7 @@ V.dost = () => {
   if (!X.d) dostStart();
   const d = X.d, last = [...d.msgs].reverse().find(m => m.role === 'assistant');
   return `<div class="screen notab dostscr" style="gap:14px;padding-bottom:16px">
-    <div class="row between"><button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button><div style="text-align:center"><b>Dost</b><div class="cap">Your guide, not a doctor</div></div>
+    <div class="row between"><button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button><div style="text-align:center"><b>YourDOST AI</b><div class="cap">Your guide, not a doctor</div></div>
       <span class="tag ${d.live === false ? 'peach' : d.live ? 'sage' : ''}" style="min-width:44px;justify-content:center">${d.live === false ? 'Offline' : d.live ? 'AI live' : 'AI'}</span></div>
     <div class="orb ${d.busy ? 'busy' : ''}" style="width:150px;height:150px;flex:none" aria-hidden="true"></div>
     <div class="lbl" style="text-align:center;color:var(--violet-600)" aria-live="polite">${d.busy ? 'Thinking…' : d.done ? (d.res && d.res.priority === 'high' ? 'A person can help right now' : 'Here\'s your plan') : 'Type or tap an answer'}</div>
