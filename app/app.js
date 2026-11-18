@@ -739,75 +739,62 @@ function sessAt(b) {
 }
 const dayDiff = d => { const a = new Date(); a.setHours(0, 0, 0, 0); const b = new Date(d); b.setHours(0, 0, 0, 0); return Math.round((b - a) / 86400000); };
 function whenLabel(d) { const n = dayDiff(d); return n === 0 ? 'Today' : n === 1 ? 'Tomorrow' : n < 7 ? DAYS[d.getDay()] : dayLabel(d); }
-/* ---- Home "For you" stack: up to 3 cards picked for this person right now, most important first.
-   They flip like a calendar every 5 s (pauses when touched). A live/imminent session or a rough day pins itself.
-   Every card logs a view and a tap, so we can measure the Home card's action rate (the North Star for this slot). */
-function homeCards() {
-  const out = [], b = S.booked, e = b && EXM[b.id], at = sessAt(b), now = Date.now();
-  const tm = S.moods.find(m => m.d === dkey(new Date()));
-  // P1 · an upcoming session (commitment we must protect)
+/* ---- Home, two fixed-format slots ----
+   1 SPOTLIGHT (company-owned): one banner, same size always, rotates our launches and hot features.
+     Goal for the business: feature adoption and benefit usage (what renews a B2B contract).
+   2 REMINDERS (person-owned): compact bars, same height, swipe sideways. Only things *this* person must not miss.
+     Hidden when there is nothing to remind. Goal: session show-up, survey response, follow-through. */
+function spotItems() {
+  const out = [];
+  if (!S.dostUsed) out.push({ id: 'sp-dost', go: 'dost', v: '', theme: 'sp-glow', art: '<span class="orb sm sp-orb"></span>', k: 'Meet Dost', t: 'Not sure where to start?', s: 'A 2-minute voice chat finds the right help' });
+  if (!S.booked && S.sessionsLeft > 0) out.push({ id: 'sp-free', go: 'tab', v: 'experts', theme: 'sp-sun', art: `<span class="sp-ic">${ic('gift')}</span>`, k: `On ${esc(S.company)}`, t: `${S.sessionsLeft} free counselling sessions`, s: 'Private. Your employer never knows who uses it' });
+  out.push({ id: 'sp-games', go: 'go-games', v: '', theme: 'sp-ink', art: `<span class="sp-ic">${ic2('puzzle')}</span>`, k: 'New', t: 'Train your mind', s: '6 quick brain games, build a daily streak' });
+  out.push({ id: 'sp-sleep', go: 'pg', v: 'pg_sleep', theme: 'sp-violet', art: `<span class="sp-ic">${ic('moon')}</span>`, k: 'New program', t: 'Sleep Reset · 7 days', s: '10 minutes a night for calmer sleep' });
+  out.push({ id: 'sp-tests', go: 'go-tests', v: '', theme: 'sp-sage', art: `<span class="sp-ic">${ic2('clip')}</span>`, k: 'Check yourself', t: 'How anxious am I, really?', s: 'Clinically tested, 2 minutes, private' });
+  return out.slice(0, 4);
+}
+function remItems() {
+  const out = [], b = S.booked, e = b && EXM[b.id], at = sessAt(b), now = Date.now(), tm = S.moods.find(m => m.d === dkey(new Date()));
+  if (tm && tm.v <= 0) out.push({ id: 'rm-rough', icon: `<span class="rm-ic help">${ic('phone')}</span>`, t: 'Rough day? Talk to someone', s: 'A counsellor is free tonight', btn: 'Talk', a: 'tab', v: 'experts', urgent: true });
   if (e && at && at - now > -50 * 60000 && dayDiff(at) <= 7) {
     const mins = Math.round((at - now) / 60000), live = mins <= 10, inP = b.mode === 'In person';
-    const chip = live ? (mins > 0 ? `Starts in ${mins} min` : 'Happening now') : dayDiff(at) === 0 ? `Today · in ${mins >= 60 ? Math.round(mins / 60) + ' h' : mins + ' min'}` : `${whenLabel(at)} · ${b.time}`;
-    out.push({ id: 'session', pin: live, kick: 'Up next', chip, tint: 'sess', html: `<div class="row" style="gap:12px"><span class="nowav">${faceImg(e)}</span><div style="flex:1;min-width:0"><b class="t2" style="font-size:17px">Session ${b.n || 1} with ${esc(fnm(e.name))}</b><div class="cap">${esc(b.day)}, ${esc(b.time)} · ${inP ? 'In person' : esc(b.mode)} · 50 min</div><div class="cap" style="color:var(--violet-600)">${ic('pen')} Note one thing you'd like to talk about</div></div></div>
-      <div class="row" style="gap:8px">${inP ? `<button class="btn primary sm" style="flex:1" data-a="toast" data-v="Opening directions in Maps.">Directions</button>` : live ? `<button class="btn primary sm" style="flex:1" data-a="toast" data-v="Joining your session room…">${ic('video')}Join now</button>` : `<button class="btn primary sm" style="flex:1" data-a="toast" data-v="Added to your calendar. We'll remind you an hour before.">${ic('cal')}Add to calendar</button>`}<button class="btn soft sm" style="flex:1" data-a="tab" data-v="experts" data-seg="mine">Reschedule</button></div>` });
+    out.push({ id: 'rm-session', icon: `<span class="rm-av">${faceImg(e)}</span>`, t: `Session with ${fnm(e.name)}`, s: `${live ? (mins > 0 ? `Starts in ${mins} min` : 'Happening now') : whenLabel(at) + ', ' + b.time} · ${inP ? 'In person' : b.mode}`, btn: live ? (inP ? 'Directions' : 'Join') : 'Calendar', a: 'toast', v: live ? (inP ? 'Opening directions in Maps.' : 'Joining your session room…') : "Added to your calendar. We'll remind you an hour before.", urgent: live });
   }
-  // P1 · a rough day (safety first, pinned)
-  if (tm && tm.v <= 0) out.push({ id: 'rough', pin: true, kick: 'For you today', tint: 'soft', html: `<b class="t2" style="font-size:17px">Rough days are easier with someone to talk to.</b><span class="muted">A counsellor is free tonight, or start with Dost.</span>
-      <div class="row" style="gap:8px"><button class="btn primary sm" style="flex:1" data-a="tab" data-v="experts">Talk to a counsellor</button><button class="btn soft sm" style="flex:1" data-a="dost">${ic('mic')}Dost</button></div>` });
-  // P2 · just had a session: did you feel heard?
+  if (!S.surveyDone) out.push({ id: 'rm-survey', icon: `<span class="rm-ic violet">${ic('chat')}</span>`, t: 'Quick pulse survey', s: '3 questions · 1 minute · anonymous', btn: 'Start', a: 'survey-go', v: '' });
   const last = S.history[S.history.length - 1], ld = last && sessAt({ day: last.date, time: '6 pm' });
-  if (last && ld && dayDiff(ld) >= -2 && dayDiff(ld) <= 0 && !(S.fb || {})[last.n]) { const le = EXM[last.id];
-    out.push({ id: 'feedback', kick: 'How did it go?', chip: last.date, tint: '', html: `<div class="row" style="gap:12px"><span class="nowav">${faceImg(le)}</span><div style="flex:1"><b>Session ${last.n} with ${esc(fnm(le.name))}</b><div class="cap">Did you feel heard?</div></div></div>
-      <div class="row" style="gap:8px">${['Not really', 'Somewhat', 'Yes, a lot'].map((l, i) => `<button class="chip" style="flex:1;justify-content:center;padding:0 8px" data-a="sess-fb" data-v="${i}">${l}</button>`).join('')}</div>` }); }
-  // P2 · a step from the plan
-  const step = todayStep();
-  if (step) out.push({ id: 'plan', kick: "Today's one step", chip: `Step ${step.n} of ${S.plan.steps.length}`, tint: 'bare', html: stepCard(step) });
-  // P3 · activation: never talked to Dost
-  if (!S.dostUsed) out.push({ id: 'dost', kick: 'Start here', chip: '2 minutes', tint: 'glow', html: `<button class="row" data-a="dost" style="border:0;background:none;padding:0;text-align:left;gap:14px;color:inherit"><span class="orb sm" style="flex:none;width:60px;height:60px"></span><span class="stack" style="gap:4px"><b>Not sure where to start?</b><span class="cap">Talk to Dost for 2 minutes. It finds the right support for you.</span></span></button>` });
-  // P3 · never booked: make the free benefit visible
-  if (!b && !S.history.length) out.push({ id: 'free', kick: 'Your benefit', tint: 'soft', html: `<div class="row" style="gap:12px"><span class="dot" style="background:var(--surface-raised);width:48px;height:48px">${ic('gift')}</span><div style="flex:1"><b>You have ${S.sessionsLeft} free sessions</b><div class="cap">Covered by ${esc(S.company)}. They never know who uses it.</div></div><button class="btn primary sm" data-a="tab" data-v="experts">Find</button></div>` });
-  // P3 · a check-in is due
+  if (last && ld && dayDiff(ld) >= -2 && dayDiff(ld) <= 0 && !(S.fb || {})[last.n]) out.push({ id: 'rm-feedback', icon: `<span class="rm-av">${faceImg(EXM[last.id])}</span>`, t: `How was session ${last.n}?`, s: `With ${fnm(EXM[last.id].name)} · did you feel heard?`, btn: 'Rate', a: 'sheet', v: 'sessfb' });
+  const step = todayStep(); if (step) { const nm = step.kind === 'ex' ? EX[step.id].name : step.kind === 'pg' ? PG[step.id].name : 'Book ' + fnm(EXM[step.id].name);
+    out.push({ id: 'rm-plan', icon: `<span class="rm-ic sun">${ic('grow')}</span>`, t: `Plan step ${step.n}: ${nm}`, s: 'From your Dost plan', btn: 'Start', a: step.kind === 'ex' ? 'ex' : step.kind === 'pg' ? 'pg' : 'tab', v: step.kind === 'book' ? 'experts' : step.id }); }
   const lt = Object.values(S.tests || {}).flat().map(x => x.d).sort().pop();
-  if (!lt || dayDiff(new Date(lt + 'T12:00')) <= -14) out.push({ id: 'checkin', kick: 'Check in', chip: '2 min', tint: 'soft', html: `<button class="row" data-a="go-tests" style="border:0;background:none;padding:0;text-align:left;gap:12px;color:inherit;width:100%"><span class="dot" style="background:var(--surface-raised);width:48px;height:48px">${ic2('clip')}</span><div style="flex:1"><b>How are you really doing?</b><div class="cap">${lt ? 'It has been 2 weeks. See what changed.' : 'A short, clinical check. Private to you.'}</div></div>${ic('chev', 'chev')}</button>` });
-  // P4 · fillers so the slot is never empty: the next event, then a short read
-  const ev = EVENTS.find(x => !S.regs.includes(x.id) && new Date(x.date[0], x.date[1], x.date[2]) >= new Date(new Date().setHours(0, 0, 0, 0)));
-  if (ev) out.push({ id: 'event', kick: 'Coming up', chip: evWhen(ev).split(' · ')[0], tint: 'soft', html: `<button class="row" data-a="event" data-v="${ev.id}" style="border:0;background:none;padding:0;text-align:left;gap:12px;color:inherit;width:100%"><span class="dot" style="background:var(--surface-raised);width:48px;height:48px">${ic('people')}</span><div style="flex:1"><b>${esc(ev.a + ' ' + ev.b)}</b><div class="cap">${esc(ev.kicker)} · free, online</div></div><span class="btn primary sm">Join</span></button>` });
-  const ar = Object.keys(ARTS).find(k => !S.reads.includes(k));
-  if (ar) out.push({ id: 'read', kick: '3-minute read', tint: 'soft', html: `<button class="row" data-a="art" data-v="${ar}" style="border:0;background:none;padding:0;text-align:left;gap:12px;color:inherit;width:100%"><span class="dot" style="background:var(--surface-raised);width:48px;height:48px">${ic('book')}</span><div style="flex:1"><b>${esc(ARTS[ar].t)}</b><div class="cap">${ARTS[ar].tag} · ${ARTS[ar].mins} min</div></div>${ic('chev', 'chev')}</button>` });
-  const pinned = out.filter(c => c.pin);
-  return (pinned.length ? [...pinned, ...out.filter(c => !c.pin)] : out).slice(0, 3);
+  if (lt && dayDiff(new Date(lt + 'T12:00')) <= -14) out.push({ id: 'rm-checkin', icon: `<span class="rm-ic sage">${ic2('clip')}</span>`, t: 'Check-in due', s: '2 weeks since your last one', btn: 'Start', a: 'go-tests', v: '' });
+  return [...out.filter(x => x.urgent), ...out.filter(x => !x.urgent)];
 }
 function homeNow() {
-  const cards = homeCards(); if (!cards.length) return '';
-  const i = Math.min(X.ni || 0, cards.length - 1);
-  return `<section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">For you today</h2>${cards.length > 1 ? `<span class="ndots">${cards.map((_, k) => `<button class="${k === i ? 'on' : ''}" data-a="nflip" data-v="${k}" aria-label="Card ${k + 1} of ${cards.length}"></button>`).join('')}</span>` : ''}</div>
-    <div class="nstack" id="nstack">${cards.map((c, k) => `<div class="nc nowcard ${c.tint || ''} ${k === i ? 'on' : ''}" data-nid="${c.id}" aria-hidden="${k !== i}">
-      <div class="row between"><span class="nkick">${esc(c.kick)}</span>${c.chip ? `<span class="tag ${c.id === 'session' ? 'violet' : ''}" style="background:var(--surface-raised)">${esc(c.chip)}</span>` : ''}</div><div class="nbody">${c.html}</div></div>`).join('')}</div></section>`;
+  const sp = spotItems(), rm = remItems(), si = (X.spi || 0) % Math.max(1, sp.length);
+  return `${sp.length ? `<section class="spot" id="t-step" aria-label="Spotlight"><div class="sptrack" id="sptrack" style="transform:translateX(-${si * 100}%)">${sp.map(p => `<button class="spcard ${p.theme}" data-a="${p.go}" data-v="${p.v}" data-nid="${p.id}">${p.art}<span class="sptxt"><span class="spk">${p.k}</span><b>${p.t}</b><span class="sps">${p.s}</span></span><span class="spgo">${ic('chev')}</span></button>`).join('')}</div>
+      ${sp.length > 1 ? `<div class="spdots">${sp.map((_, k) => `<i class="${k === si ? 'on' : ''}"></i>`).join('')}</div>` : ''}</section>` : ''}
+    ${rm.length ? `<section class="sec" style="gap:10px"><div class="sec-h"><h2 class="t2">Reminders</h2><span class="cap">${rm.length > 1 ? `${rm.length} · swipe` : '1'}</span></div>
+      <div class="rmrow ${rm.length === 1 ? 'one' : ''}">${rm.map(r => `<div class="rmbar ${r.urgent ? 'urgent' : ''}" data-nid="${r.id}">${r.icon}<span class="rmtxt"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></span><button class="btn sm ${r.urgent ? 'primary' : 'soft'}" data-a="${r.a}" data-v="${esc(r.v)}">${r.btn}</button></div>`).join('')}</div></section>` : ''}`;
 }
 let NFT = null;
 function nstat(id, k) { S.nstats = S.nstats || {}; const r = S.nstats[id] || (S.nstats[id] = { seen: 0, tap: 0 }); r[k]++; }
 function runNow() {
   clearInterval(NFT); NFT = null;
-  const st = document.getElementById('nstack'); if (!st || S.view !== 'home') return;
-  const cards = [...st.children]; if (!cards.length) return;
-  const seen = X.nseen || (X.nseen = {}); const mark = el => { const id = el.dataset.nid; if (!seen[id]) { seen[id] = 1; nstat(id, 'seen'); save(); } };
-  mark(cards[Math.min(X.ni || 0, cards.length - 1)]);
-  if (cards.length < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  let hold = 0; st.onpointerdown = () => { hold = Date.now(); };
-  NFT = setInterval(() => {
-    if (!document.body.contains(st) || (S.tour !== null && S.tour !== undefined) || SHEET) return;
-    if (Date.now() - hold < 7000) return;
-    flipTo(((X.ni || 0) + 1) % cards.length);
-  }, 5000);
+  const seen = X.nseen || (X.nseen = {}), mark = id => { if (id && !seen[id]) { seen[id] = 1; nstat(id, 'seen'); save(); } };
+  document.querySelectorAll('.rmbar').forEach(r => mark(r.dataset.nid));
+  const tr = document.getElementById('sptrack'); if (!tr) return; const n = tr.children.length;
+  mark(tr.children[(X.spi || 0) % n].dataset.nid);
+  if (n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let hold = 0, x0 = null; const sp = tr.parentElement;
+  sp.onpointerdown = ev => { hold = Date.now(); x0 = ev.clientX; };
+  sp.onpointerup = ev => { if (x0 === null) return; const dx = ev.clientX - x0; x0 = null; if (Math.abs(dx) > 40) { spGo(((X.spi || 0) + (dx < 0 ? 1 : -1) + n) % n); sp._drag = true; setTimeout(() => { sp._drag = false; }, 50); } };
+  sp.addEventListener('click', ev => { if (sp._drag) { ev.stopPropagation(); ev.preventDefault(); } }, true);
+  NFT = setInterval(() => { if (!document.body.contains(tr) || (S.tour !== null && S.tour !== undefined) || SHEET || Date.now() - hold < 7000) return; spGo(((X.spi || 0) + 1) % n); }, 5000);
 }
-function flipTo(n) {
-  const st = document.getElementById('nstack'); if (!st) return; const cards = [...st.children], cur = Math.min(X.ni || 0, cards.length - 1); if (n === cur) return;
-  cards[cur].classList.remove('on'); cards[cur].classList.add('out'); cards[cur].setAttribute('aria-hidden', 'true');
-  setTimeout(() => cards[cur] && cards[cur].classList.remove('out'), 650);
-  cards[n].classList.add('on'); cards[n].setAttribute('aria-hidden', 'false'); X.ni = n;
-  document.querySelectorAll('.ndots button').forEach((d, k) => d.classList.toggle('on', k === n));
-  const seen = X.nseen || (X.nseen = {}), id = cards[n].dataset.nid; if (!seen[id]) { seen[id] = 1; nstat(id, 'seen'); save(); }
+function spGo(k) {
+  const tr = document.getElementById('sptrack'); if (!tr) return; X.spi = k; tr.style.transform = `translateX(-${k * 100}%)`;
+  document.querySelectorAll('.spdots i').forEach((d, j) => d.classList.toggle('on', j === k));
+  const id = tr.children[k].dataset.nid, seen = X.nseen || (X.nseen = {}); if (!seen[id]) { seen[id] = 1; nstat(id, 'seen'); save(); }
 }
 
 /* prototype: preview Home in each state */
@@ -816,7 +803,7 @@ function setHomeState(k) {
   const t = new Date(), tm = new Date(Date.now() + 8 * 60000), tom = new Date(); tom.setDate(tom.getDate() + 1);
   const lbl = d => `${DAYS[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`, hm = d => { let h = d.getHours() % 12 || 12; const m = d.getMinutes(); return `${h}${m ? ':' + String(m).padStart(2, '0') : ''} ${d.getHours() < 12 ? 'am' : 'pm'}`; };
   const yest = new Date(); yest.setDate(yest.getDate() - 1);
-  const base = fresh(); S.fb = k === 'after' ? {} : { 1: 2, 2: 2 }; S.moods = S.moods.filter(m => m.d !== dkey(t)); S.lastCheck = Date.now(); S.plan = null; S.dostUsed = true;
+  const base = fresh(); S.fb = k === 'after' ? {} : { 1: 2, 2: 2 }; S.surveyDone = !['new', 'booked'].includes(k); S.moods = S.moods.filter(m => m.d !== dkey(t)); S.lastCheck = Date.now(); S.plan = null; S.dostUsed = true;
   S.history = base.history; S.booked = null; S.tests = {};
   if (k === 'new') { S.history = []; S.dostUsed = false; }
   if (k === 'booked') S.booked = { id: 'e1', day: lbl(tom), time: '6 pm', mode: 'Video', n: 3 };
@@ -1196,7 +1183,7 @@ V.me = () => {
       <button class="li" data-a="help"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Get help now</b></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="tour-again"><span class="dot tint-sun">${ic('spark')}</span><span class="grow"><b>Take the app tour again</b><span class="cap" style="display:block">A quick guide to every feature</span></span>${ic('chev', 'chev')}</button>
       <div class="li" style="display:grid;gap:8px"><span><b>Prototype: preview Home as…</b><span class="cap" style="display:block">The top card on Home changes with each person's situation</span></span><div class="row wrap" style="gap:6px">${HOME_STATES.map(([k, l]) => `<button class="chip" style="min-height:34px;font-size:13px" data-a="home-state" data-v="${k}">${l}</button>`).join('')}</div></div>
-      <div class="li" style="display:grid;gap:8px"><span class="row between"><b>Prototype: “For you today” performance</b><button class="link" data-a="nstats-reset" style="padding:0">Reset</button></span>
+      <div class="li" style="display:grid;gap:8px"><span class="row between"><b>Prototype: Spotlight &amp; Reminders performance</b><button class="link" data-a="nstats-reset" style="padding:0">Reset</button></span>
         <span class="cap">Views and taps on this phone. Action rate = taps ÷ views.</span>
         <div class="nperf">${Object.entries(S.nstats || {}).length ? Object.entries(S.nstats).map(([k, r]) => `<span>${esc(k)}</span><span>${r.seen} views</span><span>${r.tap} taps</span><b>${r.seen ? Math.round(r.tap / r.seen * 100) : 0}%</b>`).join('') : '<span class="cap" style="grid-column:1/-1">No data yet. Open Home and tap a card.</span>'}</div></div>
       <button class="li" data-a="restart"><span class="dot" style="background:var(--surface-sunken)">${ic('back')}</span><span class="grow"><b>Prototype: start over</b><span class="cap" style="display:block">Replays onboarding and clears this demo</span></span></button>
@@ -1213,6 +1200,9 @@ function sheetHTML() {
     <div class="list"><div class="li"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Tele-MANAS · 14416</b><span class="cap" style="display:block">Free, 24×7, in your language</span></span></div>
       <div class="li"><span class="dot tint-help" style="color:var(--help-600)">${ic('shield')}</span><span class="grow"><b>Emergency · 112</b><span class="cap" style="display:block">If you're in danger right now</span></span></div></div>
     <button class="btn ghost block" data-a="close">I'm safe for now</button>`;
+  if (s.name === 'sessfb') { const last = S.history[S.history.length - 1], le = EXM[last.id];
+    body = `<div class="row"><span class="nowav">${faceImg(le)}</span><div><h2 class="t2">Session ${last.n} with ${esc(fnm(le.name))}</h2><span class="cap">${esc(last.date)}</span></div></div><h2 class="t1">Did you feel heard?</h2>
+      <div class="stack" style="gap:8px">${['Not really', 'Somewhat', 'Yes, a lot'].map((l, i) => `<button class="qopt" data-a="sess-fb" data-v="${i}">${l}</button>`).join('')}</div><span class="cap">Only you and YourDOST see this. If it wasn't a good fit, we'll help you find someone else.</span>`; }
   if (s.name === 'hconnect') { const h = HAPPS.find(x => x[0] === s.k);
     body = `<div class="row"><span class="happ" style="background:${h[3]}">${esc(h[1][0])}</span><h2 class="t1">Connect ${esc(h[1])}</h2></div>
       <p class="muted" style="margin:0">YourDOST will read this data once a day. We never write to ${esc(h[1])}, and ${esc(S.company)} never sees it.</p>
@@ -1704,9 +1694,9 @@ $app.addEventListener('click', e => {
   if (act === 'scrim' && e.target !== a) return;
   switch (act) {
     case 'go-tests': go('tests'); break;
-    case 'sess-fb': { const last = S.history[S.history.length - 1]; S.fb = S.fb || {}; S.fb[last.n] = +v; save(); toast(+v === 0 ? 'Thanks for telling us. You can try someone else, no awkwardness.' : 'Thanks. We\'ll share this with your counsellor.'); if (+v === 0) { S.seg = 'browse'; go('experts'); } else render(); break; }
+    case 'sess-fb': { const last = S.history[S.history.length - 1]; S.fb = S.fb || {}; S.fb[last.n] = +v; SHEET = null; save(); toast(+v === 0 ? 'Thanks for telling us. You can try someone else, no awkwardness.' : 'Thanks. We\'ll share this with your counsellor.'); if (+v === 0) { S.seg = 'browse'; go('experts'); } else render(); break; }
     case 'home-state': setHomeState(v); break;
-    case 'nflip': flipTo(+v); break;
+    case 'survey-go': X.sv = []; go('survey'); break;
     case 'nstats-reset': S.nstats = {}; save(); render(); break;
     case 'go-acts': go('acts'); break;
     case 'go-read': go('read'); break;
