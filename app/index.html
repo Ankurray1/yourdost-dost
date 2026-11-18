@@ -679,11 +679,20 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .sp-ink .sp-ic{background:rgba(255,255,255,.12);color:#FFD225}
 .orb.sm.sp-orb{width:56px;height:56px;flex:none;box-shadow:inset 0 -6px 12px rgba(107,79,176,.22),inset 0 5px 10px #FFFFFF,0 0 0 5px color-mix(in srgb,var(--violet-100) 60%,transparent)}
 .sptxt{flex:1;min-width:0;display:grid;gap:1px}
-.spk{font:600 11px/14px var(--f-body);letter-spacing:.6px;text-transform:uppercase;color:var(--violet-600)}
-.sp-ink .spk{color:#FFD225}
+.spkick{font:600 11px/14px var(--f-body);letter-spacing:.6px;text-transform:uppercase;color:var(--violet-600)}
+.sp-ink .spkick{color:#FFD225}
 .sptxt b{font:600 16px/21px var(--f-display);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .sps{font:500 12px/16px var(--f-body);opacity:.75;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .spgo{opacity:.45;flex:none}
+.spot{transition:opacity .26s ease}
+.spot.fade{opacity:0}
+.spcard.enter .spkick,.spcard.enter .sptxt b,.spcard.enter .sps{animation:sprise .5s cubic-bezier(.2,.8,.2,1) both}
+.spcard.enter .sptxt b{animation-delay:.07s}
+.spcard.enter .sps{animation-delay:.14s}
+.spcard.enter .sp-ic,.spcard.enter .sp-orb{animation:sppop .55s cubic-bezier(.2,.9,.3,1.3) both}
+@keyframes sprise{from{opacity:0;transform:translateY(8px)}}
+@keyframes sppop{from{opacity:0;transform:scale(.8)}}
+@media (prefers-reduced-motion:reduce){.spcard.enter *{animation:none!important}}
 .spdots{position:absolute;right:16px;top:12px;display:flex;gap:4px;pointer-events:none}
 .spdots i{width:5px;height:5px;border-radius:3px;background:currentColor;opacity:.25;transition:width .3s,opacity .3s;color:var(--ink)}
 .spdots i.on{width:12px;opacity:.7}

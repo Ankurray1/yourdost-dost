@@ -746,7 +746,7 @@ function whenLabel(d) { const n = dayDiff(d); return n === 0 ? 'Today' : n === 1
      Hidden when there is nothing to remind. Goal: session show-up, survey response, follow-through. */
 function spotItems() {
   const out = [];
-  out.push({ id: 'sp-voice', go: 'dost', v: '', theme: 'sp-glow', art: '<span class="orb sm sp-orb"></span>', k: '✦ New release', t: 'Just talk to Dost', s: 'Voice chat in your language · try 2 minutes' });
+  out.push({ id: 'sp-voice', go: 'dost', v: '', theme: 'sp-glow', art: '<span class="orb sm sp-orb"></span>', k: '✦ New release', t: 'Talk to your Dost', s: 'Voice chat in your language · try 2 minutes' });
   if (!S.booked && S.sessionsLeft > 0) out.push({ id: 'sp-free', go: 'tab', v: 'experts', theme: 'sp-sun', art: `<span class="sp-ic">${ic('gift')}</span>`, k: `On ${esc(S.company)}`, t: `${S.sessionsLeft} free counselling sessions`, s: 'Private. Your employer never knows who uses it' });
   out.push({ id: 'sp-games', go: 'go-games', v: '', theme: 'sp-ink', art: `<span class="sp-ic">${ic2('puzzle')}</span>`, k: 'New', t: 'Train your mind', s: '6 quick brain games, build a daily streak' });
   out.push({ id: 'sp-sleep', go: 'pg', v: 'pg_sleep', theme: 'sp-violet', art: `<span class="sp-ic">${ic('moon')}</span>`, k: 'New program', t: 'Sleep Reset · 7 days', s: '10 minutes a night for calmer sleep' });
@@ -771,7 +771,7 @@ function remItems() {
 }
 function homeNow() {
   const sp = spotItems(), rm = remItems(), si = (X.spi || 0) % Math.max(1, sp.length);
-  return `${sp.length ? `<section class="spot" id="t-step" aria-label="Spotlight"><div class="sptrack" id="sptrack" style="transform:translateX(-${si * 100}%)">${sp.map(p => `<button class="spcard ${p.theme}" data-a="${p.go}" data-v="${p.v}" data-nid="${p.id}">${p.art}<span class="sptxt"><span class="spk">${p.k}</span><b>${p.t}</b><span class="sps">${p.s}</span></span><span class="spgo">${ic('chev')}</span></button>`).join('')}</div>
+  return `${sp.length ? `<section class="spot" id="t-step" aria-label="Spotlight"><div class="sptrack" id="sptrack" style="transform:translateX(-${si * 100}%)">${sp.map(p => `<button class="spcard ${p.theme}" data-a="${p.go}" data-v="${p.v}" data-nid="${p.id}">${p.art}<span class="sptxt"><span class="spkick">${p.k}</span><b>${p.t}</b><span class="sps">${p.s}</span></span></button>`).join('')}</div>
       ${sp.length > 1 ? `<div class="spdots">${sp.map((_, k) => `<i class="${k === si ? 'on' : ''}"></i>`).join('')}</div>` : ''}</section>` : ''}
     ${rm.length ? `<section class="sec" style="gap:10px"><div class="sec-h"><h2 class="t2">Reminders</h2><span class="cap">${rm.length > 1 ? `${rm.length} · swipe` : '1'}</span></div>
       <div class="rmrow ${rm.length === 1 ? 'one' : ''}">${rm.map(r => `<div class="rmbar ${r.urgent ? 'urgent' : ''}" data-nid="${r.id}">${r.icon}<span class="rmtxt"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></span><button class="btn sm ${r.urgent ? 'primary' : 'soft'}" data-a="${r.a}" data-v="${esc(r.v)}">${r.btn}</button></div>`).join('')}</div></section>` : ''}`;
@@ -794,7 +794,7 @@ function runNow() {
     const w = sp.getBoundingClientRect().width, cur = X.spi || 0; spGo(Math.abs(d.dx) > w * 0.18 ? (cur + (d.dx < 0 ? 1 : -1) + n) % n : cur); };
   sp.onpointerup = end; sp.onpointercancel = end; sp.onpointerleave = ev => { if (drag && !drag.on) drag = null; };
   sp.addEventListener('click', ev => { if (sp._drag) { ev.stopPropagation(); ev.preventDefault(); } }, true);
-  NFT = setInterval(() => { if (!document.body.contains(tr) || (S.tour !== null && S.tour !== undefined) || SHEET || Date.now() - hold < 7000) return; spGo(((X.spi || 0) + 1) % n); }, 5000);
+  NFT = setInterval(() => { if (!document.body.contains(tr) || (S.tour !== null && S.tour !== undefined) || SHEET || Date.now() - hold < 7000) return; spSoft(((X.spi || 0) + 1) % n); }, 5000);
 }
 function dragScroll(el) {
   if (!el || el._ds) return; el._ds = true; let d = null;
@@ -804,8 +804,14 @@ function dragScroll(el) {
   el.addEventListener('pointerup', end); el.addEventListener('pointerleave', end);
   el.addEventListener('click', ev => { if (el._nc) { ev.stopPropagation(); ev.preventDefault(); } }, true);
 }
+function spSoft(k) { // auto-advance: fade, swap, then the text rises in
+  const tr = document.getElementById('sptrack'); if (!tr) return; const sp = tr.parentElement;
+  sp.classList.add('fade');
+  setTimeout(() => { if (!document.body.contains(tr)) return; tr.style.transition = 'none'; spGo(k); void tr.offsetWidth; tr.style.transition = ''; sp.classList.remove('fade'); }, 260);
+}
 function spGo(k) {
   const tr = document.getElementById('sptrack'); if (!tr) return; X.spi = k; tr.style.transform = `translateX(-${k * 100}%)`;
+  [...tr.children].forEach((c, j) => { c.classList.remove('enter'); if (j === k) { void c.offsetWidth; c.classList.add('enter'); } });
   document.querySelectorAll('.spdots i').forEach((d, j) => d.classList.toggle('on', j === k));
   const id = tr.children[k].dataset.nid, seen = X.nseen || (X.nseen = {}); if (!seen[id]) { seen[id] = 1; nstat(id, 'seen'); save(); }
 }
