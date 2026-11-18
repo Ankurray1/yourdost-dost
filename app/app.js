@@ -1779,10 +1779,9 @@ V.cnew = () => {
     <div class="stack" style="gap:8px"><span class="lbl">What is it about?</span><div class="row wrap" style="gap:6px">${C_TOPICS.slice(1).map(c => `<button class="chip" data-a="cn-topic" data-v="${c}" aria-pressed="${d.topic === c}">${c}</button>`).join('')}</div></div>
     <input id="cntitle" class="field" placeholder="A short title" maxlength="80" value="${esc(d.title || '')}">
     <textarea id="cnbody" class="field rtext" rows="7" placeholder="What happened, and what helped? Others will read this when they feel the same.">${esc(d.body || '')}</textarea>
-    <div class="row" style="gap:10px;align-items:center"><button class="toggle" role="switch" aria-checked="${d.who === 'name'}" data-a="cn-who" data-v="${d.who === 'name' ? 'anon' : 'name'}" aria-label="Share my first name"></button><span style="font:500 14px/20px var(--f-body)">Share my first name (${esc(S.name)})<span class="cap" style="display:block">Off: your story shows as Anonymous</span></span></div>
-    <label class="row" style="gap:10px;align-items:flex-start"><button class="toggle" role="switch" aria-checked="${d.ok}" data-a="cn-ok" aria-label="I agree to the guidelines"></button><span class="cap" style="font-size:13px">No workplaces, other people's names or details that could identify anyone. No medical advice. I've read the <button class="link" data-a="sheet" data-v="cguide" style="padding:0">guidelines</button>.</span></label>
+    <div class="row" style="gap:10px;align-items:center"><button class="toggle" role="switch" aria-checked="${d.who === 'name'}" data-a="cn-who" data-v="${d.who === 'name' ? 'anon' : 'name'}" aria-label="Share my identity"></button><span style="font:500 15px/20px var(--f-body)">Share my identity</span></div>
     <div style="flex:1"></div><button class="btn primary block" data-a="cn-post">${d.who === 'name' ? 'Post as ' + esc(S.name) : 'Post anonymously'}</button>
-    <p class="cap" style="text-align:center;margin:0">A YourDOST moderator reviews every story, usually within an hour.</p></div>`;
+    <p class="cap" style="text-align:center;margin:0">Reviewed by YourDOST before it goes live · <button class="link" data-a="sheet" data-v="cguide" style="padding:0;font-size:12px">Guidelines</button></p></div>`;
 };
 function cnKeep() { const d = X.cn; if (!d) return; const t = document.getElementById('cntitle'), b = document.getElementById('cnbody'); if (t) d.title = t.value; if (b) d.body = b.value; }
 
@@ -1812,7 +1811,6 @@ $app.addEventListener('click', e => {
     case 'cn-post': { cnKeep(); const d = X.cn, body = (d.body || '').trim(), title = (d.title || '').trim();
       if (!d.topic) { toast('Pick what your story is about.'); break; }
       if (body.length < 30) { toast('Write a little more so others can relate.'); break; }
-      if (!d.ok) { toast('Please agree to the guidelines first.'); break; }
       if (RISK.test(title + ' ' + body)) { sheet('help', { urgent: true }); toast("We've kept your story private. Someone can talk with you right now."); break; }
       const id = 'm' + Date.now(); S.myPosts.unshift({ id, a: d.who === 'name' ? S.name : 'Anonymous', c: 3, topic: d.topic, ago: 'Just now', title: title || 'My story', body, relate: 0, strength: 0, comments: [], mine: true, live: false });
       if (!S.doneToday.story) { S.doneToday.story = true; S.wins.push('Shared your story'); }
