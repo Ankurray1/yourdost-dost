@@ -98,7 +98,9 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .tag.sage{background:var(--sage-100);color:var(--sage-600)}
 .tag.violet{background:var(--violet-100);color:var(--violet-600)}
 .avatar{width:44px;height:44px;border-radius:50%;background:var(--violet-200);color:var(--violet-600);display:grid;place-items:center;font:600 16px/1 var(--f-display);flex:none}
-.hscroll{display:flex;gap:12px;overflow-x:auto;margin:0 -16px;padding:4px 16px 8px;scroll-snap-type:x mandatory}
+.hscroll{display:flex;gap:12px;overflow-x:auto;margin:0 -16px;padding:4px 16px 8px;scroll-snap-type:x mandatory;scroll-padding-inline:16px}
+.hscroll::after,.rmrow::after,.fstrip::after{content:"";flex:0 0 4px}
+.hscroll,.rmrow,.fstrip{-webkit-mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%);mask-image:linear-gradient(90deg,transparent 0,#000 14px,#000 calc(100% - 14px),transparent 100%)}
 .hscroll>*{scroll-snap-align:start;flex:none}
 .hscroll::-webkit-scrollbar{display:none}
 .list{background:var(--surface-raised);border-radius:var(--r-md);box-shadow:var(--shadow-card);overflow:hidden}
@@ -626,7 +628,7 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .plang em{font-style:normal;color:var(--ink-soft)}
 .prate{position:absolute;top:12px;right:12px;display:inline-flex;align-items:center;gap:3px;font:600 12px/1 var(--f-body);color:var(--ink-muted)}
 .prate svg{width:11px;height:11px}
-.fstrip{display:flex;gap:14px;overflow-x:auto;margin:0 -16px;padding:2px 16px 4px;scrollbar-width:none}
+.fstrip{display:flex;gap:14px;overflow-x:auto;margin:0 -16px;padding:2px 16px 4px;scrollbar-width:none;scroll-padding-inline:16px}
 .fstrip::-webkit-scrollbar{display:none}
 .fchip{border:0;background:none;padding:0;display:grid;justify-items:center;gap:2px;flex:none;width:66px;color:var(--ink)}
 .fava{width:62px;height:62px;border-radius:50%;padding:3px;background:conic-gradient(from 200deg,#2F9E6B,#9BE3BF,#2F9E6B)}
@@ -705,7 +707,7 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .spcard{opacity:0;transition:opacity .25s}
 .spcard.cur,.spot.dragging .spcard{opacity:1}
 /* Home slot 2: Reminders (same-height bars, swipe) */
-.rmrow{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 8px}
+.rmrow{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;scroll-padding-inline:16px;margin:0 -16px;padding:2px 16px 8px}
 .rmbar{flex:0 0 86%;scroll-snap-align:start;height:68px;display:flex;align-items:center;gap:12px;background:var(--surface-raised);border-radius:var(--r-md);box-shadow:var(--shadow-card);padding:0 12px}
 .rmrow.one .rmbar{flex-basis:100%}
 .rmbar.urgent{box-shadow:inset 0 0 0 1.5px var(--violet-600),var(--shadow-card)}
