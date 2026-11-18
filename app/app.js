@@ -302,7 +302,7 @@ function evWhen(e) {
 function evCard(e, i) {
   const reg = S.regs.includes(e.id);
   return `<button class="evcard ${e.theme}" data-a="event" data-v="${e.id}" aria-label="${esc(e.a + ' ' + e.b)}, ${evWhen(e)}${reg ? ', you are registered' : ''}">
-    <span class="row between"><span class="evkick">${esc(e.kicker)}</span>${reg ? `<span class="evin">${ic('check')}You're in</span>` : `<span class="evfree">Free</span>`}</span>
+    <span class="row between"><span class="evkick">${esc(e.kicker)}</span>${reg ? `<span class="evin">${ic('check')}You're in</span>` : ''}</span>
     <span class="evtitle"><span>${esc(e.a)}</span><span class="evb">${esc(e.b)}</span></span>
     <span class="row between" style="align-items:flex-end"><span class="evmeta">${evWhen(e)}<br>${e.mins} min · online</span><span class="evgo">${reg ? 'View' : 'Register'}</span></span></button>`;
 }
@@ -429,7 +429,7 @@ const ritualDone = sl => S.rituals.some(r => r.d === dkey(new Date()) && r.slot 
 function ritualCard() {
   const { sl, R, bk } = ritualToday(), done = ritualDone(sl), week = S.rituals.filter(r => r.d > dkey(new Date(Date.now() - 7 * 86400000))).length;
   const steps = [['Breathe', '2 min'], ['Write', '1 line'], ['Listen', '1 min'], ['Feel', 'name it'], ['Close', 'recap']];
-  return `<section class="sec" id="t-ritual"><div class="sec-h"><h2 class="t2">Your 5 minutes today</h2><span class="cap">${week ? week + ' this week' : 'about 5 min'}</span></div>
+  return `<section class="sec" id="t-ritual"><div class="sec-h"><h2 class="t2">Your 5 minutes today</h2></div>
     <button class="ritual tint-${R.tint} ${done ? 'done' : ''}" data-a="ritual" aria-label="${R.name}${done ? ', done today' : ''}">
       <span class="row between"><span class="row" style="gap:8px"><span class="dot" style="background:var(--surface-raised)">${ic(R.icon)}</span><span class="stack" style="gap:0;text-align:left"><b class="t2" style="font-size:19px">${R.name}</b><span class="cap">Today: ${esc(R_BREATH[bk].name.toLowerCase())}</span></span></span>
         ${done ? `<span class="tag sage">${ic('check')}Done</span>` : ''}</span>
@@ -773,7 +773,7 @@ function homeNow() {
   const sp = spotItems(), rm = remItems(), si = (X.spi || 0) % Math.max(1, sp.length);
   return `${sp.length ? `<section class="spot" id="t-step" aria-label="Spotlight"><div class="sptrack" id="sptrack" style="transform:translateX(-${si * 100}%)">${sp.map((p, k) => `<button class="spcard ${p.theme} ${k === si ? 'cur' : ''}" data-a="${p.go}" data-v="${p.v}" data-nid="${p.id}">${p.art}<span class="sptxt"><span class="spkick">${p.k}</span><b>${p.t}</b><span class="sps">${p.s}</span></span></button>`).join('')}</div>
       ${sp.length > 1 ? `<div class="spdots">${sp.map((_, k) => `<button class="${k === si ? 'on' : ''}" data-a="spdot" data-v="${k}" aria-label="Show banner ${k + 1} of ${sp.length}"></button>`).join('')}</div>` : ''}</section>` : ''}
-    ${rm.length ? `<section class="sec" style="gap:10px"><div class="sec-h"><h2 class="t2">Reminders</h2><span class="cap">${rm.length > 1 ? `${rm.length} · swipe` : '1'}</span></div>
+    ${rm.length ? `<section class="sec" style="gap:10px"><div class="sec-h"><h2 class="t2">Reminders</h2></div>
       <div class="rmrow ${rm.length === 1 ? 'one' : ''}">${rm.map(r => `<div class="rmbar ${r.urgent ? 'urgent' : ''}" data-nid="${r.id}">${r.icon}<span class="rmtxt"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></span><button class="btn sm ${r.urgent ? 'primary' : 'soft'}" data-a="${r.a}" data-v="${esc(r.v)}">${r.btn}</button></div>`).join('')}</div></section>` : ''}`;
 }
 let NFT = null;
@@ -842,7 +842,7 @@ V.home = () => {
     <h1 class="hello1">${greet()}, <b>${esc(S.name)}</b></h1></div>
   ${moodCard()}
   ${homeNow()}
-  <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2><span class="cap">free · online</span></div>
+  <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2></div>
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
     <div class="dotsrow">${sosPill()}<div class="dots evdots" id="evdots">${EVENTS.map((e, i) => `<button class="${i === 0 ? 'on' : ''}" data-a="evdot" data-v="${i}" aria-label="Show event ${i + 1} of ${EVENTS.length}"></button>`).join('')}</div></div></section>
   ${ritualCard()}
