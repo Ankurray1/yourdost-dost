@@ -403,8 +403,8 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .affirm{background:var(--sun-100);border-radius:var(--r-lg);padding:16px;display:grid;gap:8px}
 .affirm-t{font:700 26px/1.25 var(--f-hand);margin:0;color:var(--ink);animation:fade .5s}
 /* SOS */
-.sospill{position:absolute;right:16px;bottom:calc(104px + var(--hi) + env(safe-area-inset-bottom,0px));z-index:21;display:inline-flex;align-items:center;gap:7px;border:1.5px solid color-mix(in srgb,var(--help-600) 30%,transparent);background:color-mix(in srgb,var(--surface-raised) 92%,transparent);backdrop-filter:blur(6px);color:var(--help-600);border-radius:10px;padding:7px 11px;font:700 12px/1 var(--f-body);letter-spacing:.8px;box-shadow:var(--shadow-card);transition:transform .35s ease,opacity .35s ease}
-.sospill i{width:8px;height:8px;border-radius:50%;background:var(--help-600);animation:sosdot 2.4s ease-in-out infinite}
+.sospill{align-self:flex-start;margin:-8px 0 -12px;display:inline-flex;align-items:center;gap:6px;border:1px solid color-mix(in srgb,var(--help-600) 22%,transparent);background:transparent;color:var(--help-600);border-radius:8px;padding:5px 9px;font:700 11px/1 var(--f-body);letter-spacing:.8px;opacity:.85}
+.sospill i{width:7px;height:7px;border-radius:50%;background:var(--help-600);animation:sosdot 2.4s ease-in-out infinite}
 @keyframes sosdot{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--help-600) 45%,transparent)}50%{box-shadow:0 0 0 6px transparent}}
 .sospill.tuck{transform:translateX(calc(100% - 26px));opacity:.55}
 .sosscr{background:linear-gradient(180deg,var(--peach-100) 0%,var(--surface) 55%)}

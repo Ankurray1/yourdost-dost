@@ -716,7 +716,8 @@ V.home = () => {
   const step = todayStep(), bk = S.booked && EXM[S.booked.id];
   const care = (S.plan && S.plan.ex) ? [S.plan.ex, 'ex_good', 'ex_ground'] : ['ex_box', 'ex_good', 'ex_ground'];
   return `<div class="screen">
-  <div class="row between"><div><span class="cap">${greet()},</span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div>
+  ${sosPill()}
+  <div class="row between"><div><span class="row" style="gap:8px"><span class="cap">${greet()},</span></span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div>
     <div class="row" style="gap:8px">${bell()}${moodChip()}</div></div>
   ${moodCard()}
   <section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
@@ -726,7 +727,7 @@ V.home = () => {
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
     <div class="dots" id="evdots" aria-hidden="true">${EVENTS.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div></section>
   ${ritualCard()}
-</div>${sosPill()}${tabbar()}`;
+</div>${tabbar()}`;
 };
 function stepCard(s) {
   if (s.kind === 'ex') { const x = EX[s.id]; return `<div class="card row"><span class="dot tint-${x.tint}" style="width:52px;height:52px">${ic('play')}</span><div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="cap">${x.mins} min · ${esc(x.why)}</div></div><button class="btn primary sm" data-a="ex" data-v="${s.id}" data-step="${s.n}">Start</button></div>`; }
@@ -1103,8 +1104,7 @@ function render() {
   if (!((S.view === 'ritual' && X.r && X.r.step === 3 && X.ls) || (S.view === 'grow' && X.gs))) stopSound();
   if (S.view === 'ritual' && X.ls) runListen();
   if (S.view === 'sos' && X.sos && ['connect', 'call'].includes(X.sos.phase)) runSos();
-  const hs = S.view === 'home' && $app.querySelector('.screen'), pill = document.getElementById('t-sos');
-  if (hs && pill) hs.onscroll = () => { pill.classList.add('tuck'); clearTimeout(hs._t); hs._t = setTimeout(() => pill.classList.remove('tuck'), 700); };
+
   drawTour();
   if (S.view === 'home') autoSlide(); else { clearInterval(EVT); EVT = null; }
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
