@@ -882,6 +882,7 @@ V.deck = () => {
   const m = (S.quiz && S.quiz.done ? quizMatches() : matches()).find(x => x.e.id === e.id);
   const nf = nextFree(e);
   return `<div class="screen flush notab deck tint-${e.tint}">
+    <div class="deck-bg" aria-hidden="true">${img(e)}<i></i></div>
     <div class="deck-top"><button class="iconbtn" data-a="back" aria-label="Close">${ic('back')}</button><span class="lbl">${i + 1} of ${ids.length}</span>
       <span style="width:44px" aria-hidden="true"></span></div>
     <div class="arch-wrap">${ids.length > 1 ? `<div class="arch behind" aria-hidden="true">${img(nxt)}</div>` : ''}

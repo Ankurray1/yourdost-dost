@@ -594,6 +594,17 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .xrate svg{width:12px;height:12px}
 .xfree{font:600 11px/1 var(--f-body);color:var(--sage-600);background:var(--sage-100);border-radius:var(--r-pill);padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .xmode{font:500 11px/1 var(--f-body);color:var(--ink-muted);white-space:nowrap;flex:none}
+/* modern backdrops for expert photos */
+.deck{position:relative;isolation:isolate}
+.deck-bg{position:absolute;left:0;right:0;top:0;height:560px;z-index:-1;overflow:hidden;pointer-events:none}
+.deck-bg img{position:absolute;inset:-20%;width:140%;height:140%;object-fit:cover;filter:blur(42px) saturate(1.6);opacity:.4;transform:scale(1.1)}
+.deck-bg i{position:absolute;inset:0;background:radial-gradient(65% 45% at 8% 6%,color-mix(in srgb,var(--sun-400) 60%,transparent) 0%,transparent 70%),radial-gradient(60% 55% at 100% 22%,color-mix(in srgb,var(--violet-400) 55%,transparent) 0%,transparent 72%),radial-gradient(75% 45% at 25% 92%,color-mix(in srgb,var(--peach-400) 45%,transparent) 0%,transparent 75%),linear-gradient(180deg,transparent 62%,var(--surface) 100%)}
+.arch{box-shadow:0 0 0 6px rgba(255,255,255,.55),0 24px 50px rgba(47,38,99,.22)}
+.arch::after,.photo::after,.xph::after{content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;background:radial-gradient(90% 60% at 0% 0%,rgba(255,210,37,.22) 0%,transparent 60%),radial-gradient(80% 60% at 100% 100%,rgba(122,79,201,.22) 0%,transparent 65%);mix-blend-mode:soft-light}
+.arch .rate{z-index:2}
+.arch.behind{opacity:.75;filter:saturate(.9) brightness(1.05)}
+.xph{position:relative}
+.photo::after{z-index:1}
 .proto{position:fixed;left:16px;bottom:16px;font:500 12px/16px var(--f-body);color:var(--ink-muted);max-width:220px}
 @media (max-width:900px){.proto{display:none}}
 </style>
