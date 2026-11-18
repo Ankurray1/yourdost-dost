@@ -1988,4 +1988,148 @@ $app.addEventListener('click', e => {
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && SHEET) { SHEET = null; render(); } });
 if (location.hash === '#start') { S = fresh(); }
 render();
+/* =====================================================================
+   SHOWCASE PANEL (desktop only): a guide beside the phone for anyone visiting this page.
+   Explore freely · Feature walkthrough (hand-drawn notes) · Notification flow · Start over
+   ===================================================================== */
+const DEMO = { mode: 'free', wi: 0, paused: false, timer: null, nstep: 0, ntimers: [] };
+const WALK = [
+  { view: 'home', name: 'Home', notes: [
+    ['.bell', 'Nudges & quick surveys, with an unread count'],
+    ['.moodchip', 'Your mood score out of 100. Tap for trends'],
+    ['.meav', 'Profile, benefits and privacy'],
+    ['.moodcard', 'One-tap daily check-in, in plain words'],
+    ['.spot', 'Spotlight: new launches rotate here'],
+    ['.rmrow', "Reminders: only what you shouldn't miss"],
+    ['#t-events', 'Live webinars, 3-field sign-up'],
+    ['.orbbtn', 'Talk to YourDOST AI from anywhere'] ] },
+  { view: 'experts', name: 'Experts', prep: () => { S.seg = 'browse'; S.q = ''; }, notes: [
+    ['.seg', 'Browse · Smart match · My sessions'],
+    ['.searchbox', 'Search by name, topic or language'],
+    ['.filtbtn:last-of-type', 'One screen to filter & sort'],
+    ['.fstrip', 'Who can talk to you tonight'],
+    ['.pgrid .pcx', 'Calm cards: experience & languages only'] ] },
+  { view: 'grow', name: 'Grow', notes: [
+    ['.rstrip', 'Your 5-minute daily ritual'],
+    ['.htile:nth-child(1)', 'Clinically tested self-checks'],
+    ['.htile:nth-child(2)', 'Breathe, pause, focus activities'],
+    ['.htile:nth-child(3)', 'Short reads that lead to action'],
+    ['.htile:nth-child(4)', 'A private journal with prompts'],
+    ['.gbanner', 'Brain games with a daily streak'] ] },
+  { view: 'community', name: 'Community', notes: [
+    ['.compose', 'Share anonymously, or with your name'],
+    ['.post', 'Real stories, reviewed before they go live'],
+    ['.pacts', 'Support only: I relate · Strength · reply'],
+    ['.creply', 'Counsellors reply too'],
+    ['.screen .iconbtn', 'Community guidelines'] ] },
+  { view: 'dost', name: 'YourDOST AI', notes: [
+    ['.dostscr .orb', 'Talk or type for 2 minutes'],
+    ['.bub.d', 'Understands free answers, not just options'],
+    ['.dostscr .row.wrap', 'Or just tap a topic'],
+    ['#dform', 'Type how you feel'],
+    ['.dostscr > p.cap', 'Private: your employer never sees this'] ] },
+];
+const DEMO_TABS = [
+  ['free', 'Explore freely', 'Use it like a real user'],
+  ['walk', 'Feature walkthrough', 'Every screen, explained'],
+  ['notif', 'Notification flow', 'From a nudge to the right screen'],
+  ['reset', 'Start over', 'Reset and begin from sign-in'],
+];
+function demoPanel() {
+  let el = document.getElementById('demo'); if (!el) { el = document.createElement('aside'); el.id = 'demo'; el.className = 'demo'; document.body.appendChild(el); el.addEventListener('click', demoClick); }
+  const m = DEMO.mode, w = WALK[DEMO.wi];
+  const body = m === 'free' ? `<p>This is the real app, running live. Tap anything, just like you would on your phone.</p>
+      <ul class="dtry"><li>Talk to <b>YourDOST AI</b> (the mic button)</li><li>Book a counsellor <b>online or in person</b></li><li>Take a <b>2-minute check</b> in Grow</li><li>Read or share a <b>story</b> in Community</li><li>Tap the tiny <b>SOS</b> dot on Home</li></ul>
+      <p class="dcap">Everything stays in this browser. Nothing is sent anywhere.</p>`
+    : m === 'walk' ? `<p>Hand-drawn notes point out what each part of a screen does.</p>
+      <ol class="dsteps">${WALK.map((s, i) => `<li class="${i === DEMO.wi ? 'on' : i < DEMO.wi ? 'done' : ''}"><button data-d="wgo" data-v="${i}">${s.name}</button></li>`).join('')}</ol>
+      <div class="drow"><button class="dbtn" data-d="wprev" ${DEMO.wi ? '' : 'disabled'}>‹ Back</button><button class="dbtn" data-d="wpause">${DEMO.paused ? '▶ Play' : '❚❚ Pause'}</button><button class="dbtn pri" data-d="wnext">${DEMO.wi < WALK.length - 1 ? 'Next ›' : 'Finish'}</button></div>`
+    : m === 'notif' ? `<p>How a nudge brings someone back to exactly the right screen.</p>
+      <ol class="dsteps">${['The phone is locked on its home screen', 'A YourDOST notification arrives', 'They tap it', 'The app opens straight on the survey'].map((t, i) => `<li class="${i === DEMO.nstep ? 'on' : i < DEMO.nstep ? 'done' : ''}"><span>${t}</span></li>`).join('')}</ol>
+      <div class="drow"><button class="dbtn pri" data-d="nplay">↻ Play again</button></div>`
+    : '';
+  el.innerHTML = `<div class="dhead"><span class="dkick">YourDOST · B2B wellbeing app</span><h2>Explore what's <span>in the app</span></h2></div>
+    <nav class="dtabs">${DEMO_TABS.map(([k, t, s], i) => `<button class="dtab ${m === k ? 'on' : ''}" data-d="mode" data-v="${k}"><i>${i + 1}</i><span><b>${t}</b><small>${s}</small></span></button>`).join('')}</nav>
+    <div class="dbody">${body}</div>`;
+}
+function demoClick(e) {
+  const b = e.target.closest('[data-d]'); if (!b) return; const d = b.dataset.d, v = b.dataset.v;
+  if (d === 'mode') demoMode(v);
+  if (d === 'wgo') { DEMO.wi = +v; walkShow(); }
+  if (d === 'wnext') { if (DEMO.wi < WALK.length - 1) { DEMO.wi++; walkShow(); } else demoMode('free'); }
+  if (d === 'wprev') { DEMO.wi = Math.max(0, DEMO.wi - 1); walkShow(); }
+  if (d === 'wpause') { DEMO.paused = !DEMO.paused; demoPanel(); if (!DEMO.paused) walkTimer(); else clearTimeout(DEMO.timer); }
+  if (d === 'nplay') notifPlay();
+}
+function demoStop() { clearTimeout(DEMO.timer); DEMO.ntimers.forEach(clearTimeout); DEMO.ntimers = []; clearNotes(); const os = document.getElementById('osscr'); if (os) os.remove(); }
+function demoReady() { if (!S.onboarded) { S.onboarded = true; if (!S.name) S.name = 'Riya'; } S.tour = null; SHEET = null; }
+function demoMode(m) {
+  demoStop();
+  if (m === 'reset') { try { localStorage.removeItem(KEY); } catch (e) {} S = fresh(); X = {}; SHEET = null; render(); toast('Fresh start. Sign in or continue as a guest.'); DEMO.mode = 'free'; demoPanel(); return; }
+  DEMO.mode = m; demoPanel();
+  if (m === 'walk') { DEMO.wi = 0; DEMO.paused = false; walkShow(); }
+  if (m === 'notif') notifPlay();
+}
+/* ---- walkthrough ---- */
+function walkShow() {
+  clearTimeout(DEMO.timer); clearNotes(); demoReady();
+  const w = WALK[DEMO.wi]; if (w.prep) w.prep();
+  go(w.view); const sc = $app.querySelector('.screen'); if (sc) sc.scrollTop = 0;
+  demoPanel();
+  setTimeout(() => drawNotes(w), 450);
+  walkTimer();
+}
+function walkTimer() { clearTimeout(DEMO.timer); if (DEMO.paused) return; DEMO.timer = setTimeout(() => { if (DEMO.mode !== 'walk') return; if (DEMO.wi < WALK.length - 1) { DEMO.wi++; walkShow(); } else { DEMO.wi = 0; walkShow(); } }, 10000); }
+function clearNotes() { const o = document.getElementById('dnotes'); if (o) o.remove(); }
+function drawNotes(w) {
+  clearNotes(); if (DEMO.mode !== 'walk') return;
+  const ph = document.getElementById('phone').getBoundingClientRect(), vw = innerWidth;
+  const room = vw - ph.right - 24, left = room >= 200;
+  const items = w.notes.map(([sel, txt]) => { const el = document.querySelector('#app ' + sel); if (!el) return null; const r = el.getBoundingClientRect(); if (r.height === 0 || r.bottom < ph.top + 30 || r.top > ph.bottom - 30) return null; return { r, txt }; }).filter(Boolean).sort((a, b) => a.r.top - b.r.top);
+  const wrap = document.createElement('div'); wrap.id = 'dnotes'; wrap.className = 'dnotes';
+  const nx = left ? ph.right + 56 : 0, nw = Math.min(250, room - 70);
+  let lastBottom = ph.top + 8, svg = '', html = '';
+  items.forEach((it, i) => {
+    const ty = Math.max(ph.top + 4, Math.min(ph.bottom - 40, it.r.top + it.r.height / 2));
+    const ny = Math.max(lastBottom + 8, ty - 18); lastBottom = ny + 42;
+    const tx = Math.min(it.r.right - 6, ph.right - 14), sx = nx - 8, sy = ny + 16;
+    const mx = (sx + tx) / 2 + 10, my = Math.min(sy, ty) - 24 + (i % 2) * 18;
+    const ang = Math.atan2(ty - my, tx - mx), h = 11;
+    const a1 = `${tx - h * Math.cos(ang - 0.45)},${ty - h * Math.sin(ang - 0.45)}`, a2 = `${tx - h * Math.cos(ang + 0.45)},${ty - h * Math.sin(ang + 0.45)}`;
+    const d = `--d:${i * 0.22}s`;
+    svg += `<rect class="dring" style="${d}" x="${it.r.left - 3}" y="${it.r.top - 3}" width="${it.r.width + 6}" height="${it.r.height + 6}" rx="14" pathLength="1"/>`;
+    svg += `<path class="darrow" style="${d}" d="M${sx},${sy} Q${mx},${my} ${tx},${ty}" pathLength="1"/><path class="dhead2" style="${d}" d="M${a1} L${tx},${ty} L${a2}"/>`;
+    html += `<div class="dnote" style="left:${nx}px;top:${ny}px;width:${nw}px;${d}">${esc(it.txt)}</div>`;
+  });
+  wrap.innerHTML = `<svg class="dsvg" width="${vw}" height="${Math.max(innerHeight, document.body.scrollHeight)}">${svg}</svg>${left ? html : ''}`;
+  document.body.appendChild(wrap);
+}
+/* ---- notification flow ---- */
+function notifPlay() {
+  demoStop(); demoReady(); go('home'); DEMO.nstep = 0; demoPanel();
+  const phone = document.getElementById('phone'), os = document.createElement('div'); os.id = 'osscr'; os.className = 'osscr';
+  const icons = [['#34C759', 'Phone'], ['#0A84FF', 'Mail'], ['#FF9F0A', 'Photos'], ['#5E5CE6', 'Calendar'], ['#FF375F', 'Music'], ['#30B0C7', 'Maps'], ['#8E8E93', 'Settings'], ['yd', 'YourDOST'], ['#FFD60A', 'Notes'], ['#64D2FF', 'Weather'], ['#BF5AF2', 'Podcasts'], ['#32D74B', 'Messages']];
+  const now = new Date(), hh = now.getHours() % 12 || 12, mm = String(now.getMinutes()).padStart(2, '0');
+  os.innerHTML = `<div class="ostime"><small>${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]}, ${now.getDate()} ${MONTH[now.getMonth()]}</small><b>${hh}:${mm}</b></div>
+    <div class="osgrid">${icons.map(([c, n]) => `<span class="osapp"><i style="${c === 'yd' ? '' : 'background:' + c}" class="${c === 'yd' ? 'ydicon' : ''}">${c === 'yd' ? '<img src="/yd-logo.png" alt="">' : ''}</i>${n}</span>`).join('')}</div>
+    <button class="osban" id="osban" aria-label="YourDOST notification: Got 2 minutes?"><span class="ydicon sm"><img src="/yd-logo.png" alt=""></span><span class="osbt"><span class="row between"><b>YourDOST</b><small>now</small></span><b class="ost">Got 2 minutes?</b><span>A quick, anonymous pulse survey is open. 3 questions.</span></span></button>
+    <span class="ostap" id="ostap"></span>`;
+  phone.appendChild(os);
+  os.querySelector('#osban').onclick = notifOpen;
+  const T = (ms, f) => DEMO.ntimers.push(setTimeout(f, ms));
+  T(900, () => { DEMO.nstep = 1; demoPanel(); os.classList.add('ban'); });
+  T(3800, () => { DEMO.nstep = 2; demoPanel(); os.classList.add('tap'); });
+  T(4600, notifOpen);
+}
+function notifOpen() {
+  const os = document.getElementById('osscr'); if (!os || os.classList.contains('open')) return;
+  DEMO.ntimers.forEach(clearTimeout); DEMO.ntimers = [];
+  os.classList.add('open'); DEMO.nstep = 3; demoPanel();
+  const n = (S.notifs || []).find(x => x.kind === 'survey'); if (n) n.read = true;
+  X = {}; X.sv = []; S.surveyDone = false; go('survey'); X.sv = []; render();
+  DEMO.ntimers.push(setTimeout(() => { const o = document.getElementById('osscr'); if (o) o.remove(); DEMO.nstep = 4; demoPanel(); }, 650));
+}
+addEventListener('resize', () => { if (DEMO.mode === 'walk') drawNotes(WALK[DEMO.wi]); });
+document.getElementById('app').addEventListener('click', e => { if (DEMO.mode === 'walk' && e.isTrusted) { DEMO.paused = true; clearTimeout(DEMO.timer); clearNotes(); demoPanel(); } }, true);
+demoPanel();
 })();
