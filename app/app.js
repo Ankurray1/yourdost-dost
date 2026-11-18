@@ -1751,11 +1751,10 @@ function postCard(p, full) {
       <button class="pact" data-a="post" data-v="${p.id}">${ic('chat')}<span>${cm}</span></button></div></article>`;
 }
 V.community = () => {
-  const t = X.ct || 'All', list = allPosts().filter(p => t === 'All' || p.topic === t);
+  const list = allPosts();
   return `<div class="screen" style="gap:14px">
     <div class="row between"><div><h1 class="t1">Community</h1><p class="note" style="font-size:17px">real stories, no names</p></div><button class="iconbtn" data-a="sheet" data-v="cguide" aria-label="Community guidelines" style="background:var(--surface-raised);box-shadow:var(--shadow-card)">${ic('shield')}</button></div>
     <button class="compose" data-a="c-new">${avatarA(myAlias().a, myAlias().c)}<span class="grow" style="text-align:left"><b>Share your story</b><span class="cap" style="display:block">You'll post as ${esc(myAlias().a)}. No one sees your name.</span></span><span class="btn primary sm">Write</span></button>
-    <div class="row chipsx" style="gap:8px;overflow-x:auto;flex-wrap:nowrap;margin:0 -16px;padding:0 16px">${C_TOPICS.map(c => `<button class="chip" style="flex:none" data-a="ctopic" data-v="${c}" aria-pressed="${t === c}">${c}</button>`).join('')}</div>
     <div class="feed">${list.map(p => postCard(p)).join('') || `<div class="card stack" style="text-align:center"><b>No stories here yet</b><span class="muted">Be the first to share.</span></div>`}</div>
     <p class="cap" style="text-align:center;margin:0">${ic('lock')} Anonymous to everyone, including your employer. Every story is reviewed before it goes live.</p>
   </div>${tabbar()}`;
