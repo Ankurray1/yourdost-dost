@@ -2109,7 +2109,7 @@ function notifPlay() {
   demoStop(); demoReady(); go('home'); DEMO.nstep = 0; demoPanel();
   const phone = document.getElementById('phone'), os = document.createElement('div'); os.id = 'osscr'; os.className = 'osscr';
   const icons = [['#34C759', 'Phone'], ['#0A84FF', 'Mail'], ['#FF9F0A', 'Photos'], ['#5E5CE6', 'Calendar'], ['#FF375F', 'Music'], ['#30B0C7', 'Maps'], ['#8E8E93', 'Settings'], ['yd', 'YourDOST'], ['#FFD60A', 'Notes'], ['#64D2FF', 'Weather'], ['#BF5AF2', 'Podcasts'], ['#32D74B', 'Messages']];
-  const now = new Date(), hh = now.getHours() % 12 || 12, mm = String(now.getMinutes()).padStart(2, '0');
+  const now = new Date(), hh = 9, mm = '24';
   os.innerHTML = `<div class="ostime"><small>${['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][now.getDay()]}, ${now.getDate()} ${MONTH[now.getMonth()]}</small><b>${hh}:${mm}</b></div>
     <div class="osgrid">${icons.map(([c, n]) => `<span class="osapp"><i style="${c === 'yd' ? '' : 'background:' + c}" class="${c === 'yd' ? 'ydicon' : ''}">${c === 'yd' ? '<img src="/yd-logo.png" alt="">' : ''}</i>${n}</span>`).join('')}</div>
     <button class="osban" id="osban" aria-label="YourDOST notification: Got 2 minutes?"><span class="ydicon sm"><img src="/yd-logo.png" alt=""></span><span class="osbt"><span class="row between"><b>YourDOST</b><small>now</small></span><b class="ost">Got 2 minutes?</b><span>A quick, anonymous pulse survey is open. 3 questions.</span></span></button>
