@@ -403,10 +403,14 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .affirm{background:var(--sun-100);border-radius:var(--r-lg);padding:16px;display:grid;gap:8px}
 .affirm-t{font:700 26px/1.25 var(--f-hand);margin:0;color:var(--ink);animation:fade .5s}
 /* SOS */
-.sospill{position:absolute;left:16px;bottom:calc(104px + var(--hi) + env(safe-area-inset-bottom,0px));z-index:21;display:inline-flex;align-items:center;gap:7px;border:1.5px solid color-mix(in srgb,var(--help-600) 30%,transparent);background:color-mix(in srgb,var(--surface-raised) 92%,transparent);backdrop-filter:blur(6px);color:var(--help-600);border-radius:10px;padding:7px 11px;font:700 12px/1 var(--f-body);letter-spacing:.8px;box-shadow:var(--shadow-card);transition:transform .35s ease,opacity .35s ease}
-.sospill i{width:8px;height:8px;border-radius:50%;background:var(--help-600);animation:sosdot 2.4s ease-in-out infinite}
-@keyframes sosdot{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--help-600) 45%,transparent)}50%{box-shadow:0 0 0 6px transparent}}
-.sospill.tuck{transform:translateX(calc(-100% + 26px));opacity:.55}
+.dotsrow{position:relative;display:flex;justify-content:center;align-items:center;min-height:24px}
+.sospill{position:absolute;left:0;top:50%;transform:translateY(-50%);display:inline-flex;align-items:center;gap:0;border:1px solid transparent;background:transparent;color:var(--help-600);border-radius:8px;padding:4px 6px;font:700 11px/1 var(--f-body);letter-spacing:.8px;opacity:.7;animation:sosbox 9s ease-in-out infinite 3s}
+.sospill i{width:7px;height:7px;border-radius:50%;background:var(--help-600);flex:none;animation:sosdot 2.4s ease-in-out infinite}
+.sospill span{display:inline-block;max-width:0;overflow:hidden;white-space:nowrap;opacity:0;animation:soslbl 9s ease-in-out infinite 3s}
+@keyframes sosdot{0%,100%{box-shadow:0 0 0 0 color-mix(in srgb,var(--help-600) 40%,transparent)}50%{box-shadow:0 0 0 5px transparent}}
+@keyframes soslbl{0%,62%,100%{max-width:0;opacity:0;margin-left:0}70%,90%{max-width:32px;opacity:1;margin-left:6px}}
+@keyframes sosbox{0%,62%,100%{border-color:transparent;background:transparent;opacity:.7}70%,90%{border-color:color-mix(in srgb,var(--help-600) 25%,transparent);background:var(--help-100);opacity:1}}
+.sospill:hover span,.sospill:focus-visible span{max-width:32px;opacity:1;margin-left:6px;animation:none}
 .sosscr{background:linear-gradient(180deg,var(--peach-100) 0%,var(--surface) 55%)}
 .sosbig{font:800 38px/1.08 var(--f-display);letter-spacing:-1.3px;margin:0;color:var(--ink)}
 .sosopt{display:flex;align-items:center;gap:10px;text-align:left;border:1.5px solid var(--line);background:var(--surface-raised);border-radius:var(--r-md);padding:12px 14px;font:500 16px/1.3 var(--f-body);color:var(--ink)}

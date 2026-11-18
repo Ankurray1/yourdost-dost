@@ -551,7 +551,7 @@ function runListen() {
 /* ---- SOS: for the hardest moments. One calm screen, then a counsellor within 5 minutes ---- */
 const SOS_OPTS = [['heavy', 'Everything feels too heavy'], ['panic', "I can't calm down"], ['talk', 'I need to talk to someone, now'], ['harm', "I'm having thoughts of hurting myself"]];
 const SOS_STEPS = ['Finding a counsellor who is free right now', 'Sharing only what you chose', 'Ringing your counsellor'];
-const sosPill = () => `<button class="sospill" id="t-sos" data-a="sos" aria-label="SOS: talk to someone now"><i></i>SOS</button>`;
+const sosPill = () => `<button class="sospill" id="t-sos" data-a="sos" aria-label="SOS: talk to someone now"><i></i><span>SOS</span></button>`;
 V.sos = () => {
   const s = X.sos || (X.sos = { picks: [], phase: S.params.now ? 'connect' : 'ask' });
   const e = EXM.e3;
@@ -724,9 +724,9 @@ V.home = () => {
   ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(bk.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
   <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2><span class="cap">free · online</span></div>
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
-    <div class="dots" id="evdots" aria-hidden="true">${EVENTS.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div></section>
+    <div class="dotsrow">${sosPill()}<div class="dots" id="evdots" aria-hidden="true">${EVENTS.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div></div></section>
   ${ritualCard()}
-</div>${sosPill()}${tabbar()}`;
+</div>${tabbar()}`;
 };
 function stepCard(s) {
   if (s.kind === 'ex') { const x = EX[s.id]; return `<div class="card row"><span class="dot tint-${x.tint}" style="width:52px;height:52px">${ic('play')}</span><div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="cap">${x.mins} min · ${esc(x.why)}</div></div><button class="btn primary sm" data-a="ex" data-v="${s.id}" data-step="${s.n}">Start</button></div>`; }
@@ -1104,8 +1104,6 @@ function render() {
   if (S.view === 'ritual' && X.ls) runListen();
   if (S.view === 'sos' && X.sos && ['connect', 'call'].includes(X.sos.phase)) runSos();
 
-  const hs = S.view === 'home' && $app.querySelector('.screen'), pill = document.getElementById('t-sos');
-  if (hs && pill) hs.onscroll = () => { pill.classList.add('tuck'); clearTimeout(hs._t); hs._t = setTimeout(() => pill.classList.remove('tuck'), 700); };
   drawTour();
   if (S.view === 'home') autoSlide(); else { clearInterval(EVT); EVT = null; }
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
