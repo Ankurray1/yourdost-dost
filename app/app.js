@@ -130,7 +130,7 @@ function matches() {
 }
 
 /* ---------------- navigation ---------------- */
-const TABS = ['home', 'experts', 'grow', 'me'];
+const TABS = ['home', 'experts', 'grow', 'community', 'me'];
 function go(view, params = {}, push = true) {
   if (push && S.view !== view) S.stack.push([S.view, S.params]);
   if (TABS.includes(view)) { S.stack = []; S.tab = view; }
@@ -145,8 +145,8 @@ function sheet(name, p = {}) { SHEET = { name, ...p }; render(); }
 const greet = () => { const h = new Date().getHours(); return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'; };
 const top = (title, right = '') => `<div class="top"><button class="iconbtn" data-a="back" aria-label="Back">${ic('back')}</button><h1 class="t2">${esc(title)}</h1>${right}</div>`;
 function tabbar() {
-  const t = (k, label) => `<button class="tab" data-a="tab" data-v="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${ic(k)}${label}</button>`;
-  return `<nav class="tabbar" aria-label="Main">${t('home', 'Home')}${t('experts', 'Experts')}<button class="orbbtn" data-a="dost" aria-label="Talk to Dost">${ic('mic')}</button>${t('grow', 'Grow')}${t('me', 'Me')}</nav>`;
+  const t = (k, label) => `<button class="tab" data-a="tab" data-v="${k}" ${S.tab === k ? 'aria-current="page"' : ''}>${ic2(k)}${label}</button>`;
+  return `<nav class="tabbar" aria-label="Main">${t('home', 'Home')}${t('experts', 'Experts')}<button class="orbbtn" data-a="dost" aria-label="Talk to Dost">${ic('mic')}</button>${t('grow', 'Grow')}${t('community', 'Community')}</nav>`;
 }
 function person(e, big) {
   const c = { violet: 'var(--violet-400)', sun: 'var(--peach-400)', peach: 'var(--peach-400)', sage: 'var(--sage-600)' }[e.tint];
@@ -248,7 +248,8 @@ const TOUR = [
   { sel: '.tab[data-v="experts"]', title: 'Experts', text: 'Find your counsellor. Take the smart match, swipe through profiles and book a time from their calendar.' },
   { sel: '.orbbtn', title: 'Dost, your AI guide', text: "Talk or type anytime. Dost listens, asks a few questions and finds the right next step. It's not a doctor." },
   { sel: '.tab[data-v="grow"]', title: 'Grow', text: 'Short exercises, 7-day programs and quick checks for stress, sleep and mood.' },
-  { sel: '.tab[data-v="me"]', title: 'Me', text: 'Your journey, journal, free sessions left and privacy. Only you see what is here.' },
+  { sel: '.tab[data-v="community"]', title: 'Community', text: 'Real stories from people who have been there. Read, relate and share your own, always anonymously.' },
+  { sel: '.meav', title: 'You', text: 'Your journey, journal, free sessions left and privacy. Only you see what is here.' },
   { sel: '#t-sos', title: 'SOS, always here', text: 'For the hardest moments. One tap connects you to a real counsellor within 5 minutes, 24×7.' },
 ];
 function tourSteps() { return TOUR.filter(t => document.querySelector('#app ' + t.sel)); }
@@ -748,10 +749,11 @@ function spotItems() {
   const out = [];
   out.push({ id: 'sp-voice', go: 'dost', v: '', theme: 'sp-glow', art: '<span class="orb sm sp-orb"></span>', k: '✦ New release', t: 'Talk to your Dost', s: 'Voice chat in your language · try 2 minutes' });
   if (!S.booked && S.sessionsLeft > 0) out.push({ id: 'sp-free', go: 'tab', v: 'experts', theme: 'sp-sun', art: `<span class="sp-ic">${ic('gift')}</span>`, k: 'Your work benefit', t: `${S.sessionsLeft} free counselling sessions`, s: 'Private. Your employer never knows who uses it' });
+  out.push({ id: 'sp-comm', go: 'tab', v: 'community', theme: 'sp-sun', art: `<span class="sp-ic">${ic2('community')}</span>`, k: 'New · Community', t: 'Real stories, no names', s: 'Read how others got through it' });
   out.push({ id: 'sp-games', go: 'go-games', v: '', theme: 'sp-ink', art: `<span class="sp-ic">${ic2('puzzle')}</span>`, k: 'New', t: 'Train your mind', s: '6 quick brain games, build a daily streak' });
   out.push({ id: 'sp-sleep', go: 'pg', v: 'pg_sleep', theme: 'sp-violet', art: `<span class="sp-ic">${ic('moon')}</span>`, k: 'New program', t: 'Sleep Reset · 7 days', s: '10 minutes a night for calmer sleep' });
   out.push({ id: 'sp-tests', go: 'go-tests', v: '', theme: 'sp-sage', art: `<span class="sp-ic">${ic2('clip')}</span>`, k: 'Check yourself', t: 'How anxious am I, really?', s: 'Clinically tested, 2 minutes, private' });
-  return out.slice(0, 5);
+  return out.slice(0, 6);
 }
 function remItems() {
   const out = [], b = S.booked, e = b && EXM[b.id], at = sessAt(b), now = Date.now(), tm = S.moods.find(m => m.d === dkey(new Date()));
@@ -838,7 +840,7 @@ V.home = () => {
   const step = todayStep(), bk = S.booked && EXM[S.booked.id];
   const care = (S.plan && S.plan.ex) ? [S.plan.ex, 'ex_good', 'ex_ground'] : ['ex_box', 'ex_good', 'ex_ground'];
   return `<div class="screen">
-  <div class="stack" style="gap:10px"><div class="row between"><img src="/yd-logo.png" alt="YourDOST" class="homelogo"><div class="row" style="gap:8px">${bell()}${moodChip()}</div></div>
+  <div class="stack" style="gap:10px"><div class="row between"><img src="/yd-logo.png" alt="YourDOST" class="homelogo"><div class="row" style="gap:8px">${bell()}${moodChip()}<button class="meav" data-a="tab" data-v="me" aria-label="You: profile and settings">${esc((S.name || 'Y')[0])}</button></div></div>
     <h1 class="hello1">${greet()}, <b>${esc(S.name)}</b></h1></div>
   ${moodCard()}
   ${homeNow()}
@@ -1220,6 +1222,8 @@ function sheetHTML() {
     <div class="list"><div class="li"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Tele-MANAS · 14416</b><span class="cap" style="display:block">Free, 24×7, in your language</span></span></div>
       <div class="li"><span class="dot tint-help" style="color:var(--help-600)">${ic('shield')}</span><span class="grow"><b>Emergency · 112</b><span class="cap" style="display:block">If you're in danger right now</span></span></div></div>
     <button class="btn ghost block" data-a="close">I'm safe for now</button>`;
+  if (s.name === 'cguide') body = `<h2 class="t1">Community guidelines</h2><div class="list">${[['heart', 'Be kind', "Share what helped you. Support, don't judge."], ['lock', 'Stay anonymous', 'No names, workplaces, photos or details that identify anyone.'], ['shield', 'No medical advice', 'Talk about your experience, not doses or diagnoses. Leave that to professionals.'], ['phone', "In crisis? Don't post. Call.", 'Tap SOS or call Tele-MANAS 14416. A person will answer.'], ['eye', 'Reviewed before posting', 'Every story is checked by a YourDOST moderator. Counsellors reply to many.']].map(([i, t, d]) => `<div class="li"><span class="dot tint-violet">${ic(i)}</span><span class="grow"><b>${t}</b><span class="cap" style="display:block">${d}</span></span></div>`).join('')}</div><button class="btn primary block" data-a="close">Got it</button>`;
+  if (s.name === 'pmore') body = `<h2 class="t2">This story</h2><div class="stack" style="gap:8px"><button class="qopt" data-a="p-hide">Hide this story</button><button class="qopt" data-a="p-report">Report: harmful or not anonymous</button></div><button class="btn ghost block" data-a="close">Cancel</button>`;
   if (s.name === 'sessfb') { const last = S.history[S.history.length - 1], le = EXM[last.id];
     body = `<div class="row"><span class="nowav">${faceImg(le)}</span><div><h2 class="t2">Session ${last.n} with ${esc(fnm(le.name))}</h2><span class="cap">${esc(last.date)}</span></div></div><h2 class="t1">Did you feel heard?</h2>
       <div class="stack" style="gap:8px">${['Not really', 'Somewhat', 'Yes, a lot'].map((l, i) => `<button class="qopt" data-a="sess-fb" data-v="${i}">${l}</button>`).join('')}</div><span class="cap">Only you and YourDOST see this. If it wasn't a good fit, we'll help you find someone else.</span>`; }
@@ -1352,6 +1356,7 @@ const P2 = {
   clip: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5h6v2.5H9zM9 12l2 2 4-4"/>',
   gridv: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
   listv: '<rect x="4" y="5" width="5" height="5" rx="1.2"/><rect x="4" y="14" width="5" height="5" rx="1.2"/><path d="M12 6.5h8M12 9h5M12 15.5h8M12 18h5"/>',
+  community: '<path d="M4 5.5h10a2 2 0 0 1 2 2V13a2 2 0 0 1-2 2H9l-3.5 3v-3H4a2 2 0 0 1-2-2V7.5a2 2 0 0 1 2-2z"/><path d="M16 9h4a2 2 0 0 1 2 2v5.5a2 2 0 0 1-2 2h-1v2.5L16 18.5h-3.5"/>',
   timer: '<circle cx="12" cy="13" r="7"/><path d="M12 13V9.5M10 3h4"/>',
 };
 const ic2 = (n, x = '') => P2[n] ? `<svg class="i ${x}" viewBox="0 0 24 24" aria-hidden="true">${P2[n]}</svg>` : ic(n, x);
@@ -1706,6 +1711,79 @@ function growAfter() {
   const wt = document.getElementById('wtext'); if (wt) wt.oninput = () => { X.w.text = wt.value; };
 }
 
+/* =====================================================================
+   COMMUNITY: anonymous stories, read, relate, support. Cross-company, never shown to the employer.
+   Safety: every post is reviewed before it goes live; risk words route to crisis help, not the feed;
+   sensitive posts sit behind a content note; supportive reactions only; report/hide on every post.
+   ===================================================================== */
+if (!Array.isArray(S.myPosts)) S.myPosts = [];
+if (!S.reacts || typeof S.reacts !== 'object') S.reacts = {};
+if (!S.myComments || typeof S.myComments !== 'object') S.myComments = {};
+if (!Array.isArray(S.hidden)) S.hidden = [];
+const C_TOPICS = ['All', 'Anxiety', 'Work stress', 'Low mood', 'Relationships', 'Sleep', 'Small wins'];
+const ALIAS_A = ['Quiet', 'Brave', 'Gentle', 'Steady', 'Hopeful', 'Bright', 'Calm', 'Kind', 'Warm', 'Patient'];
+const ALIAS_B = ['Lotus', 'Sparrow', 'River', 'Banyan', 'Monsoon', 'Lantern', 'Pebble', 'Kite', 'Jasmine', 'Comet'];
+const ALIAS_C = ['#C7B8F5', '#FFD3BD', '#BFE8D2', '#FFE58A', '#D9D1F4', '#F5C9A6'];
+const POSTS = [
+  { id: 'p1', a: 'Steady Banyan', c: 2, topic: 'Work stress', ago: '2 h', title: 'I stopped answering Slack after 9 pm', body: 'For two years I thought being always online meant I was good at my job. I was sleeping 5 hours and snapping at everyone at home. My counsellor asked me to try one rule for a week: laptop shut at 9. The first three nights I felt guilty. By Friday I had slept properly for the first time in months. Nobody at work even noticed. I did.', relate: 214, strength: 96, counsellor: 'Proud of you for testing the rule instead of just thinking about it. Guilt in the first week is normal; it fades when nothing bad happens. · Neha, counselling psychologist', comments: [['Calm Kite', 'Saving this. Starting tonight.'], ['Warm Pebble', 'The "nobody noticed" part hit me.']] },
+  { id: 'p2', a: 'Quiet Lotus', c: 0, topic: 'Anxiety', ago: '5 h', title: 'Panic attack in a meeting, and what helped after', body: 'My heart was racing and I was sure everyone could see. I excused myself, went to the washroom, and did the long out-breath thing: in for 4, out for 8. It did not stop instantly but it got smaller. Later I told one colleague. She said she gets them too. I had no idea.', relate: 341, strength: 188, counsellor: null, comments: [['Bright Comet', 'You are definitely not the only one. Thank you for writing this.'], ['Kind River', 'In 4 out 8 works for me too.']] },
+  { id: 'p3', a: 'Hopeful Monsoon', c: 4, topic: 'Small wins', ago: 'Yesterday', title: '30 days of the evening wind-down', body: 'Small thing, but I finished 30 evenings in a row. Breathe, write one line, listen. Some nights I wrote "today was bad" and that was it. Still counts. My mood score went from the 40s to the 60s. Not magic. Just a bit kinder to myself every night.', relate: 402, strength: 233, counsellor: null, comments: [['Gentle Sparrow', 'This is so encouraging.']] },
+  { id: 'p4', a: 'Gentle Jasmine', c: 1, topic: 'Low mood', ago: 'Yesterday', title: 'I did not want to get out of bed for weeks', body: 'Everything felt grey. I kept telling myself it would pass. It did not, until I booked a session through the app. I almost cancelled twice. The first session I mostly cried. The third one, I laughed at something. That was the first time in a long time.', relate: 528, strength: 410, counsellor: 'Booking that first session when everything feels heavy is one of the hardest steps. Thank you for showing others it is possible. · Farah, counsellor', comments: [['Patient Lantern', 'I am where you were. This gives me hope.'], ['Steady Kite', 'Please keep going. We are rooting for you.']] },
+  { id: 'p5', a: 'Kind Pebble', c: 3, topic: 'Relationships', ago: '2 d', title: 'Learning to say "I need a minute" instead of shouting', body: 'My partner and I used to have the same fight every week. Now when I feel it rising I say "I need ten minutes" and go for a walk. We come back and actually talk. It sounds simple. It took me 33 years to learn.', relate: 167, strength: 74, counsellor: null, comments: [] },
+  { id: 'p6', a: 'Brave Sparrow', c: 5, topic: 'Low mood', cw: 'This story mentions thoughts of not wanting to be here.', ago: '3 d', title: 'The night I called the helpline', body: 'I had been having dark thoughts for a while, the kind where you feel everyone would be better off. One night I called Tele-MANAS. The person on the line just listened. Then she helped me plan the next day, hour by hour. I am in therapy now. I am still here, and I am glad I am.', relate: 612, strength: 590, counsellor: 'Thank you for trusting us with this. If anyone reading feels this way, you can tap SOS any time. A real person will answer. · YourDOST care team', comments: [['Warm Lotus', 'So glad you are still here.']] },
+  { id: 'p7', a: 'Calm River', c: 2, topic: 'Sleep', ago: '4 d', title: 'Phone out of the bedroom. That was it.', body: 'I tried apps, teas, everything. What finally worked was the most boring thing: phone charging in the kitchen, a cheap alarm clock by the bed. Week one was hard. Week three I was falling asleep in 15 minutes.', relate: 198, strength: 61, counsellor: null, comments: [['Bright Banyan', 'Buying an alarm clock today.']] },
+];
+const aliasFor = id => { let h = 0; for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) % 997; return { a: ALIAS_A[h % 10] + ' ' + ALIAS_B[(h >> 2) % 10], c: h % 6 }; };
+const myAlias = () => S.alias || (S.alias = aliasFor((S.email || 'me') + 'yd'));
+const avatarA = (name, c) => `<span class="cav" style="background:${ALIAS_C[c % 6]}">${esc(name.split(' ').map(w => w[0]).join(''))}</span>`;
+function allPosts() { return [...S.myPosts.filter(p => p.live || p.mine), ...POSTS].filter(p => !S.hidden.includes(p.id)); }
+function postCard(p, full) {
+  const r = S.reacts[p.id] || {}, rel = p.relate + (r.relate ? 1 : 0), str = p.strength + (r.strength ? 1 : 0), cm = (p.comments || []).length + (S.myComments[p.id] || []).length + (p.counsellor ? 1 : 0);
+  const veiled = p.cw && !(X.unveil || {})[p.id];
+  return `<article class="post ${full ? 'full' : ''}">
+    <div class="row" style="gap:10px">${avatarA(p.a, p.c)}<div style="flex:1;min-width:0"><b class="pa">${esc(p.a)}</b><div class="cap">${esc(p.topic)} · ${esc(p.ago)}${p.mine && !p.live ? ' · <span class="inrev">In review</span>' : ''}</div></div>
+      <button class="iconbtn sm" data-a="post-more" data-v="${p.id}" aria-label="More options">⋯</button></div>
+    ${veiled ? `<button class="cwveil" data-a="unveil" data-v="${p.id}"><b>Content note</b><span>${esc(p.cw)}</span><span class="link">Tap to read</span></button>`
+      : `<button class="pbody" data-a="${full ? 'noop' : 'post'}" data-v="${p.id}"><b class="ptitle">${esc(p.title)}</b><span class="ptext ${full ? '' : 'clamp'}">${esc(p.body)}</span></button>`}
+    ${p.counsellor && !veiled ? `<div class="creply"><span class="cbadge">${ic('check')}Counsellor replied</span>${full ? `<span>${esc(p.counsellor)}</span>` : ''}</div>` : ''}
+    <div class="pacts"><button class="pact ${r.relate ? 'on' : ''}" data-a="react" data-k="relate" data-v="${p.id}" aria-pressed="${!!r.relate}">${ic('heart')}<span>I relate · ${rel}</span></button>
+      <button class="pact ${r.strength ? 'on' : ''}" data-a="react" data-k="strength" data-v="${p.id}" aria-pressed="${!!r.strength}">${ic('spark')}<span>Strength · ${str}</span></button>
+      <button class="pact" data-a="post" data-v="${p.id}">${ic('chat')}<span>${cm}</span></button></div></article>`;
+}
+V.community = () => {
+  const t = X.ct || 'All', list = allPosts().filter(p => t === 'All' || p.topic === t);
+  return `<div class="screen" style="gap:14px">
+    <div class="row between"><div><h1 class="t1">Community</h1><p class="note" style="font-size:17px">real stories, no names</p></div><button class="iconbtn" data-a="sheet" data-v="cguide" aria-label="Community guidelines" style="background:var(--surface-raised);box-shadow:var(--shadow-card)">${ic('shield')}</button></div>
+    <button class="compose" data-a="c-new">${avatarA(myAlias().a, myAlias().c)}<span class="grow" style="text-align:left"><b>Share your story</b><span class="cap" style="display:block">You'll post as ${esc(myAlias().a)}. No one sees your name.</span></span><span class="btn primary sm">Write</span></button>
+    <div class="row chipsx" style="gap:8px;overflow-x:auto;flex-wrap:nowrap;margin:0 -16px;padding:0 16px">${C_TOPICS.map(c => `<button class="chip" style="flex:none" data-a="ctopic" data-v="${c}" aria-pressed="${t === c}">${c}</button>`).join('')}</div>
+    <div class="feed">${list.map(p => postCard(p)).join('') || `<div class="card stack" style="text-align:center"><b>No stories here yet</b><span class="muted">Be the first to share.</span></div>`}</div>
+    <p class="cap" style="text-align:center;margin:0">${ic('lock')} Anonymous to everyone, including your employer. Every story is reviewed before it goes live.</p>
+  </div>${tabbar()}`;
+};
+V.post = () => {
+  const p = allPosts().find(x => x.id === S.params.id); if (!p) return `<div class="screen notab">${top('Story')}<p class="muted">This story is no longer available.</p></div>`;
+  const mine = S.myComments[p.id] || [];
+  return `<div class="screen notab" style="gap:14px">${top('Story')}${postCard(p, true)}
+    <div class="stack" style="gap:10px"><span class="lbl">Replies</span>
+      ${p.counsellor ? `<div class="cmt pro">${avatarA('Y D', 1)}<div><b>${esc(p.counsellor.split(' · ')[1] || 'YourDOST')}</b><span class="cbadge sm">Counsellor</span><p>${esc(p.counsellor.split(' · ')[0])}</p></div></div>` : ''}
+      ${[...(p.comments || []), ...mine.map(m => [myAlias().a + ' (you)', m])].map(([a, t2]) => `<div class="cmt">${avatarA(a, a.length)}<div><b>${esc(a)}</b><p>${esc(t2)}</p></div></div>`).join('') || '<span class="muted">No replies yet. Be kind and go first.</span>'}</div>
+    <div style="flex:1"></div>
+    <div class="row" style="gap:8px"><input id="ctext" class="field" placeholder="Reply kindly as ${esc(myAlias().a)}" maxlength="300"><button class="iconbtn" style="background:var(--primary);color:var(--on-primary);flex:none" data-a="c-reply" data-v="${p.id}" aria-label="Send reply">${ic('send')}</button></div>
+    <div class="row wrap" style="gap:6px">${['This helped me', 'Sending you strength', 'Same here, you\'re not alone'].map(q => `<button class="chip" style="min-height:32px;font-size:12px" data-a="c-quick" data-v="${esc(q)}">${esc(q)}</button>`).join('')}</div></div>`;
+};
+V.cnew = () => {
+  const d = X.cn || (X.cn = { topic: null, ok: false });
+  return `<div class="screen notab" style="gap:14px">${top('Share your story')}
+    <div class="row" style="gap:10px">${avatarA(myAlias().a, myAlias().c)}<div><b>${esc(myAlias().a)}</b><div class="cap">Your anonymous name. It's the same each time.</div></div></div>
+    <div class="stack" style="gap:8px"><span class="lbl">What is it about?</span><div class="row wrap" style="gap:6px">${C_TOPICS.slice(1).map(c => `<button class="chip" data-a="cn-topic" data-v="${c}" aria-pressed="${d.topic === c}">${c}</button>`).join('')}</div></div>
+    <input id="cntitle" class="field" placeholder="A short title" maxlength="80" value="${esc(d.title || '')}">
+    <textarea id="cnbody" class="field rtext" rows="7" placeholder="What happened, and what helped? Others will read this when they feel the same.">${esc(d.body || '')}</textarea>
+    <label class="row" style="gap:10px;align-items:flex-start"><button class="toggle" role="switch" aria-checked="${d.ok}" data-a="cn-ok" aria-label="I agree to the guidelines"></button><span class="cap" style="font-size:13px">No names, workplaces or details that could identify you or anyone else. No medical advice. I've read the <button class="link" data-a="sheet" data-v="cguide" style="padding:0">guidelines</button>.</span></label>
+    <div style="flex:1"></div><button class="btn primary block" data-a="cn-post">Post anonymously</button>
+    <p class="cap" style="text-align:center;margin:0">A YourDOST moderator reviews every story, usually within an hour.</p></div>`;
+};
+function cnKeep() { const d = X.cn; if (!d) return; const t = document.getElementById('cntitle'), b = document.getElementById('cnbody'); if (t) d.title = t.value; if (b) d.body = b.value; }
+
 $app.addEventListener('click', e => {
   const a = e.target.closest('[data-a]'); if (!a) return;
   const act = a.dataset.a, v = a.dataset.v;
@@ -1713,6 +1791,30 @@ $app.addEventListener('click', e => {
   if (a.dataset.tv && S.params) { S.params.vis = [...(S.params.vis || []), a.dataset.tv]; }
   if (act === 'scrim' && e.target !== a) return;
   switch (act) {
+    case 'c-new': go('cnew'); break;
+    case 'ctopic': X.ct = v; X.keep = true; render(); break;
+    case 'post': go('post', { id: v }); break;
+    case 'noop': break;
+    case 'unveil': X.unveil = { ...(X.unveil || {}), [v]: 1 }; X.keep = true; render(); break;
+    case 'react': { const r = S.reacts[v] || (S.reacts[v] = {}), k = a.dataset.k; r[k] = !r[k]; save(); X.keep = true; render(); break; }
+    case 'post-more': sheet('pmore', { id: v }); break;
+    case 'p-hide': S.hidden.push(SHEET.id); SHEET = null; save(); toast("Hidden. You won't see this story again."); if (S.view === 'post') back(); else render(); break;
+    case 'p-report': SHEET = null; toast('Thanks for telling us. A moderator will look at it within an hour.'); render(); break;
+    case 'c-quick': { const i = document.getElementById('ctext'); if (i) { i.value = v; i.focus(); } break; }
+    case 'c-reply': { const i = document.getElementById('ctext'), t = i ? i.value.trim() : ''; if (!t) { toast('Write a kind reply first.'); break; }
+      if (RISK.test(t)) { sheet('help', { urgent: true }); break; }
+      (S.myComments[v] = S.myComments[v] || []).push(t); save(); toast('Reply posted anonymously.'); render(); break; }
+    case 'cn-topic': cnKeep(); X.cn.topic = v; render(); break;
+    case 'cn-ok': cnKeep(); X.cn.ok = !X.cn.ok; render(); break;
+    case 'cn-post': { cnKeep(); const d = X.cn, body = (d.body || '').trim(), title = (d.title || '').trim();
+      if (!d.topic) { toast('Pick what your story is about.'); break; }
+      if (body.length < 30) { toast('Write a little more so others can relate.'); break; }
+      if (!d.ok) { toast('Please agree to the guidelines first.'); break; }
+      if (RISK.test(title + ' ' + body)) { sheet('help', { urgent: true }); toast("We've kept your story private. Someone can talk with you right now."); break; }
+      const al = myAlias(), id = 'm' + Date.now(); S.myPosts.unshift({ id, a: al.a, c: al.c, topic: d.topic, ago: 'Just now', title: title || 'My story', body, relate: 0, strength: 0, comments: [], mine: true, live: false });
+      if (!S.doneToday.story) { S.doneToday.story = true; S.wins.push('Shared your story'); }
+      save(); back(); toast('Sent for review. It goes live once a moderator checks it.');
+      setTimeout(() => { const p = S.myPosts.find(x => x.id === id); if (p) { p.live = true; save(); if (S.view === 'community') { render(); toast('Your story is live. Thank you for sharing.'); } } }, 8000); break; }
     case 'go-tests': go('tests'); break;
     case 'sess-fb': { const last = S.history[S.history.length - 1]; S.fb = S.fb || {}; S.fb[last.n] = +v; SHEET = null; save(); toast(+v === 0 ? 'Thanks for telling us. You can try someone else, no awkwardness.' : 'Thanks. We\'ll share this with your counsellor.'); if (+v === 0) { S.seg = 'browse'; go('experts'); } else render(); break; }
     case 'home-state': setHomeState(v); break;
