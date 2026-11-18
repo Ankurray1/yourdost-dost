@@ -90,7 +90,7 @@ const KEY = 'yd-app-v3';
 const fresh = () => ({
   onboarded: false, ob: 0, name: 'Riya', email: 'riya.sharma@acme.com', company: 'Acme Corp', concerns: [], lang: 'English',
   view: 'home', params: {}, stack: [], tab: 'home',
-  moods: seedMoods(), lastCheck: null, leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
+  moods: seedMoods(), lastCheck: null, tour: null, leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
   plan: null, sessionsLeft: 3, favs: ['e1'], seg: 'browse', sort: 'match', quiz: null,
   booked: { id: 'e1', day: 'Mon 24 Nov', time: '6 pm', mode: 'Video', n: 3 },
   history: [{ id: 'e1', n: 1, date: 'Mon 10 Nov', mode: 'Video', fit: 4, note: 'Mapped what drains my evenings: late calls and checking Slack in bed.', task: 'Try a switch-off ritual' }, { id: 'e1', n: 2, date: 'Mon 17 Nov', mode: 'Video', fit: 5, note: 'The ritual helped on 3 of 5 nights. Next: saying no to one late meeting.', task: 'Box breathing before stand-up' }],
@@ -185,8 +185,8 @@ const SLIDES = [
   { bg: 'var(--violet-100)', wave: 'var(--violet-200)', wave2: 'var(--violet-400)', a: 'You are', b: 'not alone.', note: 'lots of us feel this way',
     sub: 'Feeling low, anxious or stuck happens to many people. Reaching out is how it starts to get lighter.',
     art: `<svg viewBox="0 0 240 150" class="iart" aria-hidden="true"><circle class="bob d1" cx="60" cy="80" r="26" fill="var(--violet-200)"/><circle class="bob d2" cx="180" cy="72" r="22" fill="var(--peach-100)"/><circle class="bob d3" cx="120" cy="40" r="18" fill="var(--sage-100)"/><circle class="bob d4" cx="150" cy="118" r="16" fill="var(--violet-200)"/><circle class="bob d2" cx="86" cy="124" r="14" fill="var(--sun-200)"/><circle class="bob" cx="120" cy="82" r="30" fill="var(--sun-400)"/><path d="M110 82c3 4 17 4 20 0" stroke="#2F2663" stroke-width="3" fill="none" stroke-linecap="round"/><circle cx="111" cy="74" r="2.5" fill="#2F2663"/><circle cx="129" cy="74" r="2.5" fill="#2F2663"/></svg>` },
-  { bg: 'var(--sun-100)', wave: 'var(--sun-200)', wave2: 'var(--sun-400)', a: 'Opening this app', b: 'took courage.', note: "that's the biggest step",
-    sub: 'Most people wait a long time before they reach out. You just did. Be proud of that.',
+  { bg: 'var(--sun-100)', wave: 'var(--sun-200)', wave2: 'var(--sun-400)', a: 'Your first step towards therapy', b: 'takes courage.', note: 'and you just took it',
+    sub: 'Reaching out about how you feel is how support begins for most people. Be proud of that.',
     art: `<svg viewBox="0 0 240 150" class="iart" aria-hidden="true"><g class="rise"><circle cx="120" cy="120" r="54" fill="var(--sun-400)"/><g stroke="var(--peach-400)" stroke-width="5" stroke-linecap="round"><path d="M120 46V28"/><path d="M70 66L58 54"/><path d="M170 66l12-12"/><path d="M52 104H34"/><path d="M188 104h18"/></g></g><rect x="20" y="118" width="200" height="40" fill="var(--sun-100)"/><path d="M20 118h200" stroke="var(--peach-400)" stroke-width="4" stroke-linecap="round"/></svg>` },
   { bg: 'var(--peach-100)', wave: '#FFD9BF', wave2: 'var(--peach-400)', a: "Don't worry.", b: "We've got you.", note: 'one small step at a time',
     sub: 'Talk to Dost, try a 2-minute exercise, or speak to a counsellor. Private, free and here 24×7.',
@@ -210,7 +210,7 @@ V.intro = () => {
 };
 function introNext() {
   const i = X.slide || 0;
-  if (i >= SLIDES.length - 1) { S.onboarded = true; S.view = 'home'; S.tab = 'home'; save(); X = {}; render(); return; }
+  if (i >= SLIDES.length - 1) { S.onboarded = true; S.view = 'home'; S.tab = 'home'; S.tour = 0; save(); X = {}; render(); return; }
   if (X.busy) return; X.busy = true;
   const host = document.getElementById('intro'), n = SLIDES[i + 1];
   const layer = document.createElement('div'); layer.className = 'liquid'; layer.style.background = n.bg;
@@ -222,6 +222,44 @@ function bindIntro() {
   let x0 = null;
   el.onpointerdown = e => { if (e.target.closest('button')) return; x0 = e.clientX; };
   el.onpointerup = e => { if (x0 === null) return; const dx = e.clientX - x0; x0 = null; if (dx < -50) introNext(); };
+}
+
+/* ---- First-visit tour: spotlight one feature at a time with a short explanation ---- */
+const TOUR = [
+  { sel: '.moodcard', title: 'A 5-second daily check-in', text: 'Tap how you feel once a day. It disappears for 24 hours and builds your mood history.' },
+  { sel: '.moodchip', title: 'Your mood score', text: 'Your average for the week, out of 100. Tap it to see your week, month and year, and what lifts you.' },
+  { sel: '#t-step', title: "Today's one step", text: 'One small thing to do today, picked by Dost from your plan. Never a long to-do list.' },
+  { sel: '#t-garden', title: 'Your garden', text: 'Every kind thing you do for yourself grows a plant. It never wilts, so missed days are okay.' },
+  { sel: '.tab[data-v="experts"]', title: 'Experts', text: 'Find your counsellor. Take the smart match, swipe through profiles and book a time from their calendar.' },
+  { sel: '.orbbtn', title: 'Dost, your AI guide', text: "Talk or type anytime. Dost listens, asks a few questions and finds the right next step. It's not a doctor." },
+  { sel: '.tab[data-v="grow"]', title: 'Grow', text: 'Short exercises, 7-day programs and quick checks for stress, sleep and mood.' },
+  { sel: '.tab[data-v="me"]', title: 'Me', text: 'Your journey, journal, free sessions left and privacy. Only you see what is here.' },
+  { sel: '#t-help', title: 'A person is always one tap away', text: 'If things feel heavy, an on-call counsellor is here 24×7.' },
+];
+function tourSteps() { return TOUR.filter(t => document.querySelector('#app ' + t.sel)); }
+function drawTour() {
+  let box = document.getElementById('tour');
+  const off = () => { if (box) box.remove(); };
+  if (S.view !== 'home' || S.tour === null || S.tour === undefined || SHEET) return off();
+  const steps = tourSteps(), i = S.tour;
+  if (i >= steps.length) { S.tour = null; save(); return off(); }
+  const st = steps[i], el = document.querySelector('#app ' + st.sel);
+  if (el.closest('.screen')) el.scrollIntoView({ block: 'center', behavior: 'instant' });
+  const ar = $app.getBoundingClientRect(), k = ar.width / $app.offsetWidth, r = el.getBoundingClientRect();
+  const pad = 6, x = (r.left - ar.left) / k - pad, y = (r.top - ar.top) / k - pad, w = r.width / k + pad * 2, h = r.height / k + pad * 2;
+  const round = el.matches('.orbbtn, .moodchip') ? 999 : el.matches('.tab') ? 22 : 24;
+  const W = $app.offsetWidth, H = $app.offsetHeight, below = y + h / 2 < H * 0.55;
+  if (!box) {
+    box = document.createElement('div'); box.id = 'tour'; box.className = 'tour';
+    box.innerHTML = '<div class="tour-catch" data-a="tour-noop"></div><div class="tour-spot"></div><div class="tour-tipwrap"></div>';
+    $app.appendChild(box);
+  }
+  Object.assign(box.querySelector('.tour-spot').style, { left: x + 'px', top: y + 'px', width: w + 'px', height: h + 'px', borderRadius: round + 'px' });
+  box.querySelector('.tour-tipwrap').innerHTML = `<div class="tour-tip ${below ? 'down' : 'up'}" role="dialog" aria-live="polite" aria-label="${esc(st.title)}" style="${below ? `top:${y + h + 14}px` : `bottom:${H - y + 14}px`};--ax:${Math.max(28, Math.min(W - 44, x + w / 2 - 16))}px">
+      <div class="row between"><span class="eyebrow">${i + 1} of ${steps.length}</span><button class="link" data-a="tour-skip">Skip tour</button></div>
+      <b class="t2">${esc(st.title)}</b><p style="margin:0" class="muted">${esc(st.text)}</p>
+      <div class="row between"><div class="dots" aria-hidden="true">${steps.map((_, n) => `<i class="${n === i ? 'on' : ''}"></i>`).join('')}</div>
+        <div class="row" style="gap:8px">${i > 0 ? `<button class="btn ghost sm" data-a="tour-back">Back</button>` : ''}<button class="btn primary sm" data-a="tour-next">${i === steps.length - 1 ? 'Got it' : 'Next'}</button></div></div></div>`;
 }
 
 /* ---- Home ---- */
@@ -323,14 +361,14 @@ V.home = () => {
   <div class="row between"><div><span class="cap">${greet()},</span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div>
     <div class="row">${moodChip()}<button class="avatar" data-a="tab" data-v="me" aria-label="Me" style="border:0">${esc(S.name[0])}</button></div></div>
   ${moodCard()}
-  <section class="sec"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
+  <section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
     ${step ? stepCard(step) : `<button class="card glow row" data-a="dost" style="border:0;text-align:left;box-shadow:var(--shadow-card)"><span class="orb sm" style="animation:none;flex:none;width:64px;height:64px;box-shadow:0 0 0 6px color-mix(in srgb,var(--violet-200) 70%,transparent)"></span><span class="stack" style="gap:4px"><b>Talk to Dost for 2 minutes</b><span class="cap">Dost asks a few questions and finds the right support for you.</span></span></button>`}</section>
   ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(bk.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
-  <section class="card stack"><div class="row between"><h2 class="t2">Your garden</h2><span class="cap">${S.leaves} of 7 this week</span></div>
+  <section class="card stack" id="t-garden"><div class="row between"><h2 class="t2">Your garden</h2><span class="cap">${S.leaves} of 7 this week</span></div>
     ${garden(S.leaves)}<p class="muted" style="margin:0">Every kind thing you do for yourself grows a plant. It never wilts, so missed days are okay.</p></section>
   <section class="sec"><div class="sec-h"><h2 class="t2">Today's care</h2><button class="link" data-a="tab" data-v="grow">See all</button></div>
     <div class="hscroll">${care.map((id, i) => actCard(id, i === 0 ? 'For you' : '')).join('')}</div></section>
-  <button class="card row" data-a="help" style="border:0;text-align:left"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span style="flex:1"><b>Need to talk now?</b><span class="cap" style="display:block">A counsellor is on call, 24×7.</span></span>${ic('chev', 'chev')}</button>
+  <button class="card row" id="t-help" data-a="help" style="border:0;text-align:left"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span style="flex:1"><b>Need to talk now?</b><span class="cap" style="display:block">A counsellor is on call, 24×7.</span></span>${ic('chev', 'chev')}</button>
 </div>${tabbar()}`;
 };
 function stepCard(s) {
@@ -639,6 +677,7 @@ V.me = () => {
       <div class="li"><span class="dot tint-sage">${ic('chat')}</span><span class="grow"><b>Dost remembers our chats</b><span class="cap" style="display:block">So it can ask how things went</span></span><button class="toggle" role="switch" aria-checked="${S.memory}" aria-label="Dost memory" data-a="memory"></button></div>
       <button class="li" data-a="sheet" data-v="privacy"><span class="dot tint-violet">${ic('shield')}</span><span class="grow"><b>Privacy and your data</b><span class="cap" style="display:block">What ${esc(S.company)} sees: group totals only</span></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="help"><span class="dot tint-help" style="color:var(--help-600)">${ic('phone')}</span><span class="grow"><b>Get help now</b></span>${ic('chev', 'chev')}</button>
+      <button class="li" data-a="tour-again"><span class="dot tint-sun">${ic('spark')}</span><span class="grow"><b>Take the app tour again</b><span class="cap" style="display:block">A quick guide to every feature</span></span>${ic('chev', 'chev')}</button>
       <button class="li" data-a="restart"><span class="dot" style="background:var(--surface-sunken)">${ic('back')}</span><span class="grow"><b>Prototype: start over</b><span class="cap" style="display:block">Replays onboarding and clears this demo</span></span></button>
     </div></div>${tabbar()}`;
 };
@@ -699,6 +738,7 @@ function render() {
   if (S.view === 'ex' && X.ex && X.ex.running) runBreath();
   if (S.view === 'deck') bindSwipe();
   if (S.view === 'intro') bindIntro();
+  drawTour();
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
 }
 function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; X.date = null; save(); render(); const nx = EXM[p.ids[(p.i + 1) % n]]; if (nx) { const im = new Image(); im.src = `/app/img/${nx.id}.webp`; } }
@@ -750,7 +790,12 @@ $app.addEventListener('click', e => {
       S.email = em; const nm = em.split('@')[0].split(/[._-]/)[0]; S.name = nm ? nm[0].toUpperCase() + nm.slice(1) : 'Riya'; S.guest = false; S.view = 'intro'; X = { slide: 0 }; save(); render(); break; }
     case 'guest': S.guest = true; S.name = 'Friend'; S.email = 'Guest'; S.view = 'intro'; X = { slide: 0 }; save(); render(); break;
     case 'intro-next': introNext(); break;
-    case 'intro-skip': S.onboarded = true; S.view = 'home'; S.tab = 'home'; save(); X = {}; render(); break;
+    case 'intro-skip': S.onboarded = true; S.view = 'home'; S.tab = 'home'; S.tour = 0; save(); X = {}; render(); break;
+    case 'tour-next': S.tour = (S.tour || 0) + 1; save(); drawTour(); break;
+    case 'tour-back': S.tour = Math.max(0, (S.tour || 0) - 1); save(); drawTour(); break;
+    case 'tour-skip': S.tour = null; save(); drawTour(); break;
+    case 'tour-noop': break;
+    case 'tour-again': S.tour = 0; save(); go('home'); break;
     case 'tab': go(v); break;
     case 'back': back(); break;
     case 'dost': go('dost'); break;
