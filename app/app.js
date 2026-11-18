@@ -780,6 +780,13 @@ function quizMatches() {
     return { e: EXM[e.id], pct, why: why.slice(0, 3) };
   }).sort((a, b) => b.pct - a.pct);
 }
+const faceImg = e => `<img src="/app/img/${e.id}-f.webp?v=1" alt="" decoding="async" loading="lazy">`;
+function freeStrip() {
+  const fr = EXPERTS.filter(e => e.today); if (!fr.length) return '';
+  const ids = fr.map(e => e.id).join(',');
+  return `<section class="sec" style="gap:10px"><div class="sec-h"><h2 class="t2">Free today</h2><span class="cap">talk tonight</span></div>
+    <div class="fstrip">${fr.map((e, i) => `<button class="fchip" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="${esc(e.name)}, free today at ${esc(e.today)}"><span class="fava">${faceImg(e)}</span><b>${esc(fnm(e.name))}</b><span class="cap">${esc(e.today)}</span></button>`).join('')}</div></section>`;
+}
 const img = (e, cls = '', size = '') => `<img class="${cls}" src="/app/img/${e.id}${size === 's' ? '-s' : ''}.webp?v=2" alt="${esc(e.name)}" decoding="async">`;
 const SPARK = '<svg class="spk" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5 4.6-.6 6.9-2.9 7.5-7.5z" fill="currentColor"/><path class="spk2" d="M19 15.5c.3 1.8 1.2 2.7 3 3-1.8.3-2.7 1.2-3 3-.3-1.8-1.2-2.7-3-3 1.8-.3 2.7-1.2 3-3z" fill="currentColor"/></svg>';
 const STAR = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="var(--sun-400)"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
@@ -851,9 +858,15 @@ V.experts = () => {
             <span class="cap">${e.focus.map(c => CL[c]).join(' · ')}</span>
             <span class="tlang">${e.langs.join(' · ')}</span>
             <span class="row between" style="gap:6px;margin-top:4px"><span class="xfree">${e.today ? 'Free today, ' + esc(e.today) : 'Next: ' + esc((nextFree(e, 1)[0] || 'this week').replace(/^Tomorrow, /, 'tomorrow, '))}</span><span class="xmode">${CLINIC[e.id] ? 'Online · In person' : 'Online'}</span></span></span></button>`).join('')}</div>`
-      : list.length ? `<div class="xgrid">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
-          <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
-        <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.yrs} years experience</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
+      : list.length ? `${!S.q && !nf ? freeStrip() : ''}
+      <div class="sec-h" style="margin-bottom:-6px"><h2 class="t2">${S.q || nf ? 'Results' : 'All experts'}</h2><span class="cap">${list.length} ${list.length === 1 ? 'person' : 'people'}</span></div>
+      <div class="pgrid ${X.pin ? '' : 'in'}">${list.map((e, i) => `<button class="pcx" style="--i:${i}" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="${esc(e.name)}, ${e.yrs} years, speaks ${esc(e.langs.join(', '))}">
+          <span class="pav">${faceImg(e)}</span>
+          <b class="pname">${esc(e.name)}</b>
+          <span class="pyrs">${e.yrs} years experience</span>
+          <span class="plang">${esc(e.langs.slice(0, 2).join(' · '))}${e.langs.length > 2 ? ` <em>+${e.langs.length - 2}</em>` : ''}</span>
+          <span class="prate">${STAR}${e.rating.toFixed(1)}</span></button>`).join('')}</div>
+      <button class="pnudge" data-a="seg" data-v="for"><span class="stack" style="gap:2px;text-align:left;flex:1"><b>Not sure who to pick?</b><span class="cap">Answer 6 quick taps and we'll suggest your top 3.</span></span><span class="btn primary sm">Help me choose</span></button>`
         : `<div class="card stack" style="text-align:center"><b>No one matches${S.q ? ' “' + esc(S.q) + '”' : ' all of these'}</b><span class="muted">Try a different word or remove a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear search and filters</button></div>`}`;
   }
   if (seg === 'mine') {
@@ -1159,6 +1172,7 @@ function render() {
   if (S.view === 'ritual' && X.ls) runListen();
   if (S.view === 'sos' && X.sos && ['connect', 'call'].includes(X.sos.phase)) runSos();
 
+  if (S.view === 'experts' && document.querySelector('.pgrid.in')) setTimeout(() => { X.pin = true; }, 0);
   const xs = document.getElementById('xsearch');
   if (xs) { xs.oninput = () => { S.q = xs.value; save(); render(); const n = document.getElementById('xsearch'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }; }
   drawTour();
