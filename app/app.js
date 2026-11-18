@@ -746,12 +746,12 @@ function whenLabel(d) { const n = dayDiff(d); return n === 0 ? 'Today' : n === 1
      Hidden when there is nothing to remind. Goal: session show-up, survey response, follow-through. */
 function spotItems() {
   const out = [];
-  if (!S.dostUsed) out.push({ id: 'sp-dost', go: 'dost', v: '', theme: 'sp-glow', art: '<span class="orb sm sp-orb"></span>', k: 'Meet Dost', t: 'Not sure where to start?', s: 'A 2-minute voice chat finds the right help' });
+  out.push({ id: 'sp-voice', go: 'dost', v: '', theme: 'sp-glow', art: '<span class="orb sm sp-orb"></span>', k: '✦ New release', t: 'Just talk to Dost', s: 'Voice chat in your language · try 2 minutes' });
   if (!S.booked && S.sessionsLeft > 0) out.push({ id: 'sp-free', go: 'tab', v: 'experts', theme: 'sp-sun', art: `<span class="sp-ic">${ic('gift')}</span>`, k: `On ${esc(S.company)}`, t: `${S.sessionsLeft} free counselling sessions`, s: 'Private. Your employer never knows who uses it' });
   out.push({ id: 'sp-games', go: 'go-games', v: '', theme: 'sp-ink', art: `<span class="sp-ic">${ic2('puzzle')}</span>`, k: 'New', t: 'Train your mind', s: '6 quick brain games, build a daily streak' });
   out.push({ id: 'sp-sleep', go: 'pg', v: 'pg_sleep', theme: 'sp-violet', art: `<span class="sp-ic">${ic('moon')}</span>`, k: 'New program', t: 'Sleep Reset · 7 days', s: '10 minutes a night for calmer sleep' });
   out.push({ id: 'sp-tests', go: 'go-tests', v: '', theme: 'sp-sage', art: `<span class="sp-ic">${ic2('clip')}</span>`, k: 'Check yourself', t: 'How anxious am I, really?', s: 'Clinically tested, 2 minutes, private' });
-  return out.slice(0, 4);
+  return out.slice(0, 5);
 }
 function remItems() {
   const out = [], b = S.booked, e = b && EXM[b.id], at = sessAt(b), now = Date.now(), tm = S.moods.find(m => m.d === dkey(new Date()));
@@ -782,14 +782,27 @@ function runNow() {
   clearInterval(NFT); NFT = null;
   const seen = X.nseen || (X.nseen = {}), mark = id => { if (id && !seen[id]) { seen[id] = 1; nstat(id, 'seen'); save(); } };
   document.querySelectorAll('.rmbar').forEach(r => mark(r.dataset.nid));
+  dragScroll(document.querySelector('.rmrow'));
   const tr = document.getElementById('sptrack'); if (!tr) return; const n = tr.children.length;
   mark(tr.children[(X.spi || 0) % n].dataset.nid);
   if (n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  let hold = 0, x0 = null; const sp = tr.parentElement;
-  sp.onpointerdown = ev => { hold = Date.now(); x0 = ev.clientX; };
-  sp.onpointerup = ev => { if (x0 === null) return; const dx = ev.clientX - x0; x0 = null; if (Math.abs(dx) > 40) { spGo(((X.spi || 0) + (dx < 0 ? 1 : -1) + n) % n); sp._drag = true; setTimeout(() => { sp._drag = false; }, 50); } };
+  let hold = 0, drag = null; const sp = tr.parentElement;
+  sp.onpointerdown = ev => { hold = Date.now(); drag = { x: ev.clientX, y: ev.clientY, dx: 0, on: false, id: ev.pointerId }; };
+  sp.onpointermove = ev => { if (!drag) return; drag.dx = ev.clientX - drag.x; if (!drag.on && Math.abs(drag.dx) > 6 && Math.abs(drag.dx) > Math.abs(ev.clientY - drag.y)) { drag.on = true; try { sp.setPointerCapture(drag.id); } catch (e) {} tr.style.transition = 'none'; }
+    if (drag.on) { hold = Date.now(); tr.style.transform = `translateX(calc(-${(X.spi || 0) * 100}% + ${drag.dx}px))`; } };
+  const end = () => { if (!drag) return; const d = drag; drag = null; tr.style.transition = ''; if (!d.on) return; sp._drag = true; setTimeout(() => { sp._drag = false; }, 60);
+    const w = sp.getBoundingClientRect().width, cur = X.spi || 0; spGo(Math.abs(d.dx) > w * 0.18 ? (cur + (d.dx < 0 ? 1 : -1) + n) % n : cur); };
+  sp.onpointerup = end; sp.onpointercancel = end; sp.onpointerleave = ev => { if (drag && !drag.on) drag = null; };
   sp.addEventListener('click', ev => { if (sp._drag) { ev.stopPropagation(); ev.preventDefault(); } }, true);
   NFT = setInterval(() => { if (!document.body.contains(tr) || (S.tour !== null && S.tour !== undefined) || SHEET || Date.now() - hold < 7000) return; spGo(((X.spi || 0) + 1) % n); }, 5000);
+}
+function dragScroll(el) {
+  if (!el || el._ds) return; el._ds = true; let d = null;
+  el.addEventListener('pointerdown', ev => { if (ev.pointerType !== 'mouse') return; d = { x: ev.clientX, l: el.scrollLeft, on: false }; });
+  el.addEventListener('pointermove', ev => { if (!d) return; const dx = ev.clientX - d.x; if (!d.on && Math.abs(dx) > 5) { d.on = true; el.style.scrollSnapType = 'none'; el.style.scrollBehavior = 'auto'; } if (d.on) el.scrollLeft = d.l - dx; });
+  const end = () => { if (!d) return; const was = d.on; d = null; el.style.scrollSnapType = ''; el.style.scrollBehavior = ''; if (was) { el._nc = true; setTimeout(() => { el._nc = false; }, 60); const c = el.firstElementChild; if (c) { const w = c.getBoundingClientRect().width + 10; el.scrollTo({ left: Math.round(el.scrollLeft / w) * w, behavior: 'smooth' }); } } };
+  el.addEventListener('pointerup', end); el.addEventListener('pointerleave', end);
+  el.addEventListener('click', ev => { if (el._nc) { ev.stopPropagation(); ev.preventDefault(); } }, true);
 }
 function spGo(k) {
   const tr = document.getElementById('sptrack'); if (!tr) return; X.spi = k; tr.style.transform = `translateX(-${k * 100}%)`;
