@@ -693,9 +693,13 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 @keyframes sprise{from{opacity:0;transform:translateY(8px)}}
 @keyframes sppop{from{opacity:0;transform:scale(.8)}}
 @media (prefers-reduced-motion:reduce){.spcard.enter *{animation:none!important}}
-.spdots{position:absolute;right:16px;top:12px;display:flex;gap:4px;pointer-events:none}
-.spdots i{width:5px;height:5px;border-radius:3px;background:currentColor;opacity:.25;transition:width .3s,opacity .3s;color:var(--ink)}
-.spdots i.on{width:12px;opacity:.7}
+.spdots{position:absolute;right:10px;top:4px;display:flex;gap:2px}
+.spdots button{width:17px;height:24px;border:0;padding:0;background:none;display:grid;place-items:center;cursor:pointer}
+.spdots button::before{content:"";width:5px;height:5px;border-radius:3px;background:var(--ink);opacity:.25;transition:width .3s,opacity .3s}
+.spdots button.on::before{width:14px;opacity:.7}
+.spot:has(.sp-ink.cur) .spdots button::before{background:#FFF4C7}
+.spcard{opacity:0;transition:opacity .25s}
+.spcard.cur,.spot.dragging .spcard{opacity:1}
 /* Home slot 2: Reminders (same-height bars, swipe) */
 .rmrow{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -16px;padding:2px 16px 8px}
 .rmbar{flex:0 0 86%;scroll-snap-align:start;height:68px;display:flex;align-items:center;gap:12px;background:var(--surface-raised);border-radius:var(--r-md);box-shadow:var(--shadow-card);padding:0 12px}

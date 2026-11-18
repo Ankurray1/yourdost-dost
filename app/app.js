@@ -771,8 +771,8 @@ function remItems() {
 }
 function homeNow() {
   const sp = spotItems(), rm = remItems(), si = (X.spi || 0) % Math.max(1, sp.length);
-  return `${sp.length ? `<section class="spot" id="t-step" aria-label="Spotlight"><div class="sptrack" id="sptrack" style="transform:translateX(-${si * 100}%)">${sp.map(p => `<button class="spcard ${p.theme}" data-a="${p.go}" data-v="${p.v}" data-nid="${p.id}">${p.art}<span class="sptxt"><span class="spkick">${p.k}</span><b>${p.t}</b><span class="sps">${p.s}</span></span></button>`).join('')}</div>
-      ${sp.length > 1 ? `<div class="spdots">${sp.map((_, k) => `<i class="${k === si ? 'on' : ''}"></i>`).join('')}</div>` : ''}</section>` : ''}
+  return `${sp.length ? `<section class="spot" id="t-step" aria-label="Spotlight"><div class="sptrack" id="sptrack" style="transform:translateX(-${si * 100}%)">${sp.map((p, k) => `<button class="spcard ${p.theme} ${k === si ? 'cur' : ''}" data-a="${p.go}" data-v="${p.v}" data-nid="${p.id}">${p.art}<span class="sptxt"><span class="spkick">${p.k}</span><b>${p.t}</b><span class="sps">${p.s}</span></span></button>`).join('')}</div>
+      ${sp.length > 1 ? `<div class="spdots">${sp.map((_, k) => `<button class="${k === si ? 'on' : ''}" data-a="spdot" data-v="${k}" aria-label="Show banner ${k + 1} of ${sp.length}"></button>`).join('')}</div>` : ''}</section>` : ''}
     ${rm.length ? `<section class="sec" style="gap:10px"><div class="sec-h"><h2 class="t2">Reminders</h2><span class="cap">${rm.length > 1 ? `${rm.length} · swipe` : '1'}</span></div>
       <div class="rmrow ${rm.length === 1 ? 'one' : ''}">${rm.map(r => `<div class="rmbar ${r.urgent ? 'urgent' : ''}" data-nid="${r.id}">${r.icon}<span class="rmtxt"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></span><button class="btn sm ${r.urgent ? 'primary' : 'soft'}" data-a="${r.a}" data-v="${esc(r.v)}">${r.btn}</button></div>`).join('')}</div></section>` : ''}`;
 }
@@ -788,9 +788,9 @@ function runNow() {
   if (n < 2 || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   let hold = 0, drag = null; const sp = tr.parentElement;
   sp.onpointerdown = ev => { hold = Date.now(); drag = { x: ev.clientX, y: ev.clientY, dx: 0, on: false, id: ev.pointerId }; };
-  sp.onpointermove = ev => { if (!drag) return; drag.dx = ev.clientX - drag.x; if (!drag.on && Math.abs(drag.dx) > 6 && Math.abs(drag.dx) > Math.abs(ev.clientY - drag.y)) { drag.on = true; try { sp.setPointerCapture(drag.id); } catch (e) {} tr.style.transition = 'none'; }
+  sp.onpointermove = ev => { if (!drag) return; drag.dx = ev.clientX - drag.x; if (!drag.on && Math.abs(drag.dx) > 6 && Math.abs(drag.dx) > Math.abs(ev.clientY - drag.y)) { drag.on = true; try { sp.setPointerCapture(drag.id); } catch (e) {} tr.style.transition = 'none'; sp.classList.add('dragging'); }
     if (drag.on) { hold = Date.now(); tr.style.transform = `translateX(calc(-${(X.spi || 0) * 100}% + ${drag.dx}px))`; } };
-  const end = () => { if (!drag) return; const d = drag; drag = null; tr.style.transition = ''; if (!d.on) return; sp._drag = true; setTimeout(() => { sp._drag = false; }, 60);
+  const end = () => { if (!drag) return; const d = drag; drag = null; tr.style.transition = ''; setTimeout(() => sp.classList.remove('dragging'), 560); if (!d.on) return; sp._drag = true; setTimeout(() => { sp._drag = false; }, 60);
     const w = sp.getBoundingClientRect().width, cur = X.spi || 0; spGo(Math.abs(d.dx) > w * 0.18 ? (cur + (d.dx < 0 ? 1 : -1) + n) % n : cur); };
   sp.onpointerup = end; sp.onpointercancel = end; sp.onpointerleave = ev => { if (drag && !drag.on) drag = null; };
   sp.addEventListener('click', ev => { if (sp._drag) { ev.stopPropagation(); ev.preventDefault(); } }, true);
@@ -811,8 +811,8 @@ function spSoft(k) { // auto-advance: fade, swap, then the text rises in
 }
 function spGo(k) {
   const tr = document.getElementById('sptrack'); if (!tr) return; X.spi = k; tr.style.transform = `translateX(-${k * 100}%)`;
-  [...tr.children].forEach((c, j) => { c.classList.remove('enter'); if (j === k) { void c.offsetWidth; c.classList.add('enter'); } });
-  document.querySelectorAll('.spdots i').forEach((d, j) => d.classList.toggle('on', j === k));
+  [...tr.children].forEach((c, j) => { c.classList.remove('enter'); c.classList.toggle('cur', j === k); if (j === k) { void c.offsetWidth; c.classList.add('enter'); } });
+  document.querySelectorAll('.spdots button').forEach((d, j) => d.classList.toggle('on', j === k));
   const id = tr.children[k].dataset.nid, seen = X.nseen || (X.nseen = {}); if (!seen[id]) { seen[id] = 1; nstat(id, 'seen'); save(); }
 }
 
@@ -1715,6 +1715,7 @@ $app.addEventListener('click', e => {
     case 'go-tests': go('tests'); break;
     case 'sess-fb': { const last = S.history[S.history.length - 1]; S.fb = S.fb || {}; S.fb[last.n] = +v; SHEET = null; save(); toast(+v === 0 ? 'Thanks for telling us. You can try someone else, no awkwardness.' : 'Thanks. We\'ll share this with your counsellor.'); if (+v === 0) { S.seg = 'browse'; go('experts'); } else render(); break; }
     case 'home-state': setHomeState(v); break;
+    case 'spdot': { const t = document.getElementById('sptrack'); if (t) { const sp = t.parentElement; sp.classList.add('dragging'); spGo(+v); setTimeout(() => sp.classList.remove('dragging'), 560); } break; }
     case 'survey-go': X.sv = []; go('survey'); break;
     case 'nstats-reset': S.nstats = {}; save(); render(); break;
     case 'go-acts': go('acts'); break;
