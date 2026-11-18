@@ -37,17 +37,25 @@
 }
 *{box-sizing:border-box}
 html,body{height:100%;margin:0}
-body{background:var(--page);font:400 15px/22px var(--f-body);color:var(--ink);display:flex;justify-content:center;align-items:flex-start;padding:24px 16px}
+body{background:var(--page);font:400 15px/22px var(--f-body);color:var(--ink);display:flex;justify-content:center;align-items:flex-start;padding:24px 16px;overflow-x:hidden}
 button,input,textarea{font:inherit;color:inherit}
 button{cursor:pointer}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 /* phone frame on desktop, full screen on a phone */
-.phone{width:390px;height:844px;max-height:calc(100vh - 48px);background:var(--surface);border-radius:44px;box-shadow:0 30px 70px -20px rgba(47,38,99,.35),0 0 0 10px var(--surface-raised);position:relative;overflow:hidden;display:flex;flex-direction:column}
-@media (max-width:480px){body{padding:0}.phone{width:100%;height:100%;max-height:none;border-radius:0;box-shadow:none}}
-.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:20px 16px 120px;display:flex;flex-direction:column;gap:20px;scroll-behavior:smooth}
-.screen.flush{padding:0}
-.screen.notab{padding-bottom:24px}
+:root{--sb:54px;--hi:22px}
+/* a real phone: 402 x 874 (iPhone Pro screen), scaled evenly to fit the window */
+.phone{width:402px;height:874px;flex:none;position:relative;border-radius:58px;overflow:hidden;background:var(--surface);transform-origin:top center;
+  box-shadow:0 0 0 2px #C9C2DE,0 0 0 11px #1E1A33,0 0 0 13px #3A3456,0 40px 80px -24px rgba(47,38,99,.45)}
+#app{position:absolute;inset:0;display:flex;flex-direction:column;overflow:hidden}
+.sbar{position:absolute;left:0;right:0;top:0;height:var(--sb);z-index:80;background:color-mix(in srgb,var(--surface) 82%,transparent);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);display:flex;align-items:center;justify-content:space-between;padding:6px 30px 0 44px;pointer-events:none;color:var(--ink);font:600 16px/1 -apple-system,"SF Pro Text",Inter,system-ui,sans-serif;letter-spacing:-.2px}
+.sbar .island{position:absolute;left:50%;top:11px;width:124px;height:36px;margin-left:-62px;border-radius:20px;background:#0E0B1C}
+.sbar .icons{display:flex;gap:6px;align-items:center}
+.hind{position:absolute;left:50%;bottom:8px;width:140px;height:5px;margin-left:-70px;border-radius:3px;background:var(--ink);opacity:.85;z-index:80;pointer-events:none}
+@media (max-width:480px){:root{--sb:0px;--hi:0px}body{padding:0}.phone{width:100%;height:100%;border-radius:0;box-shadow:none;transform:none!important}.sbar,.hind{display:none}}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:calc(20px + var(--sb)) 16px calc(120px + var(--hi));display:flex;flex-direction:column;gap:20px;scroll-behavior:smooth}
+.screen.flush{padding:var(--sb) 0 0}
+.screen.notab{padding-bottom:calc(24px + var(--hi))}
 /* type */
 .display{font:700 30px/36px var(--f-display);letter-spacing:-.5px;margin:0;text-wrap:balance}
 .t1{font:600 24px/30px var(--f-display);margin:0;text-wrap:balance}
@@ -106,7 +114,7 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 .top{display:flex;align-items:center;gap:12px;min-height:44px}
 .top .t2{flex:1}
 /* tab bar */
-.tabbar{position:absolute;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:space-between;background:var(--surface-raised);border-radius:var(--r-pill);box-shadow:var(--shadow-float);padding:6px 10px;z-index:20}
+.tabbar{position:absolute;left:12px;right:12px;bottom:calc(12px + var(--hi) + env(safe-area-inset-bottom,0px));display:flex;align-items:center;justify-content:space-between;background:var(--surface-raised);border-radius:var(--r-pill);box-shadow:var(--shadow-float);padding:6px 10px;z-index:20}
 .tab{display:grid;justify-items:center;gap:3px;min-width:60px;min-height:52px;border:0;background:none;color:var(--ink-muted);font:600 11px/1 var(--f-body);border-radius:var(--r-pill);padding:6px 2px;align-content:center}
 .tab svg{width:22px;height:22px}
 .tab[aria-current="page"]{color:var(--primary)}
@@ -116,10 +124,10 @@ svg.i{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-widt
 /* sheets and toast */
 .scrim{position:absolute;inset:0;background:rgba(23,19,46,.45);z-index:40;display:flex;align-items:flex-end}
 .scrim.anim{animation:fade .2s ease-out}
-.sheet{width:100%;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:12px 16px calc(24px + env(safe-area-inset-bottom,0px));display:grid;gap:16px;max-height:88%;overflow-y:auto}
+.sheet{width:100%;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:12px 16px calc(24px + var(--hi) + env(safe-area-inset-bottom,0px));display:grid;gap:16px;max-height:84%;overflow-y:auto}
 .scrim.anim .sheet{animation:up .25s ease-out}
 .grab{width:40px;height:5px;border-radius:3px;background:var(--line);justify-self:center}
-.toast{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:12px 18px;border-radius:var(--r-pill);font:600 14px/18px var(--f-body);z-index:60;max-width:330px;text-align:center}
+.toast{position:absolute;left:50%;bottom:calc(110px + var(--hi));transform:translateX(-50%);background:var(--ink);color:var(--surface);padding:12px 18px;border-radius:var(--r-pill);font:600 14px/18px var(--f-body);z-index:60;max-width:330px;text-align:center}
 @keyframes fade{from{opacity:0}}
 @keyframes up{from{transform:translateY(40px);opacity:.4}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -205,7 +213,7 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .arch.behind{transform:translateX(30px) scale(.9) rotate(5deg);opacity:.5;box-shadow:none;cursor:default}
 .arch .rate{position:absolute}
 .dsheet{margin-top:-30px;position:relative;z-index:2;background:var(--surface);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:12px 16px 24px;display:grid;gap:12px;flex:1;align-content:start;box-shadow:0 -10px 30px rgba(47,38,99,.12)}
-.deck-cta{position:sticky;bottom:0;z-index:3;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(14px + env(safe-area-inset-bottom,0px));display:grid;gap:6px}
+.deck-cta{position:sticky;bottom:0;z-index:3;background:var(--surface);border-top:1px solid var(--line);padding:10px 16px calc(14px + var(--hi) + env(safe-area-inset-bottom,0px));display:grid;gap:6px}
 /* session history timeline */
 .tl{display:grid;gap:12px;position:relative;padding-left:30px}
 .tl::before{content:"";position:absolute;left:11px;top:10px;bottom:10px;width:2px;background:var(--line)}
@@ -217,7 +225,23 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 </style>
 </head>
 <body>
-<main class="phone" id="app" aria-live="polite"></main>
+<div class="phone" id="phone">
+  <div class="sbar" aria-hidden="true"><span id="clock">9:41</span><span class="island"></span><span class="icons">
+    <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+    <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.2c2.4 0 4.6.9 6.3 2.4l1.2-1.3A10.8 10.8 0 0 0 8 .4C5.1.4 2.5 1.5.5 3.3l1.2 1.3A9.1 9.1 0 0 1 8 2.2zm0 3.6c1.4 0 2.7.5 3.7 1.4l1.2-1.3A7.3 7.3 0 0 0 8 4c-1.9 0-3.6.7-4.9 1.9l1.2 1.3c1-.9 2.3-1.4 3.7-1.4zM8 9.4c-.6 0-1.2.2-1.6.6L8 11.8l1.6-1.8c-.4-.4-1-.6-1.6-.6z"/></svg>
+    <svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="18" height="9" rx="2" fill="currentColor"/><path d="M25 4.5v4c.8-.3 1.3-1.1 1.3-2s-.5-1.7-1.3-2z" fill="currentColor" opacity=".45"/></svg></span></div>
+  <main id="app" aria-live="polite"></main>
+  <div class="hind" aria-hidden="true"></div>
+</div>
+<script>
+(function(){ /* scale the whole phone evenly so it keeps real proportions on any window */
+  var ph=document.getElementById('phone');
+  function fit(){ if (innerWidth<=480){ ph.style.transform=''; ph.style.marginBottom=''; return; }
+    var s=Math.min(1,(innerHeight-48)/874,(innerWidth-32)/402); ph.style.transform='scale('+s+')'; ph.style.marginBottom=(-874*(1-s))+'px'; }
+  function clock(){ var d=new Date(), h=d.getHours()%12||12, m=String(d.getMinutes()).padStart(2,'0'); document.getElementById('clock').textContent=h+':'+m; }
+  addEventListener('resize',fit); fit(); clock(); setInterval(clock,30000);
+})();
+</script>
 <p class="proto">YourDOST app prototype · fictional people and data · Dost runs on the live AI from Task 3.</p>
 <script src="/app/app.js"></script>
 </body>
