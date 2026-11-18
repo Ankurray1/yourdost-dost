@@ -2091,18 +2091,26 @@ function drawNotes(w) {
   let lastBottom = ph.top + 8, svg = '', html = '';
   items.forEach((it, i) => {
     const ty = Math.max(ph.top + 4, Math.min(ph.bottom - 40, it.r.top + it.r.height / 2));
-    const ny = Math.max(lastBottom + 8, ty - 18); lastBottom = ny + 42;
+    const ny = Math.max(lastBottom + 8, ty - 18); lastBottom = ny + 56;
     const tx = Math.min(it.r.right - 6, ph.right - 14), sx = nx - 8, sy = ny + 16;
     const mx = (sx + tx) / 2 + 10, my = Math.min(sy, ty) - 24 + (i % 2) * 18;
     const ang = Math.atan2(ty - my, tx - mx), h = 11;
     const a1 = `${tx - h * Math.cos(ang - 0.45)},${ty - h * Math.sin(ang - 0.45)}`, a2 = `${tx - h * Math.cos(ang + 0.45)},${ty - h * Math.sin(ang + 0.45)}`;
     const d = `--d:${i * 0.22}s`;
     svg += `<rect class="dring" style="${d}" x="${it.r.left - 3}" y="${it.r.top - 3}" width="${it.r.width + 6}" height="${it.r.height + 6}" rx="14" pathLength="1"/>`;
-    svg += `<path class="darrow" style="${d}" d="M${sx},${sy} Q${mx},${my} ${tx},${ty}" pathLength="1"/><path class="dhead2" style="${d}" d="M${a1} L${tx},${ty} L${a2}"/>`;
+    svg += `<path class="darrow" data-i="${i}" data-tx="${tx}" data-ty="${ty}" data-k="${i % 2}" style="${d}" d="M${sx},${sy} Q${mx},${my} ${tx},${ty}" pathLength="1"/><path class="dhead2" style="${d}" d="M${a1} L${tx},${ty} L${a2}"/>`;
     html += `<div class="dnote" style="left:${nx}px;top:${ny}px;width:${nw}px;${d}">${esc(it.txt)}</div>`;
   });
   wrap.innerHTML = `<svg class="dsvg" width="${vw}" height="${Math.max(innerHeight, document.body.scrollHeight)}">${svg}</svg>${left ? html : ''}`;
   document.body.appendChild(wrap);
+  // second pass: use real note heights so two-line notes never overlap, then re-aim their arrows
+  let bottom = ph.top + 8;
+  wrap.querySelectorAll('.dnote').forEach((n, i) => {
+    const top = Math.max(parseFloat(n.style.top), bottom + 8); n.style.top = top + 'px'; bottom = top + n.offsetHeight;
+    const pth = wrap.querySelector(`.darrow[data-i="${i}"]`); if (!pth) return;
+    const tx = +pth.dataset.tx, ty = +pth.dataset.ty, sx = nx - 8, sy = top + 16, mx = (sx + tx) / 2 + 10, my = Math.min(sy, ty) - 24 + (+pth.dataset.k) * 18;
+    pth.setAttribute('d', `M${sx},${sy} Q${mx},${my} ${tx},${ty}`);
+  });
 }
 /* ---- notification flow ---- */
 function notifPlay() {
