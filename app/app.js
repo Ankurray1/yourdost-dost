@@ -64,15 +64,22 @@ const CHECKS = {
   burnout: { name: 'Burnout check', mins: 1, qs: ['Feeling drained after work?', 'Finding it hard to switch off?', 'Feeling distant about work?', 'Dreading the start of the week?'], bands: [[3, 'Low burnout signs', 'work'], [7, 'Some burnout signs', 'work'], [12, 'Strong burnout signs', 'work']] },
 };
 const TINTS = ['violet', 'sun', 'peach', 'sage'];
+function fnm(n) { return n.startsWith('Dr. ') ? n.split(' ').slice(0, 2).join(' ') : n.split(' ')[0]; }
 const EXPERTS = [
   { id: 'e1', name: 'Neha Kapoor', title: 'Counselling psychologist', yrs: 9, rating: 4.9, n: 312, langs: ['English', 'Hindi'], focus: ['work', 'sleep', 'anx'], style: 'Practical tips and small weekly goals', gender: 'Woman', modes: ['Video', 'Chat'], today: '6 pm', about: 'Helps working professionals untangle stress and get their evenings back, with small changes that fit a busy week.' },
   { id: 'e2', name: 'Aditya Rao', title: 'Clinical psychologist', yrs: 12, rating: 4.8, n: 198, langs: ['English', 'Tamil'], focus: ['anx', 'rel', 'low'], style: 'Calm, structured, CBT-based', gender: 'Man', modes: ['Video', 'Call'], today: null, about: 'Works with anxiety and relationship worries using CBT, at a calm pace you set.' },
   { id: 'e3', name: 'Farah Siddiqui', title: 'Counsellor', yrs: 6, rating: 4.9, n: 241, langs: ['English', 'Hindi', 'Urdu'], focus: ['low', 'lonely', 'rel'], style: 'Warm listener, space to talk', gender: 'Woman', modes: ['Chat', 'Call'], today: '8 pm', about: 'Gives you room to talk it through first, then gently helps you find your next step.' },
   { id: 'e4', name: 'Rohan Mehta', title: 'Counselling psychologist', yrs: 8, rating: 4.7, n: 156, langs: ['English', 'Hindi', 'Marathi'], focus: ['career', 'work', 'anx'], style: 'Direct and goal-focused', gender: 'Man', modes: ['Video', 'Chat'], today: '7:30 pm', about: 'Helps with career crossroads, performance pressure and burnout, with clear goals.' },
-  { id: 'e5', name: 'Priya Iyer', title: 'Clinical psychologist', yrs: 14, rating: 5.0, n: 402, langs: ['English', 'Tamil', 'Malayalam'], focus: ['sleep', 'low', 'anx'], style: 'Gentle, mindfulness-based', gender: 'Woman', modes: ['Video'], today: null, about: 'Brings mindfulness and sleep science together for people who feel worn out.' },
-  { id: 'e6', name: 'Kabir Singh', title: 'Counsellor', yrs: 5, rating: 4.8, n: 133, langs: ['English', 'Hindi', 'Punjabi'], focus: ['rel', 'lonely', 'work'], style: 'Friendly, follows your lead', gender: 'Man', modes: ['Chat', 'Call', 'Video'], today: '9 pm', about: 'Easy to talk to; good for a first session if you\'ve never spoken to anyone before.' },
+  { id: 'e5', name: 'Priya Iyer', title: 'Clinical psychologist', yrs: 18, rating: 5.0, n: 402, langs: ['English', 'Tamil', 'Malayalam'], focus: ['sleep', 'low', 'anx'], style: 'Gentle, mindfulness-based', gender: 'Woman', modes: ['Video'], today: null, about: 'Brings mindfulness and sleep science together for people who feel worn out.' },
+  { id: 'e6', name: 'Dr. Kabir Singh', title: 'Psychiatrist, MD', yrs: 11, rating: 4.8, n: 133, langs: ['English', 'Hindi', 'Punjabi'], focus: ['low', 'anx', 'sleep'], style: 'Clear, medical and reassuring', gender: 'Man', modes: ['Video', 'Call'], today: '9 pm', about: 'Assesses when medicine might help, alongside therapy. Can prescribe, and keeps it as simple as possible.' },
+  { id: 'e7', name: 'Ananya Sharma', title: 'Counselling psychologist', yrs: 15, rating: 4.9, n: 287, langs: ['English', 'Hindi', 'Bengali'], focus: ['career', 'work', 'rel'], style: 'Warm but direct', gender: 'Woman', modes: ['Video', 'Chat'], today: '5 pm', about: 'Works with managers and teams on pressure, conflict and confidence at work.' },
+  { id: 'e8', name: 'Dr. Meera Nair', title: 'Psychiatrist, MD', yrs: 13, rating: 4.9, n: 221, langs: ['English', 'Malayalam', 'Hindi'], focus: ['low', 'anx', 'sleep'], style: 'Gentle, explains every option', gender: 'Woman', modes: ['Video', 'Call'], today: null, about: 'Helps you understand what is going on and whether medicine could help, with no pressure to take it.' },
+  { id: 'e9', name: 'Ishita Banerjee', title: 'Counsellor', yrs: 7, rating: 4.8, n: 174, langs: ['English', 'Bengali', 'Hindi'], focus: ['rel', 'lonely', 'low'], style: 'Friendly, follows your lead', gender: 'Woman', modes: ['Chat', 'Call', 'Video'], today: '7 pm', about: 'Easy to talk to; good for a first session if you\'ve never spoken to anyone before.' },
+  { id: 'e10', name: 'Kavya Reddy', title: 'Clinical psychologist', yrs: 10, rating: 4.9, n: 265, langs: ['English', 'Telugu', 'Kannada'], focus: ['anx', 'work', 'sleep'], style: 'Structured, CBT and goal-focused', gender: 'Woman', modes: ['Video', 'Chat'], today: '8:30 pm', about: 'Uses CBT to help with anxiety, overthinking and sleep, with tools you can use right away.' },
+  { id: 'e11', name: 'Sarah Mitchell', title: 'Counselling psychologist · UK', yrs: 12, rating: 4.8, n: 119, langs: ['English'], focus: ['anx', 'rel', 'lonely'], style: 'Calm and compassion-focused', gender: 'Woman', modes: ['Video'], today: null, about: 'Based in London. Supports people far from home, and anyone working across time zones.' },
+  { id: 'e12', name: 'Daniel Weber', title: 'Psychotherapist · Germany', yrs: 16, rating: 4.7, n: 96, langs: ['English', 'German'], focus: ['low', 'career', 'rel'], style: 'Thoughtful, explores what led here', gender: 'Man', modes: ['Video'], today: '10 pm', about: 'Based in Berlin. Helps with low mood and life transitions, at a steady, unhurried pace.' },
 ];
-const STYLE4 = { e1: [0, 0, 0, 1], e2: [0, 0, 1, 0], e3: [1, 1, 1, 0], e4: [0, 0, 0, 1], e5: [1, 1, 0, 0], e6: [1, 1, 0, 0] }; // tips/space, guide/follow, now/past, gentle/direct
+const STYLE4 = { e1: [0, 0, 0, 1], e2: [0, 0, 1, 0], e3: [1, 1, 1, 0], e4: [0, 0, 0, 1], e5: [1, 1, 0, 0], e6: [0, 0, 0, 1], e7: [0, 0, 0, 1], e8: [1, 0, 0, 0], e9: [1, 1, 0, 0], e10: [0, 0, 0, 1], e11: [1, 1, 1, 0], e12: [1, 1, 1, 0] }; // tips/space, guide/follow, now/past, gentle/direct
 EXPERTS.forEach(e => { e.style4 = STYLE4[e.id]; });
 const EXM = Object.fromEntries(EXPERTS.map((e, i) => [e.id, { ...e, tint: TINTS[i % 4] }]));
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -592,7 +599,7 @@ V.sos = () => {
   if (s.phase === 'here') return `<div class="screen notab sosscr" style="gap:16px;text-align:center">
       <div class="row between"><span style="width:44px"></span><span class="lbl">Connected</span><span style="width:44px"></span></div>
       <span class="sosface">${img(e)}</span>
-      <h1 class="sosbig" style="font-size:40px"><span class="swash">${esc(e.name.split(' ')[0])}</span> is here<br>for you.</h1>
+      <h1 class="sosbig" style="font-size:40px"><span class="swash">${esc(fnm(e.name))}</span> is here<br>for you.</h1>
       <p class="muted" style="margin:0">${esc(e.title)} · ${e.yrs} years · ${esc(e.langs.join(', '))}</p>
       <p class="lg" style="margin:0">Take your time. You can start with “I don’t know where to begin.”</p>
       <div style="flex:1"></div>
@@ -730,7 +737,7 @@ V.home = () => {
   ${moodCard()}
   <section class="sec" id="t-step"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
     ${step ? stepCard(step) : `<button class="card glow row" data-a="dost" style="border:0;text-align:left;box-shadow:var(--shadow-card)"><span class="orb sm" style="animation:none;flex:none;width:64px;height:64px;box-shadow:0 0 0 6px color-mix(in srgb,var(--violet-200) 70%,transparent)"></span><span class="stack" style="gap:4px"><b>Talk to Dost for 2 minutes</b><span class="cap">Dost asks a few questions and finds the right support for you.</span></span></button>`}</section>
-  ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(bk.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
+  ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(fnm(bk.name))}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
   <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2><span class="cap">free · online</span></div>
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
     <div class="dotsrow">${sosPill()}<div class="dots evdots" id="evdots">${EVENTS.map((e, i) => `<button class="${i === 0 ? 'on' : ''}" data-a="evdot" data-v="${i}" aria-label="Show event ${i + 1} of ${EVENTS.length}"></button>`).join('')}</div></div></section>
@@ -739,7 +746,7 @@ V.home = () => {
 };
 function stepCard(s) {
   if (s.kind === 'ex') { const x = EX[s.id]; return `<div class="card row"><span class="dot tint-${x.tint}" style="width:52px;height:52px">${ic('play')}</span><div style="flex:1;min-width:0"><b>${esc(x.name)}</b><div class="cap">${x.mins} min · ${esc(x.why)}</div></div><button class="btn primary sm" data-a="ex" data-v="${s.id}" data-step="${s.n}">Start</button></div>`; }
-  if (s.kind === 'book') { const e = EXM[s.id]; return `<div class="card row"><span class="dot tint-violet" style="width:52px;height:52px">${ic('cal')}</span><div style="flex:1;min-width:0"><b>Book ${esc(e.name.split(' ')[0])} this week</b><div class="cap">${esc(e.title)} · your best match</div></div><button class="btn primary sm" data-a="deck" data-v="${s.id}" data-i="0">Book</button></div>`; }
+  if (s.kind === 'book') { const e = EXM[s.id]; return `<div class="card row"><span class="dot tint-violet" style="width:52px;height:52px">${ic('cal')}</span><div style="flex:1;min-width:0"><b>Book ${esc(fnm(e.name))} this week</b><div class="cap">${esc(e.title)} · your best match</div></div><button class="btn primary sm" data-a="deck" data-v="${s.id}" data-i="0">Book</button></div>`; }
   if (s.kind === 'pg') { const g = PG[s.id]; return `<div class="card row"><span class="dot tint-sage" style="width:52px;height:52px">${ic('grow')}</span><div style="flex:1;min-width:0"><b>Day ${(S.pg[s.id] || 0) + 1} of ${esc(g.name)}</b><div class="cap">${esc(g.blurb)}</div></div><button class="btn primary sm" data-a="pg" data-v="${s.id}">Open</button></div>`; }
   return '';
 }
@@ -749,7 +756,7 @@ const STYLE_Q = [['Give me practical tips', 'Give me space to talk'], ['Guide me
 const QUIZ = [
   { k: 'concerns', q: 'What would you like help with?', sub: 'Pick up to 3. The first one counts most.', type: 'multi', max: 3, opts: CONCERNS.filter(c => c[0] !== 'explore') },
   { k: 'style', q: 'How do you like to talk?', sub: 'Choose a side, or Either.', type: 'style' },
-  { k: 'langs', q: 'Which languages are you comfortable in?', sub: 'Pick all that apply.', type: 'multi', max: 5, opts: ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu', 'Malayalam', 'Punjabi'].map(l => [l, l]) },
+  { k: 'langs', q: 'Which languages are you comfortable in?', sub: 'Pick all that apply.', type: 'multi', max: 5, opts: ['English', 'Hindi', 'Tamil', 'Bengali', 'Telugu', 'Kannada', 'Malayalam', 'Marathi', 'Urdu', 'Punjabi'].map(l => [l, l]) },
   { k: 'mode', q: 'How would you like to meet?', sub: 'You can change this for any session.', type: 'one', opts: [['Video', 'Video'], ['Call', 'Call'], ['Chat', 'Chat'], ['any', 'Any of these']] },
   { k: 'gender', q: 'Do you prefer a woman or a man?', sub: 'Many people do. It\'s fine either way.', type: 'one', opts: [['Woman', 'A woman'], ['Man', 'A man'], ['any', 'No preference']] },
   { k: 'when', q: 'When would you like to start?', sub: 'Sooner is often easier.', type: 'one', opts: [['today', 'Today'], ['week', 'This week'], ['any', 'Whenever suits']] },
@@ -773,13 +780,13 @@ function quizMatches() {
     return { e: EXM[e.id], pct, why: why.slice(0, 3) };
   }).sort((a, b) => b.pct - a.pct);
 }
-const img = (e, cls = '', size = '') => `<img class="${cls}" src="/app/img/${e.id}${size === 's' ? '-s' : ''}.webp" alt="${esc(e.name)}" decoding="async">`;
+const img = (e, cls = '', size = '') => `<img class="${cls}" src="/app/img/${e.id}${size === 's' ? '-s' : ''}.webp?v=2" alt="${esc(e.name)}" decoding="async">`;
 const SPARK = '<svg class="spk" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5 4.6-.6 6.9-2.9 7.5-7.5z" fill="currentColor"/><path class="spk2" d="M19 15.5c.3 1.8 1.2 2.7 3 3-1.8.3-2.7 1.2-3 3-.3-1.8-1.2-2.7-3-3 1.8-.3 2.7-1.2 3-3z" fill="currentColor"/></svg>';
 const STAR = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="var(--sun-400)"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 /* availability for the booking calendar: the next 6 weeks, a few times on most days */
-const CLINIC = { e1: 'YourDOST Centre, Koramangala, Bengaluru', e3: 'YourDOST Centre, Indiranagar, Bengaluru', e4: 'YourDOST Centre, Andheri West, Mumbai', e6: 'YourDOST Centre, Connaught Place, Delhi' };
+const CLINIC = { e1: 'YourDOST Centre, Koramangala, Bengaluru', e3: 'YourDOST Centre, Indiranagar, Bengaluru', e4: 'YourDOST Centre, Andheri West, Mumbai', e6: 'YourDOST Centre, Connaught Place, Delhi', e7: 'YourDOST Centre, Salt Lake, Kolkata', e8: 'YourDOST Centre, Koramangala, Bengaluru', e10: 'YourDOST Centre, Banjara Hills, Hyderabad' };
 function availFor(e, dt, where = 'online') {
   if (where === 'inperson') {
     if (!CLINIC[e.id]) return [];
@@ -836,7 +843,7 @@ V.experts = () => {
     body = `<div class="row" style="gap:10px"><label class="searchbox"><span class="sr">Search experts</span>${ic('search')}<input id="xsearch" type="search" placeholder="Search name or topic" value="${esc(S.q || '')}" autocomplete="off"></label>
       <button class="iconbtn filtbtn ${nf ? 'on' : ''}" data-a="sheet" data-v="filter" aria-label="Filter and sort${nf ? ', ' + nf + ' on' : ''}">${ic('filter')}${nf ? `<span class="badge">${nf}</span>` : ''}</button></div>
       ${S.q ? `<span class="cap">${list.length} result${list.length === 1 ? '' : 's'} for “${esc(S.q)}”</span>` : ''}
-      ${list.length ? `<div class="grid2">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
+      ${list.length ? `<div class="xgrid">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
           <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
         <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(' · ')}</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
         : `<div class="card stack" style="text-align:center"><b>No one matches${S.q ? ' “' + esc(S.q) + '”' : ' all of these'}</b><span class="muted">Try a different word or remove a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear search and filters</button></div>`}`;
@@ -844,14 +851,14 @@ V.experts = () => {
   if (seg === 'mine') {
     const up = S.booked && EXM[S.booked.id];
     body = `${up ? `<section class="sec"><span class="eyebrow">Upcoming</span><div class="card stack">
-        <div class="row"><span class="mphoto" style="width:64px;height:76px">${img(up)}</span><div style="flex:1;min-width:0"><b style="font:600 17px/22px var(--f-display)">Session ${S.booked.n || 1} with ${esc(up.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)} · 50 min</div></div></div>
+        <div class="row"><span class="mphoto" style="width:64px;height:76px">${img(up)}</span><div style="flex:1;min-width:0"><b style="font:600 17px/22px var(--f-display)">Session ${S.booked.n || 1} with ${esc(fnm(up.name))}</b><div class="cap">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)} · 50 min</div></div></div>
         <div class="card tint-violet" style="box-shadow:none;padding:12px;font-size:14px;line-height:20px">${ic('book')} Before you join: what's one thing from last week you'd like to talk about?</div>
-        <div class="row"><button class="btn primary sm" style="flex:1" data-a="toast" data-v="Your session room opens 10 minutes before.">${ic('video')}Join</button><button class="btn soft sm" style="flex:1" data-a="toast" data-v="Message sent to ${esc(up.name.split(' ')[0])}. Replies within a few hours.">${ic('chat')}Message</button></div>
+        <div class="row"><button class="btn primary sm" style="flex:1" data-a="toast" data-v="Your session room opens 10 minutes before.">${ic('video')}Join</button><button class="btn soft sm" style="flex:1" data-a="toast" data-v="Message sent to ${esc(fnm(up.name))}. Replies within a few hours.">${ic('chat')}Message</button></div>
         <button class="link" data-a="cancel" style="justify-self:start">Reschedule or cancel</button></div></section>`
       : `<div class="card stack" style="text-align:center"><b>No upcoming session</b><button class="btn primary sm" data-a="seg" data-v="browse">Find an expert</button></div>`}
       ${S.history.length ? `<button class="card row" style="border:0;text-align:left;background:var(--violet-100);box-shadow:none" data-a="rx"><span class="rxbadge" style="background:var(--surface-raised)">Rx</span><span style="flex:1"><b>Prescriptions &amp; care plans</b><span class="cap" style="display:block">${S.history.length} sessions · what you shared and your plan</span></span>${ic('chev', 'chev')}</button>` : ''}
       ${S.history.length ? `<section class="sec"><span class="eyebrow">Past sessions</span><div class="tl">${S.history.slice().reverse().map(h => { const e = EXM[h.id]; return `<div class="tl-item"><span class="tl-dot">${ic('check')}</span><div class="card stack" style="gap:6px">
-          <div class="row between"><b>Session ${h.n} · ${esc(e.name.split(' ')[0])}</b><span class="cap">${esc(h.date)}</span></div>
+          <div class="row between"><b>Session ${h.n} · ${esc(fnm(e.name))}</b><span class="cap">${esc(h.date)}</span></div>
           <span class="cap">${esc(h.mode)} · 50 min · you rated the fit ${h.fit}/5</span>
           <p style="margin:0"><span class="lbl muted">Your takeaway</span><br>${esc(h.note)}</p>
           ${h.task ? `<span class="tag sage" style="justify-self:start">${ic('grow')}${esc(h.task)}</span>` : ''}<button class="link" data-a="rx" data-v="${h.n}" style="justify-self:start;padding:0">View prescription ›</button></div></div>`; }).join('')}</div></section>` : ''}
@@ -881,7 +888,7 @@ V.deck = () => {
       <div class="stack" style="gap:6px"><span class="lbl muted">Next free</span><div class="row wrap" style="gap:6px">${nf.map(x => `<span class="tag">${x}</span>`).join('')}</div></div>
     </div>
     <div class="deck-cta"><div class="row" style="gap:10px"><button class="iconbtn" data-a="deck-move" data-v="-1" aria-label="Previous expert" ${ids.length > 1 ? '' : 'disabled'}>${ic('back')}</button>
-        <button class="btn primary" style="flex:1" data-a="sheet" data-v="book">${ic('cal')}Book ${esc(e.name.split(' ')[0])}</button>
+        <button class="btn primary" style="flex:1" data-a="sheet" data-v="book">${ic('cal')}Book ${esc(fnm(e.name))}</button>
         <button class="iconbtn" data-a="deck-move" data-v="1" aria-label="Next expert" ${ids.length > 1 ? '' : 'disabled'}>${ic('chev')}</button></div>
       ${ids.length > 1 ? `<p class="cap" style="text-align:center;margin:0">Swipe the photo left for the next expert</p>` : ''}</div></div>`;
 };
@@ -902,9 +909,9 @@ V.booked = () => {
   const e = EXM[S.booked.id];
   return `<div class="screen notab glow" style="justify-content:center;text-align:center;gap:16px">
     <span class="mphoto" style="width:120px;height:120px;border-radius:50%;align-self:center">${img(e)}</span>
-    <h1 class="t1">You're booked with ${esc(e.name.split(' ')[0])}</h1>
+    <h1 class="t1">You're booked with ${esc(fnm(e.name))}</h1>
     <p class="lg muted" style="margin:0">${esc(S.booked.day)}, ${esc(S.booked.time)} · ${esc(S.booked.mode)}<br>${S.booked.loc ? esc(S.booked.loc) + '<br>' : ''}${S.sessionsLeft} free sessions left this year</p>
-    ${S.shareSummary ? `<div class="card tint-violet" style="box-shadow:none;text-align:left">${ic('lock')} ${esc(e.name.split(' ')[0])} will see a short summary of what you told Dost, so you don't have to start from zero.</div>` : ''}
+    ${S.shareSummary ? `<div class="card tint-violet" style="box-shadow:none;text-align:left">${ic('lock')} ${esc(fnm(e.name))} will see a short summary of what you told Dost, so you don't have to start from zero.</div>` : ''}
     <p class="note">first sessions feel easier than you think</p>
     <button class="btn primary block" data-a="tab" data-v="home">Back to Today</button></div>`;
 };
@@ -961,7 +968,7 @@ async function dostClose(d) {
   const tags = d.st.tags.length ? d.st.tags : (S.concerns.filter(c => c !== 'explore').length ? S.concerns : ['work']);
   const ex = EX_FOR[tags[0]] || 'ex_box', pg = PG_FOR[tags[0]] || 'pg_calm', top1 = matches()[0].e;
   const steps = d.res.priority === 'medium'
-    ? [{ kind: 'ex', id: ex, n: 0, line: `${EX[ex].name} now (${EX[ex].mins} min)` }, { kind: 'book', id: top1.id, n: 1, line: `Book ${top1.name.split(' ')[0]}, your best-fit counsellor, this week` }, { kind: 'pg', id: pg, n: 2, line: `${PG[pg].name}, 10 minutes a day while you wait` }]
+    ? [{ kind: 'ex', id: ex, n: 0, line: `${EX[ex].name} now (${EX[ex].mins} min)` }, { kind: 'book', id: top1.id, n: 1, line: `Book ${fnm(top1.name)}, your best-fit counsellor, this week` }, { kind: 'pg', id: pg, n: 2, line: `${PG[pg].name}, 10 minutes a day while you wait` }]
     : [{ kind: 'ex', id: ex, n: 0, line: `${EX[ex].name} today (${EX[ex].mins} min)` }, { kind: 'pg', id: pg, n: 1, line: `${PG[pg].name}: a 7-day program, 10 minutes a day` }];
   S.plan = { priority: d.res.priority, ex, pg, steps, tags }; save();
   let w = null;
@@ -1090,7 +1097,7 @@ function sheetHTML() {
     const n = expertList().length;
     body = `<div class="row between"><h2 class="t1">Filter &amp; sort</h2><button class="link" data-a="filt-clear">Reset</button></div>
       <div class="stack" style="gap:8px"><span class="lbl">Show first</span><div class="row wrap">${[['match', 'Best match'], ['rating', 'Top rated'], ['soonest', 'Free soonest']].map(([k, l]) => `<button class="chip" data-a="sortc" data-v="${k}" aria-pressed="${S.sort === k}">${l}</button>`).join('')}</div></div>
-      ${grp('where', 'Session type', ['Online', 'In person'])}${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu'])}${grp('mode', 'Online as', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
+      ${grp('where', 'Session type', ['Online', 'In person'])}${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Bengali', 'Telugu', 'Malayalam', 'Marathi', 'Urdu'])}${grp('mode', 'Online as', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
       <div class="row between"><span class="lbl">Free today</span><button class="toggle" role="switch" aria-checked="${f.today}" aria-label="Free today" data-a="filt-today"></button></div>
       <button class="btn primary block" data-a="close" ${n ? '' : 'disabled style="opacity:.5"'}>${n ? `Show ${n} expert${n === 1 ? '' : 's'}` : 'No one matches yet'}</button>`; }
   if (s.name === 'sort') body = `<h2 class="t1">Sort by</h2><div class="stack">${[['match', 'Best match'], ['rating', 'Rating'], ['soonest', 'Soonest free']].map(([k, l]) => `<button class="qopt" data-a="sort" data-v="${k}" ${S.sort === k ? 'style="border-color:var(--violet-600)"' : ''}>${l}</button>`).join('')}</div>`;
@@ -1105,9 +1112,9 @@ function sheetHTML() {
     }
     const sel = X.date ? new Date(X.date + 'T12:00') : null, times = sel ? availFor(e, sel, W) : [], lab = sel ? dayLabel(sel) : '';
     const navBtn = (dir, off, label, icon) => `<button class="iconbtn calnav" data-a="calm" data-v="${dir}" ${off ? 'disabled' : ''} aria-label="${label}">${ic(icon)}</button>`;
-    body = `<div class="row"><span class="mphoto" style="width:48px;height:56px">${img(e, '', 's')}</span><div><h2 class="t2">Book ${esc(e.name.split(' ')[0])}</h2><span class="cap">50 min · ${esc(e.modes.join(', '))} · free (uses 1 of ${S.sessionsLeft})</span></div></div>
+    body = `<div class="row"><span class="mphoto" style="width:48px;height:56px">${img(e, '', 's')}</span><div><h2 class="t2">Book ${esc(fnm(e.name))}</h2><span class="cap">50 min · ${esc(e.modes.join(', '))} · free (uses 1 of ${S.sessionsLeft})</span></div></div>
       <div class="seg" role="group" aria-label="Session type"><button data-a="bwhere" data-v="online" aria-pressed="${W === 'online'}">${ic('video')}Online</button><button data-a="bwhere" data-v="inperson" aria-pressed="${W === 'inperson'}" ${CLINIC[e.id] ? '' : 'disabled style="opacity:.45"'}>${ic('people')}In person</button></div>
-      ${W === 'inperson' ? `<div class="card row" style="box-shadow:none;background:var(--sun-100);padding:12px"><span class="dot" style="background:var(--surface-raised)">${ic('home')}</span><span style="flex:1"><b>${esc(CLINIC[e.id])}</b><span class="cap" style="display:block">Tue, Thu and Sat · 50 min · free for you</span></span></div>` : !CLINIC[e.id] ? `<span class="cap">${esc(e.name.split(' ')[0])} sees people online only.</span>` : `<span class="cap">${esc(e.modes.join(', '))} · from anywhere</span>`}
+      ${W === 'inperson' ? `<div class="card row" style="box-shadow:none;background:var(--sun-100);padding:12px"><span class="dot" style="background:var(--surface-raised)">${ic('home')}</span><span style="flex:1"><b>${esc(CLINIC[e.id])}</b><span class="cap" style="display:block">Tue, Thu and Sat · 50 min · free for you</span></span></div>` : !CLINIC[e.id] ? `<span class="cap">${esc(fnm(e.name))} sees people online only.</span>` : `<span class="cap">${esc(e.modes.join(', '))} · from anywhere</span>`}
       <div class="calbox"><div class="row between">${navBtn(-1, mo === 0, 'Previous month', 'back')}<b class="t2">${MONTH[first.getMonth()]} ${first.getFullYear()}</b>${navBtn(1, mo >= 1, 'Next month', 'chev')}</div>
         <div class="cal">${['S', 'M', 'T', 'W', 'T', 'F', 'S'].map(w => `<span class="wd">${w}</span>`).join('')}${cells.join('')}</div>
         <div class="row" style="gap:14px;flex-wrap:wrap"><span class="cap row" style="gap:6px"><i class="lgd lgd-av"></i>Free</span><span class="cap row" style="gap:6px"><i class="lgd lgd-sel"></i>Selected</span><span class="cap row" style="gap:6px"><i class="lgd lgd-no"></i>Not available</span></div></div>
@@ -1149,7 +1156,7 @@ function render() {
   if (S.view === 'home') autoSlide(); else { clearInterval(EVT); EVT = null; }
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
 }
-function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; X.date = null; save(); render(); const nx = EXM[p.ids[(p.i + 1) % n]]; if (nx) { const im = new Image(); im.src = `/app/img/${nx.id}.webp`; } }
+function deckMove(dir) { const p = S.params, n = p.ids.length; if (n < 2) return; p.i = (p.i + dir + n) % n; X.slot = null; X.date = null; save(); render(); const nx = EXM[p.ids[(p.i + 1) % n]]; if (nx) { const im = new Image(); im.src = `/app/img/${nx.id}.webp?v=2`; } }
 function bindSwipe() {
   const el = document.getElementById('swipe'); if (!el) return;
   let x0 = null, dx = 0;
@@ -1512,9 +1519,9 @@ V.rx = () => {
     ${only.map(h => { const e = EXM[h.id], r = RX[h.n]; if (!r) return ''; return `<section class="rxcard">
       <div class="row"><span class="mphoto" style="width:48px;height:56px">${img(e, '', 's')}</span><div style="flex:1"><b class="t2">Session ${h.n} · ${esc(h.date)}</b><div class="cap">${esc(e.name)}, ${esc(e.title)} · ${esc(h.mode)}</div></div><span class="rxbadge">Rx</span></div>
       <div class="rxsec"><span class="lbl">What you shared</span><ul>${r.shared.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>
-      <div class="rxsec"><span class="lbl">What ${esc(e.name.split(' ')[0])} noticed</span><p>${esc(r.noted)}</p></div>
+      <div class="rxsec"><span class="lbl">What ${esc(fnm(e.name))} noticed</span><p>${esc(r.noted)}</p></div>
       <div class="rxsec"><span class="lbl">Your plan</span>${r.plan.map(([t, link]) => `<div class="row rxrow" style="align-items:flex-start"><span class="rxtick">${ic('check')}</span><span style="flex:1">${esc(t)}</span>${link ? `<button class="btn soft sm" data-a="rx-go" data-v="${link}">Open</button>` : ''}</div>`).join('')}</div>
-      <div class="rxsec"><span class="lbl">Medicines</span><p class="muted">None. Counselling psychologists don't prescribe medicines. If they're ever needed, ${esc(e.name.split(' ')[0])} will refer you to a psychiatrist.</p></div>
+      <div class="rxsec"><span class="lbl">Medicines</span><p class="muted">None. Counselling psychologists don't prescribe medicines. If they're ever needed, ${esc(fnm(e.name))} will refer you to a psychiatrist.</p></div>
       <div class="row between"><span class="cap">Next review: ${esc(r.review)}</span><button class="link" data-a="toast" data-v="Saved as a PDF to your phone.">${ic2('file')}PDF</button></div></section>`; }).join('')}
     <p class="cap" style="margin:0">${ic('lock')} Only you and your counsellor can see this. ${esc(S.company)} never does.</p></div>`;
 };
