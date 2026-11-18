@@ -853,7 +853,7 @@ V.experts = () => {
             <span class="row between" style="gap:6px;margin-top:4px"><span class="xfree">${e.today ? 'Free today, ' + esc(e.today) : 'Next: ' + esc((nextFree(e, 1)[0] || 'this week').replace(/^Tomorrow, /, 'tomorrow, '))}</span><span class="xmode">${CLINIC[e.id] ? 'Online · In person' : 'Online'}</span></span></span></button>`).join('')}</div>`
       : list.length ? `<div class="xgrid">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
           <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
-        <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(' · ')}</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
+        <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.yrs} years experience</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
         : `<div class="card stack" style="text-align:center"><b>No one matches${S.q ? ' “' + esc(S.q) + '”' : ' all of these'}</b><span class="muted">Try a different word or remove a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear search and filters</button></div>`}`;
   }
   if (seg === 'mine') {
