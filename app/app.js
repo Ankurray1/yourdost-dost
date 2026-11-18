@@ -23,6 +23,7 @@ const P = {
   trash: '<path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13"/>', chat: '<path d="M5 18.5V6.5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H9z"/>',
   cal: '<rect x="4" y="5.5" width="16" height="14.5" rx="2.5"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',
   video: '<rect x="3.5" y="6.5" width="12" height="11" rx="2.5"/><path d="M15.5 10.5l5-3v9l-5-3"/>',
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4 4"/>',
   sort: '<path d="M4 7h16M7 12h10M10 17h4"/>', filter: '<path d="M4 6h10M18 6h2M4 18h4M12 18h8"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="18" r="2"/>',
   sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.5M12 19v2.5M4.6 4.6l1.8 1.8M17.6 17.6l1.8 1.8M2.5 12H5M19 12h2.5M4.6 19.4l1.8-1.8M17.6 6.4l1.8-1.8"/>',
   moon: '<path d="M19.5 14.5A8 8 0 0 1 9.5 4.5a8 8 0 1 0 10 10z"/>', globe: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.6 3.5 5.4 3.5 8.5s-1 5.9-3.5 8.5c-2.5-2.6-3.5-5.4-3.5-8.5s1-5.9 3.5-8.5z"/>',
@@ -331,7 +332,13 @@ let EVT = null;
 function autoSlide() {
   clearInterval(EVT); EVT = null;
   const sc = document.getElementById('evscroll'); if (!sc || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  let hold = 0; sc.onpointerdown = () => { hold = Date.now(); }; sc.onscroll = () => updDots(sc);
+  let hold = 0, drag = null; sc.onscroll = () => updDots(sc);
+  sc.onpointerdown = e => { hold = Date.now(); if (e.pointerType === 'mouse') { drag = { x: e.clientX, l: sc.scrollLeft, moved: false }; sc.style.scrollSnapType = 'none'; } };
+  sc.onpointermove = e => { if (!drag) return; const dx = e.clientX - drag.x; if (Math.abs(dx) > 4) drag.moved = true; sc.scrollLeft = drag.l - dx; };
+  const endDrag = () => { if (!drag) return; const w = sc.firstElementChild.getBoundingClientRect().width + 12, moved = drag.moved; drag = null; sc.style.scrollSnapType = ''; sc.scrollTo({ left: Math.round(sc.scrollLeft / w) * w, behavior: 'smooth' }); if (moved) { sc._noClick = true; setTimeout(() => { sc._noClick = false; }, 60); } };
+  sc.onpointerup = endDrag; sc.onpointerleave = endDrag;
+  sc.onclickcapture = null; sc.addEventListener('click', e => { if (sc._noClick) { e.stopPropagation(); e.preventDefault(); } }, true);
+  autoSlide.hold = () => { hold = Date.now(); };
   EVT = setInterval(() => {
     if (!document.body.contains(sc) || S.tour !== null && S.tour !== undefined) return;
     if (Date.now() - hold < 6000) return;
@@ -339,6 +346,7 @@ function autoSlide() {
     sc.scrollTo({ left: ((k + 1) % n) * w, behavior: 'smooth' });
   }, 4000);
 }
+function evGo(i) { const sc = document.getElementById('evscroll'); if (!sc) return; if (autoSlide.hold) autoSlide.hold(); const w = sc.firstElementChild.getBoundingClientRect().width + 12; sc.scrollTo({ left: i * w, behavior: 'smooth' }); }
 function updDots(sc) { const d = document.getElementById('evdots'); if (!d) return; const w = sc.firstElementChild.getBoundingClientRect().width + 12, k = Math.round(sc.scrollLeft / w); [...d.children].forEach((x, i) => x.classList.toggle('on', i === k)); }
 
 /* ---- Notifications: in-app nudges with an unread count ---- */
@@ -724,7 +732,7 @@ V.home = () => {
   ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(bk.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
   <section class="sec" id="t-events"><div class="sec-h"><h2 class="t2">Join live events</h2><span class="cap">free · online</span></div>
     <div class="hscroll evscroll" id="evscroll">${EVENTS.map(evCard).join('')}</div>
-    <div class="dotsrow">${sosPill()}<div class="dots" id="evdots" aria-hidden="true">${EVENTS.map((_, i) => `<i class="${i === 0 ? 'on' : ''}"></i>`).join('')}</div></div></section>
+    <div class="dotsrow">${sosPill()}<div class="dots evdots" id="evdots">${EVENTS.map((e, i) => `<button class="${i === 0 ? 'on' : ''}" data-a="evdot" data-v="${i}" aria-label="Show event ${i + 1} of ${EVENTS.length}"></button>`).join('')}</div></div></section>
   ${ritualCard()}
 </div>${tabbar()}`;
 };
@@ -765,6 +773,7 @@ function quizMatches() {
   }).sort((a, b) => b.pct - a.pct);
 }
 const img = (e, cls = '', size = '') => `<img class="${cls}" src="/app/img/${e.id}${size === 's' ? '-s' : ''}.webp" alt="${esc(e.name)}" decoding="async">`;
+const SPARK = '<svg class="spk" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M12 2.5c.6 4.6 2.9 6.9 7.5 7.5-4.6.6-6.9 2.9-7.5 7.5-.6-4.6-2.9-6.9-7.5-7.5 4.6-.6 6.9-2.9 7.5-7.5z" fill="currentColor"/><path class="spk2" d="M19 15.5c.3 1.8 1.2 2.7 3 3-1.8.3-2.7 1.2-3 3-.3-1.8-1.2-2.7-3-3 1.8-.3 2.7-1.2 3-3z" fill="currentColor"/></svg>';
 const STAR = '<svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true" fill="var(--sun-400)"><path d="M12 2.5l2.9 6.1 6.6.8-4.9 4.6 1.3 6.6L12 17.3l-5.9 3.3 1.3-6.6-4.9-4.6 6.6-.8z"/></svg>';
 const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -780,6 +789,18 @@ function availFor(e, dt) {
 }
 const dayLabel = d => `${DAYS[d.getDay()]} ${d.getDate()} ${MON[d.getMonth()]}`;
 function nextFree(e, n = 3) { const out = []; for (let i = 0; i < 21 && out.length < n; i++) { const d = new Date(); d.setDate(d.getDate() + i); const t = availFor(e, d); if (t.length) out.push((i === 0 ? 'Today' : i === 1 ? 'Tomorrow' : dayLabel(d)) + ', ' + t[0]); } return out; }
+function filtCount() { const f = S.filt; return f.lang.length + f.mode.length + f.gender.length + (f.today ? 1 : 0) + (S.sort !== 'match' ? 1 : 0); }
+function expertList() {
+  const f = S.filt, q = (S.q || '').trim().toLowerCase(); let list = matches().map(x => x.e);
+  if (q) list = list.filter(e => [e.name, e.title, e.style, ...e.langs, ...e.focus.map(c => CL[c] || '')].join(' ').toLowerCase().includes(q));
+  if (f.lang.length) list = list.filter(e => f.lang.some(l => e.langs.includes(l)));
+  if (f.mode.length) list = list.filter(e => f.mode.some(m => e.modes.includes(m)));
+  if (f.gender.length) list = list.filter(e => f.gender.includes(e.gender));
+  if (f.today) list = list.filter(e => e.today);
+  if (S.sort === 'rating') list.sort((a, b) => b.rating - a.rating);
+  if (S.sort === 'soonest') list.sort((a, b) => (b.today ? 1 : 0) - (a.today ? 1 : 0));
+  return list;
+}
 V.experts = () => {
   const seg = S.seg;
   let body = '';
@@ -792,28 +813,23 @@ V.experts = () => {
         <span class="mphoto">${img(e, '', 's')}</span><span class="stack" style="gap:6px;flex:1;min-width:0"><span class="row between"><span class="tag ${i === 0 ? 'peach' : 'violet'}">${i === 0 ? 'Best match' : 'Good match'}</span><b class="pct">${pct}%</b></span>
         <b style="font:600 17px/22px var(--f-display)">${esc(e.name)}</b><span class="cap">${esc(e.title)} · ${e.yrs} yrs</span>
         ${why.map(w => `<span class="row" style="gap:6px;align-items:flex-start;font-size:13px;line-height:18px"><span style="color:var(--sage-600)">${ic('check')}</span>${esc(w)}</span>`).join('')}</span></button>`).join('')}</section>`
-    : `<button class="hero" data-a="quiz">
-        <span class="eyebrow">Smart match · 6 quick questions</span>
+    : `<button class="hero smart" data-a="quiz">
+        <span class="row between"><span class="eyebrow smartk">${SPARK}Smart match</span><span class="cap">6 quick taps</span></span>
         <span class="hero-h">Find the counsellor who <span class="swash">gets you</span>.</span>
         <span class="note" style="color:var(--ink-muted)">no long forms, just taps</span>
-        <span class="row" style="gap:-8px">${EXPERTS.slice(0, 4).map(e => `<span class="stackph">${img(e, '', 's')}</span>`).join('')}<span class="cap" style="margin-left:14px">Matched on what you need, how you like to talk, and language</span></span>
-        <span class="btn primary block">Start · about 2 minutes</span></button>`}
+        <span class="row" style="gap:-8px"><span class="row matchrow">${EXPERTS.slice(0, 4).map((e, k) => `<span class="stackph" style="--k:${k}">${img(e, '', 's')}</span>`).join('')}</span><span class="cap" style="margin-left:14px">Matched on what you need, how you like to talk, and language</span></span>
+        <span class="btn primary block">Start · only 2 minutes</span></button>`}
     <p class="muted" style="margin:0">Want to look around first? <button class="link" data-a="seg" data-v="browse">Browse all experts</button></p>`;
   }
   if (seg === 'browse') {
-    const f = S.filt; let list = matches().map(x => x.e);
-    if (f.lang.length) list = list.filter(e => f.lang.some(l => e.langs.includes(l)));
-    if (f.mode.length) list = list.filter(e => f.mode.some(m => e.modes.includes(m)));
-    if (f.gender.length) list = list.filter(e => f.gender.includes(e.gender));
-    if (f.today) list = list.filter(e => e.today);
-    if (S.sort === 'rating') list.sort((a, b) => b.rating - a.rating);
-    if (S.sort === 'soonest') list.sort((a, b) => (b.today ? 1 : 0) - (a.today ? 1 : 0));
-    const nf = f.lang.length + f.mode.length + f.gender.length + (f.today ? 1 : 0), ids = list.map(e => e.id).join(',');
-    body = `<div class="row"><button class="btn sm" style="flex:1;background:var(--surface-raised);color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)" data-a="sheet" data-v="sort">${ic('sort')}${S.sort === 'match' ? 'Best match' : S.sort === 'rating' ? 'Top rated' : 'Soonest'}</button><button class="btn sm" style="flex:1;background:var(--violet-600);color:var(--surface-raised)" data-a="sheet" data-v="filter">${ic('filter')}Filter${nf ? ' · ' + nf : ''}</button></div>
+    const list = expertList(), nf = filtCount(), ids = list.map(e => e.id).join(',');
+    body = `<div class="row" style="gap:10px"><label class="searchbox"><span class="sr">Search experts</span>${ic('search')}<input id="xsearch" type="search" placeholder="Search name or topic" value="${esc(S.q || '')}" autocomplete="off"></label>
+      <button class="iconbtn filtbtn ${nf ? 'on' : ''}" data-a="sheet" data-v="filter" aria-label="Filter and sort${nf ? ', ' + nf + ' on' : ''}">${ic('filter')}${nf ? `<span class="badge">${nf}</span>` : ''}</button></div>
+      ${S.q ? `<span class="cap">${list.length} result${list.length === 1 ? '' : 's'} for “${esc(S.q)}”</span>` : ''}
       ${list.length ? `<div class="grid2">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
           <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
         <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(' · ')}</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
-        : `<div class="card stack" style="text-align:center"><b>No one matches all of these</b><span class="muted">Try removing a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear filters</button></div>`}`;
+        : `<div class="card stack" style="text-align:center"><b>No one matches${S.q ? ' “' + esc(S.q) + '”' : ' all of these'}</b><span class="muted">Try a different word or remove a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear search and filters</button></div>`}`;
   }
   if (seg === 'mine') {
     const up = S.booked && EXM[S.booked.id];
@@ -949,10 +965,10 @@ async function dostClose(d) {
 V.dost = () => {
   if (!X.d) dostStart();
   const d = X.d, last = [...d.msgs].reverse().find(m => m.role === 'assistant');
-  return `<div class="screen notab glow" style="gap:14px;padding-bottom:16px">
+  return `<div class="screen notab dostscr" style="gap:14px;padding-bottom:16px">
     <div class="row between"><button class="iconbtn" data-a="back" aria-label="Close">${ic('close')}</button><div style="text-align:center"><b>Dost</b><div class="cap">Your guide, not a doctor</div></div>
       <span class="tag ${d.live === false ? 'peach' : d.live ? 'sage' : ''}" style="min-width:44px;justify-content:center">${d.live === false ? 'Offline' : d.live ? 'AI live' : 'AI'}</span></div>
-    <div class="orb ${d.busy ? 'busy' : ''}" style="width:120px;height:120px;flex:none" aria-hidden="true"></div>
+    <div class="orb ${d.busy ? 'busy' : ''}" style="width:150px;height:150px;flex:none" aria-hidden="true"></div>
     <div class="lbl" style="text-align:center;color:var(--violet-600)" aria-live="polite">${d.busy ? 'Thinking…' : d.done ? (d.res && d.res.priority === 'high' ? 'A person can help right now' : 'Here\'s your plan') : 'Type or tap an answer'}</div>
     <div id="log" class="stack" style="gap:10px;flex:1;overflow-y:auto;align-content:start;min-height:120px">
       ${d.msgs.map(m => `<div class="bub ${m.role === 'user' ? 'u' : 'd'}">${esc(m.content)}</div>`).join('')}
@@ -1054,8 +1070,12 @@ function sheetHTML() {
       <div class="li"><span class="dot tint-help" style="color:var(--help-600)">${ic('shield')}</span><span class="grow"><b>Emergency · 112</b><span class="cap" style="display:block">If you're in danger right now</span></span></div></div>
     <button class="btn ghost block" data-a="close">I'm safe for now</button>`;
   if (s.name === 'filter') { const f = S.filt; const grp = (k, label, opts) => `<div class="stack" style="gap:8px"><span class="lbl">${label}</span><div class="row wrap">${opts.map(o => `<button class="chip" data-a="filt" data-k="${k}" data-v="${o}" aria-pressed="${f[k].includes(o)}">${o}</button>`).join('')}</div></div>`;
-    body = `<div class="row between"><h2 class="t1">Filter</h2><button class="link" data-a="filt-clear">Clear all</button></div>${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu'])}${grp('mode', 'How to talk', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
-      <div class="row between"><span class="lbl">Free today</span><button class="toggle" role="switch" aria-checked="${f.today}" aria-label="Free today" data-a="filt-today"></button></div><button class="btn primary block" data-a="close">Show experts</button>`; }
+    const n = expertList().length;
+    body = `<div class="row between"><h2 class="t1">Filter &amp; sort</h2><button class="link" data-a="filt-clear">Reset</button></div>
+      <div class="stack" style="gap:8px"><span class="lbl">Show first</span><div class="row wrap">${[['match', 'Best match'], ['rating', 'Top rated'], ['soonest', 'Free soonest']].map(([k, l]) => `<button class="chip" data-a="sortc" data-v="${k}" aria-pressed="${S.sort === k}">${l}</button>`).join('')}</div></div>
+      ${grp('lang', 'Language', ['English', 'Hindi', 'Tamil', 'Marathi', 'Urdu'])}${grp('mode', 'How to talk', ['Video', 'Call', 'Chat'])}${grp('gender', 'Counsellor', ['Woman', 'Man'])}
+      <div class="row between"><span class="lbl">Free today</span><button class="toggle" role="switch" aria-checked="${f.today}" aria-label="Free today" data-a="filt-today"></button></div>
+      <button class="btn primary block" data-a="close" ${n ? '' : 'disabled style="opacity:.5"'}>${n ? `Show ${n} expert${n === 1 ? '' : 's'}` : 'No one matches yet'}</button>`; }
   if (s.name === 'sort') body = `<h2 class="t1">Sort by</h2><div class="stack">${[['match', 'Best match'], ['rating', 'Rating'], ['soonest', 'Soonest free']].map(([k, l]) => `<button class="qopt" data-a="sort" data-v="${k}" ${S.sort === k ? 'style="border-color:var(--violet-600)"' : ''}>${l}</button>`).join('')}</div>`;
   if (s.name === 'book') {
     const e = EXM[S.params.ids[S.params.i]], mo = X.calM || 0, t0 = new Date(); t0.setHours(0, 0, 0, 0);
@@ -1104,6 +1124,8 @@ function render() {
   if (S.view === 'ritual' && X.ls) runListen();
   if (S.view === 'sos' && X.sos && ['connect', 'call'].includes(X.sos.phase)) runSos();
 
+  const xs = document.getElementById('xsearch');
+  if (xs) { xs.oninput = () => { S.q = xs.value; save(); render(); const n = document.getElementById('xsearch'); if (n) { n.focus(); n.setSelectionRange(n.value.length, n.value.length); } }; }
   drawTour();
   if (S.view === 'home') autoSlide(); else { clearInterval(EVT); EVT = null; }
   const lf = document.getElementById('loginform'); if (lf) lf.onsubmit = e => { e.preventDefault(); const b = lf.querySelector('[data-a="login"]'); if (b) b.click(); };
@@ -1234,7 +1256,9 @@ $app.addEventListener('click', e => {
     case 'calm': X.calM = Math.max(0, Math.min(1, (X.calM || 0) + +v)); render(); break;
     case 'filt': { const k = a.dataset.k; S.filt[k] = S.filt[k].includes(v) ? S.filt[k].filter(x => x !== v) : [...S.filt[k], v]; save(); render(); break; }
     case 'filt-today': S.filt.today = !S.filt.today; save(); render(); break;
-    case 'filt-clear': S.filt = { lang: [], mode: [], gender: [], today: false }; save(); render(); break;
+    case 'filt-clear': S.filt = { lang: [], mode: [], gender: [], today: false }; S.sort = 'match'; S.q = ''; save(); render(); break;
+    case 'sortc': S.sort = v; save(); render(); break;
+    case 'evdot': evGo(+v); break;
     case 'sort': S.sort = v; SHEET = null; save(); render(); break;
     case 'slot': X.slot = v; render(); break;
     case 'share': S.shareSummary = !S.shareSummary; save(); render(); break;
