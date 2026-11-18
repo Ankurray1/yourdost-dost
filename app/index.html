@@ -220,6 +220,28 @@ textarea.field{border-radius:var(--r-md);padding:14px 16px;min-height:96px;resiz
 .tl-item{position:relative}
 .tl-dot{position:absolute;left:-30px;top:16px;width:24px;height:24px;border-radius:50%;background:var(--sage-100);color:var(--sage-600);display:grid;place-items:center}
 .tl-dot svg{width:14px;height:14px}
+/* mood check-in: compact, once a day, with a small celebration */
+.moodcard{flex:none;background:var(--sun-100);border-radius:var(--r-md);padding:12px 12px 10px;display:grid;gap:8px;overflow:hidden;max-height:200px;transition:max-height .45s ease,opacity .35s ease,padding .45s ease,margin .45s ease}
+.moodcard.gone{max-height:0;opacity:0;padding-top:0;padding-bottom:0;margin-bottom:-20px}
+.moods{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.mood{display:grid;justify-items:center;gap:4px;border:0;background:none;padding:2px 0;font:600 11px/13px var(--f-body);color:var(--ink);text-align:center;min-height:44px;border-radius:var(--r-sm)}
+.mface{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:var(--surface-raised);color:var(--ink);position:relative;transition:transform .2s ease,background .2s ease;flex:none}
+.mood:hover .mface,.mood:focus-visible .mface{transform:translateY(-3px) scale(1.08);background:var(--mf)}
+.mood:active .mface{transform:scale(.92)}
+.picked .mface,.mface.pop{background:var(--mf)}
+.mface.pop{animation:pop .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(.6)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.spark{position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--sun-400);opacity:0;animation:spark .8s ease-out .1s forwards}
+.spark.s1{background:var(--peach-400)}.spark.s2{background:var(--sage-600)}.spark.s3{background:var(--violet-400)}.spark.s4{background:var(--sun-400)}.spark.s5{background:var(--peach-400)}
+@keyframes spark{0%{opacity:1;transform:rotate(var(--a)) translateY(0) scale(1)}100%{opacity:0;transform:rotate(var(--a)) translateY(-34px) scale(.4)}}
+.spark.s0{--a:0deg}.spark.s1{--a:60deg}.spark.s2{--a:120deg}.spark.s3{--a:180deg}.spark.s4{--a:240deg}.spark.s5{--a:300deg}
+.moodchip{display:flex;align-items:center;gap:6px;border:0;background:var(--surface-raised);box-shadow:var(--shadow-card);border-radius:var(--r-pill);padding:4px 12px 4px 4px;min-height:44px;color:var(--ink)}
+.moodchip.bump svg{animation:pop .6s cubic-bezier(.3,1.6,.5,1)}
+.mchart{display:grid;gap:3px;align-items:end;height:130px}
+.mchart div{display:grid;gap:4px;justify-items:center;align-self:end}
+.mchart b{width:100%;border-radius:6px 6px 3px 3px;min-height:4px}
+.mchart .cap{font-size:10px;line-height:12px;height:12px}
+.mdist{display:flex;height:14px;border-radius:var(--r-pill);overflow:hidden;gap:2px}
 .proto{position:fixed;left:16px;bottom:16px;font:500 12px/16px var(--f-body);color:var(--ink-muted);max-width:220px}
 @media (max-width:900px){.proto{display:none}}
 </style>

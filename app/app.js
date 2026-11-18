@@ -86,11 +86,11 @@ function slotsFor(e) {
 }
 
 /* ---------------- state (kept in this browser only) ---------------- */
-const KEY = 'yd-app-v2';
+const KEY = 'yd-app-v3';
 const fresh = () => ({
   onboarded: false, ob: 0, name: 'Riya', email: 'riya.sharma@acme.com', company: 'Acme Corp', concerns: [], lang: 'English',
   view: 'home', params: {}, stack: [], tab: 'home',
-  moodToday: null, moodWeek: [2, 3, 1, 3, 2, 3], leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
+  moods: seedMoods(), lastCheck: null, leaves: 3, wins: ['Did box breathing on Monday', 'Wrote three good things', 'Slept before 11 pm on Tuesday'],
   plan: null, sessionsLeft: 3, favs: ['e1'], seg: 'browse', sort: 'match', quiz: null,
   booked: { id: 'e1', day: 'Mon 24 Nov', time: '6 pm', mode: 'Video', n: 3 },
   history: [{ id: 'e1', n: 1, date: 'Mon 10 Nov', mode: 'Video', fit: 4, note: 'Mapped what drains my evenings: late calls and checking Slack in bed.', task: 'Try a switch-off ritual' }, { id: 'e1', n: 2, date: 'Mon 17 Nov', mode: 'Video', fit: 5, note: 'The ritual helped on 3 of 5 nights. Next: saying no to one late meeting.', task: 'Box breathing before stand-up' }],
@@ -200,9 +200,90 @@ V.ob = () => {
 };
 
 /* ---- Home ---- */
-const MOODS = [['Rough', 'M10 21c3-3 7-3 10 0'], ['Low', 'M11 20c2.5-1.5 5.5-1.5 8 0'], ['Okay', 'M11 19h8'], ['Good', 'M11 18c2.5 1.8 5.5 1.8 8 0'], ['Great', 'M9.5 17c3 4 8 4 11 0']];
-const MOOD_REPLY = ['That sounds heavy. Want to talk to Dost, or a person right now?', 'Thanks for telling me. A 3-minute reset might help a little.', 'Okay is okay. One small step below, if you want it.', 'Glad to hear it. Keep the good going with today\'s step.', 'Love that. Notice what made today good.'];
-const face = (d, k) => `<svg viewBox="0 0 30 30" width="30" height="30" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><path d="${d}"/></svg>`;
+/* ---- Mood: one check-in every 24 hours, a score out of 100, history by week, month and year ---- */
+const MOODS = [
+  ['Rough day', 'M10.5 21c2.8-2.6 6.2-2.6 9 0', 'Thanks for being honest. Go easy on yourself today.'],
+  ['Just okay', 'M11 19.5h8', 'Noted. Small steps still count today.'],
+  ['Pretty good', 'M11 18.5c2.4 1.6 5.6 1.6 8 0', 'Nice. Let\'s keep that going.'],
+  ['Much better', 'M10 18c2.8 2.6 7.2 2.6 10 0', 'Love that you\'re feeling better.'],
+  ['In a great space', 'M9.5 17.2c3 3.8 8 3.8 11 0', 'Wonderful. Notice what\'s helping.'],
+];
+const MOOD_FILL = ['var(--violet-400)', 'var(--violet-200)', 'var(--sun-200)', 'var(--sun-400)', 'var(--peach-400)'];
+const face = (i, size = 26) => `<svg viewBox="0 0 30 30" width="${size}" height="${size}" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">${i === 4 ? '<path d="M9 12.5c.8-1.4 2.4-1.4 3.2 0M17.8 12.5c.8-1.4 2.4-1.4 3.2 0"/>' : '<circle cx="11" cy="12" r="1.1" fill="currentColor"/><circle cx="19" cy="12" r="1.1" fill="currentColor"/>'}<path d="${MOODS[i][1]}"/></svg>`;
+function dkey(dt) { return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`; }
+function seedMoods() { // a year of example check-ins: heavier Mondays, lighter weekends, better on days with a care activity
+  const out = [], today = new Date(); let seed = 11;
+  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let d = 365; d >= 1; d--) {
+    const dt = new Date(today); dt.setDate(today.getDate() - d);
+    if (rnd() < 0.2) continue;
+    const dow = dt.getDay(), care = rnd() < 0.45;
+    let v = 1.4 + (365 - d) / 365 * 1.2 + (dow === 1 ? -0.7 : 0) + (dow === 0 || dow === 6 ? 0.4 : 0) + (care ? 0.6 : 0) + (rnd() - 0.5) * 1.6;
+    out.push({ d: dkey(dt), v: Math.max(0, Math.min(4, Math.round(v))), care });
+  }
+  return out;
+}
+const moodDue = () => !S.lastCheck || Date.now() - S.lastCheck > 24 * 3600 * 1000;
+const avg = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : null;
+const toScore = v => v === null ? null : Math.round(v * 25);
+function moodsSince(days, until = 0) {
+  const from = new Date(); from.setDate(from.getDate() - days); const to = new Date(); to.setDate(to.getDate() - until);
+  const a = dkey(from), b = dkey(to); return S.moods.filter(m => m.d > a && m.d <= b);
+}
+function ring(score, size = 34) {
+  const r = size / 2 - 3, c = 2 * Math.PI * r, f = (score ?? 0) / 100;
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true"><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--sun-100)" stroke-width="4"/><circle cx="${size / 2}" cy="${size / 2}" r="${r}" fill="none" stroke="var(--sun-400)" stroke-width="4" stroke-linecap="round" stroke-dasharray="${c * f} ${c}" transform="rotate(-90 ${size / 2} ${size / 2})"/><text x="50%" y="54%" text-anchor="middle" dominant-baseline="middle" font-family="Poppins,sans-serif" font-weight="700" font-size="${size * 0.33}" fill="var(--ink)">${score ?? '–'}</text></svg>`;
+}
+function moodCard() {
+  const p = X.moodPicked;
+  if (p === undefined || p === null) {
+    if (!moodDue()) return '';
+    return `<section class="moodcard" aria-label="Daily mood check-in"><div class="row between"><h2 class="lbl" style="font-size:15px;margin:0;white-space:nowrap">How are you feeling today?</h2><span class="note" style="font-size:15px;white-space:nowrap">no wrong answers</span></div>
+      <div class="moods">${MOODS.map((m, i) => `<button class="mood" data-a="mood" data-v="${i}"><span class="mface" style="--mf:${MOOD_FILL[i]}">${face(i)}</span><span>${m[0]}</span></button>`).join('')}</div></section>`;
+  }
+  return `<section class="moodcard picked ${X.moodGone ? 'gone' : ''}" aria-live="polite"><div class="row" style="gap:12px">
+      <span class="mface pop" style="--mf:${MOOD_FILL[p]};width:46px;height:46px">${face(p, 30)}${[0, 1, 2, 3, 4, 5].map(k => `<i class="spark s${k}"></i>`).join('')}</span>
+      <span class="stack" style="gap:2px"><b>${MOODS[p][0]}. Logged.</b><span class="cap" style="font-size:13px">${MOODS[p][2]}</span></span></div></section>`;
+}
+function moodChip() {
+  const s = toScore(avg(moodsSince(7).map(m => m.v))), prev = toScore(avg(moodsSince(14, 7).map(m => m.v)));
+  const up = s !== null && prev !== null ? s - prev : 0;
+  return `<button class="moodchip ${X.moodBump ? 'bump' : ''}" data-a="moodview" aria-label="Mood score ${s} this week. Open mood details">${ring(s)}<span class="stack" style="gap:0;text-align:left"><b style="font:600 13px/16px var(--f-body)">Mood</b><span class="cap" style="font-size:11px">${up > 0 ? '▲ ' + up : up < 0 ? '▼ ' + Math.abs(up) : 'steady'}</span></span></button>`;
+}
+V.mood = () => {
+  const per = X.per || 'month', DAY = 86400000;
+  let bars = [], label = '', cur = [], prev = [];
+  if (per === 'week' || per === 'month') {
+    const n = per === 'week' ? 7 : 30; cur = moodsSince(n); prev = moodsSince(n * 2, n); label = per === 'week' ? 'Last 7 days' : 'Last 30 days';
+    const by = Object.fromEntries(cur.map(m => [m.d, m.v]));
+    for (let i = n - 1; i >= 0; i--) { const dt = new Date(Date.now() - i * DAY); const v = by[dkey(dt)]; bars.push({ v, l: per === 'week' ? DAYS[dt.getDay()][0] : (i % 7 === 0 ? String(dt.getDate()) : '') }); }
+  } else {
+    cur = moodsSince(365); prev = []; label = 'Last 12 months';
+    for (let i = 11; i >= 0; i--) { const dt = new Date(); dt.setDate(1); dt.setMonth(dt.getMonth() - i); const pre = dkey(dt).slice(0, 7); const ms = S.moods.filter(m => m.d.startsWith(pre)); bars.push({ v: ms.length ? avg(ms.map(m => m.v)) : undefined, l: 'JFMAMJJASOND'[dt.getMonth()] }); }
+  }
+  const sc = toScore(avg(cur.map(m => m.v))), pv = toScore(avg(prev.map(m => m.v))), delta = sc !== null && pv !== null ? sc - pv : null;
+  const counts = [0, 1, 2, 3, 4].map(k => cur.filter(m => m.v === k).length), tot = cur.length || 1;
+  const base = moodsSince(90);
+  const dow = [0, 1, 2, 3, 4, 5, 6].map(k => ({ k, a: avg(base.filter(m => new Date(m.d + 'T12:00').getDay() === k).map(m => m.v)) })).filter(x => x.a !== null).sort((a, b) => b.a - a.a);
+  const careA = toScore(avg(base.filter(m => m.care).map(m => m.v))), noA = toScore(avg(base.filter(m => !m.care).map(m => m.v)));
+  const full = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const W = per === 'month' ? 30 : per === 'week' ? 7 : 12;
+  return `<div class="screen notab">${top('Your mood')}
+    <div class="seg" role="group" aria-label="Period">${[['week', 'Week'], ['month', 'Month'], ['year', 'Year']].map(([k, l]) => `<button data-a="per" data-v="${k}" aria-pressed="${per === k}">${l}</button>`).join('')}</div>
+    <section class="card stack"><div class="row between" style="align-items:flex-end"><div class="row" style="gap:12px">${ring(sc, 64)}<div><span class="eyebrow">Mood score</span><div class="t2">${sc === null ? 'No check-ins yet' : sc >= 70 ? 'Mostly bright' : sc >= 50 ? 'Mixed, leaning up' : 'A heavier stretch'}</div></div></div>
+      ${delta !== null ? `<span class="tag ${delta >= 0 ? 'sage' : 'peach'}">${delta >= 0 ? '▲' : '▼'} ${Math.abs(delta)} vs before</span>` : ''}</div>
+      <div class="mchart" style="grid-template-columns:repeat(${W},1fr)" role="img" aria-label="Mood ${label}">${bars.map(b => `<div><b style="height:${b.v === undefined ? 4 : 10 + b.v * 22}px;background:${b.v === undefined ? 'var(--surface-sunken)' : MOOD_FILL[Math.round(b.v)]}"></b><span class="cap">${b.l}</span></div>`).join('')}</div>
+      <span class="cap">${label} · ${cur.length} check-ins · score is your average, out of 100</span></section>
+    <section class="card stack"><h2 class="t2">How the days felt</h2>
+      <div class="mdist">${counts.map((c, k) => c ? `<i style="flex:${c};background:${MOOD_FILL[k]}" title="${MOODS[k][0]}: ${c}"></i>` : '').join('')}</div>
+      <div class="stack" style="gap:6px">${counts.map((c, k) => `<div class="row between"><span class="row" style="gap:8px"><span class="mface" style="--mf:${MOOD_FILL[k]};width:28px;height:28px;background:var(--mf)">${face(k, 18)}</span>${MOODS[k][0]}</span><span class="cap">${c} day${c === 1 ? '' : 's'} · ${Math.round(c / tot * 100)}%</span></div>`).join('')}</div></section>
+    <section class="sec"><h2 class="t2">What we're noticing</h2>
+      ${dow.length > 2 ? `<div class="card row"><span class="dot tint-sun">${ic('sun')}</span><span>${full[dow[0].k]}s tend to feel lightest; ${full[dow[dow.length - 1].k]}s are heavier.</span></div>` : ''}
+      ${careA !== null && noA !== null ? `<div class="card row"><span class="dot tint-sage">${ic('grow')}</span><span>On days you did a care activity, your mood score was ${careA} vs ${noA} on other days.</span></div>` : ''}
+      <div class="card row"><span class="dot tint-violet">${ic('cal')}</span><span>You checked in on ${moodsSince(30).length} of the last 30 days. That's you showing up for yourself.</span></div></section>
+    <div class="row"><button class="btn soft" style="flex:1" data-a="dost">${ic('mic')}Talk it through with Dost</button></div>
+    <p class="cap" style="margin:0">${ic('lock')} Only you see your mood. ${esc(S.company)} never does. <button class="link" data-a="mood-again">Prototype: check in again</button></p></div>`;
+};
 function todayStep() {
   if (S.plan) {
     const s = S.plan.steps.find(x => !x.done) || null;
@@ -211,15 +292,12 @@ function todayStep() {
   return null;
 }
 V.home = () => {
-  const m = S.moodToday, step = todayStep(), bk = S.booked && EXM[S.booked.id];
+  const step = todayStep(), bk = S.booked && EXM[S.booked.id];
   const care = (S.plan && S.plan.ex) ? [S.plan.ex, 'ex_good', 'ex_ground'] : ['ex_box', 'ex_good', 'ex_ground'];
   return `<div class="screen">
   <div class="row between"><div><span class="cap">${greet()},</span><h1 class="display" style="font-size:28px;line-height:34px">${esc(S.name)}</h1></div>
-    <div class="row"><button class="btn helpbtn sm" data-a="help">${ic('phone')}Get help</button><button class="avatar" data-a="tab" data-v="me" aria-label="Me" style="border:0">${esc(S.name[0])}</button></div></div>
-  ${m === null ? `<section class="card tint-sun stack" aria-label="Mood check-in" style="border-radius:var(--r-lg);box-shadow:none">
-      <h2 class="t2">How are you, really?</h2><p class="note" style="margin-top:-8px">no wrong answers</p>
-      <div class="row between">${MOODS.map(([l, d], i) => `<button class="tab" style="min-width:0;flex:1;color:var(--ink)" data-a="mood" data-v="${i}"><span class="dot" style="width:46px;height:46px;background:var(--surface-raised)">${face(d)}</span>${l}</button>`).join('')}</div></section>`
-    : `<section class="card tint-sun row" style="box-shadow:none;align-items:flex-start"><span class="dot" style="width:46px;height:46px;background:var(--sun-400);color:#2F2663">${face(MOODS[m][1])}</span><div class="stack" style="gap:6px;flex:1"><b>You're feeling ${MOODS[m][0].toLowerCase()} today</b><span class="muted">${MOOD_REPLY[m]}</span>${m === 0 ? `<div class="row wrap"><button class="btn primary sm" data-a="dost">Talk to Dost</button><button class="btn helpbtn sm" data-a="help">Talk to a person</button></div>` : ''}</div><button class="link" data-a="mood-reset" aria-label="Change today's mood">Change</button></section>`}
+    <div class="row">${moodChip()}<button class="avatar" data-a="tab" data-v="me" aria-label="Me" style="border:0">${esc(S.name[0])}</button></div></div>
+  ${moodCard()}
   <section class="sec"><div class="sec-h"><h2 class="t2">Today's one step</h2>${S.plan ? `<span class="tag violet">From your plan</span>` : ''}</div>
     ${step ? stepCard(step) : `<button class="card glow row" data-a="dost" style="border:0;text-align:left;box-shadow:var(--shadow-card)"><span class="orb sm" style="animation:none;flex:none;width:64px;height:64px;box-shadow:0 0 0 6px color-mix(in srgb,var(--violet-200) 70%,transparent)"></span><span class="stack" style="gap:4px"><b>Talk to Dost for 2 minutes</b><span class="cap">Dost asks a few questions and finds the right support for you.</span></span></button>`}</section>
   ${bk ? `<section class="card row"><span class="dot tint-violet">${ic('video')}</span><div style="flex:1"><b>${esc(S.booked.day)}, ${esc(S.booked.time)} with ${esc(bk.name.split(' ')[0])}</b><div class="cap">${esc(S.booked.mode)} session · reminder 1 hour before</div></div><button class="btn soft sm" data-a="toast" data-v="Your session room opens 10 minutes before.">Join</button></section>` : ''}
@@ -508,12 +586,12 @@ V.journal = () => `<div class="screen notab">${top('Journal')}<p class="note">no
 /* ---- Me ---- */
 V.me = () => {
   const days = []; for (let i = 6; i >= 0; i--) { const dt = new Date(); dt.setDate(dt.getDate() - i); days.push(DAYS[dt.getDay()][0]); }
-  const week = [...S.moodWeek.slice(-6), S.moodToday];
+  const wk = Object.fromEntries(moodsSince(7).map(m => [m.d, m.v])); const week = []; for (let i = 6; i >= 0; i--) { const dt = new Date(); dt.setDate(dt.getDate() - i); week.push(wk[dkey(dt)]); }
   return `<div class="screen">
     <div class="row"><span class="avatar" style="width:56px;height:56px;font-size:22px">${esc(S.name[0])}</span><div><h1 class="t1">${esc(S.name)}</h1><span class="cap">${esc(S.email)} · ${esc(S.company)}</span></div></div>
-    <section class="card stack"><div class="row between"><h2 class="t2">Your week</h2><span class="cap">mood check-ins</span></div>
-      <div class="moodbars" role="img" aria-label="Mood over the last 7 days">${week.map((v, i) => `<div><b class="${v >= 3 ? 'hi' : ''}" style="height:${v === null || v === undefined ? 6 : 18 + v * 20}px;${v === null || v === undefined ? 'background:var(--surface-sunken)' : ''}"></b><span class="cap">${days[i]}</span></div>`).join('')}</div>
-      <p class="muted" style="margin:0">${S.moodToday === null ? 'Check in today on Home to add to your week.' : 'Thanks for checking in today.'}</p></section>
+    <button class="card stack" data-a="moodview" style="border:0;text-align:left"><div class="row between"><h2 class="t2">Your week</h2><span class="link">Mood details ›</span></div>
+      <div class="moodbars" role="img" aria-label="Mood over the last 7 days">${week.map((v, i) => `<div><b style="height:${v === undefined ? 6 : 18 + v * 20}px;background:${v === undefined ? 'var(--surface-sunken)' : MOOD_FILL[v]}"></b><span class="cap">${days[i]}</span></div>`).join('')}</div>
+      <span class="muted">${moodDue() ? 'Check in on Home to add today.' : 'Thanks for checking in today.'}</span></button>
     <section class="card tint-sage stack" style="box-shadow:none"><h2 class="t2">Small wins this week</h2>${garden(S.leaves)}<ul style="margin:0;padding-left:18px;display:grid;gap:4px">${S.wins.slice(-4).map(w => `<li>${esc(w)}</li>`).join('')}</ul></section>
     <section class="card tint-violet stack" style="box-shadow:none"><div class="row between"><h2 class="t2">Your benefits</h2><span class="tag">${esc(S.company)}</span></div>
       <span>${S.sessionsLeft} of 6 counselling sessions left this year</span><div class="bar"><i style="width:${S.sessionsLeft / 6 * 100}%;background:var(--violet-600)"></i></div><span class="cap">Dost, Grow and quick checks are unlimited.</span></section>
@@ -624,8 +702,15 @@ $app.addEventListener('click', e => {
     case 'dost': go('dost'); break;
     case 'dchip': dostSend(v); break;
     case 'plan-start': { const s = S.plan.steps[0]; go('ex', { id: s.id }); break; }
-    case 'mood': S.moodToday = +v; save(); render(); break;
-    case 'mood-reset': S.moodToday = null; save(); render(); break;
+    case 'mood': { if (X.moodPicked !== undefined && X.moodPicked !== null) break; const k = +v, today = dkey(new Date());
+      S.moods = S.moods.filter(m => m.d !== today); S.moods.push({ d: today, v: k, care: !!Object.keys(S.doneToday).length }); S.lastCheck = Date.now(); save();
+      X.moodPicked = k; X.moodBump = true; render();
+      setTimeout(() => { if (S.view !== 'home') return; X.moodGone = true; render(); }, 1700);
+      setTimeout(() => { if (S.view !== 'home') return; X.moodPicked = null; X.moodGone = false; X.moodBump = false; render(); if (k === 0) toast('Heavy day? Dost and a counsellor are one tap away.'); }, 2200);
+      break; }
+    case 'moodview': go('mood'); break;
+    case 'per': X.per = v; render(); break;
+    case 'mood-again': S.lastCheck = null; save(); toast('The check-in is back on Home.'); break;
     case 'help': sheet('help'); break;
     case 'call': SHEET.calling = true; render(); break;
     case 'talknow': sheet('help', { calling: true }); break;
