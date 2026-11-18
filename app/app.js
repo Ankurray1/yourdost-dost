@@ -841,9 +841,17 @@ V.experts = () => {
   if (seg === 'browse') {
     const list = expertList(), nf = filtCount(), ids = list.map(e => e.id).join(',');
     body = `<div class="row" style="gap:10px"><label class="searchbox"><span class="sr">Search experts</span>${ic('search')}<input id="xsearch" type="search" placeholder="Search name or topic" value="${esc(S.q || '')}" autocomplete="off"></label>
+      <button class="iconbtn filtbtn" data-a="xview" aria-label="${S.xview === 'list' ? 'Show as grid' : 'Show as list'}">${ic2(S.xview === 'list' ? 'gridv' : 'listv')}</button>
       <button class="iconbtn filtbtn ${nf ? 'on' : ''}" data-a="sheet" data-v="filter" aria-label="Filter and sort${nf ? ', ' + nf + ' on' : ''}">${ic('filter')}${nf ? `<span class="badge">${nf}</span>` : ''}</button></div>
       ${S.q ? `<span class="cap">${list.length} result${list.length === 1 ? '' : 's'} for “${esc(S.q)}”</span>` : ''}
-      ${list.length ? `<div class="xgrid">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
+      ${list.length && S.xview === 'list' ? `<div class="xlist">${list.map((e, i) => `<button class="xrow" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}">
+          <span class="xph">${img(e, '', 's')}</span>
+          <span class="xbody"><span class="row between" style="gap:6px"><b class="tname">${esc(e.name)}</b><span class="xrate">${STAR}${e.rating.toFixed(1)}</span></span>
+            <span class="cap">${esc(e.title)} · ${e.yrs} yrs</span>
+            <span class="cap">${e.focus.map(c => CL[c]).join(' · ')}</span>
+            <span class="tlang">${e.langs.join(' · ')}</span>
+            <span class="row between" style="gap:6px;margin-top:4px"><span class="xfree">${e.today ? 'Free today, ' + esc(e.today) : 'Next: ' + esc((nextFree(e, 1)[0] || 'this week').replace(/^Tomorrow, /, 'tomorrow, '))}</span><span class="xmode">${CLINIC[e.id] ? 'Online · In person' : 'Online'}</span></span></span></button>`).join('')}</div>`
+      : list.length ? `<div class="xgrid">${list.map((e, i) => `<div class="tile mtile"><div class="photo">${img(e, '', 's')}<span class="notch">${STAR}${e.rating.toFixed(1)}</span>
           <button class="tapcover" data-a="deck" data-v="${ids}" data-i="${i}" aria-label="Open ${esc(e.name)}"></button></div>
         <button class="tile" data-a="deck" data-v="${ids}" data-i="${i}"><b class="tname">${esc(e.name)}</b><span class="cap">${e.focus.slice(0, 2).map(c => CL[c]).join(' · ')}</span><span class="tlang">${e.langs.join(' · ')}</span></button></div>`).join('')}</div>`
         : `<div class="card stack" style="text-align:center"><b>No one matches${S.q ? ' “' + esc(S.q) + '”' : ' all of these'}</b><span class="muted">Try a different word or remove a filter.</span><button class="btn soft sm" data-a="filt-clear">Clear search and filters</button></div>`}`;
@@ -1213,6 +1221,8 @@ const P2 = {
   link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
   file: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M10 12h5M10 16h5"/>',
   clip: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4.5h6v2.5H9zM9 12l2 2 4-4"/>',
+  gridv: '<rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/>',
+  listv: '<rect x="4" y="5" width="5" height="5" rx="1.2"/><rect x="4" y="14" width="5" height="5" rx="1.2"/><path d="M12 6.5h8M12 9h5M12 15.5h8M12 18h5"/>',
   timer: '<circle cx="12" cy="13" r="7"/><path d="M12 13V9.5M10 3h4"/>',
 };
 const ic2 = (n, x = '') => P2[n] ? `<svg class="i ${x}" viewBox="0 0 24 24" aria-hidden="true">${P2[n]}</svg>` : ic(n, x);
@@ -1715,6 +1725,7 @@ $app.addEventListener('click', e => {
     case 'filt': { const k = a.dataset.k; S.filt[k] = S.filt[k].includes(v) ? S.filt[k].filter(x => x !== v) : [...S.filt[k], v]; save(); render(); break; }
     case 'filt-today': S.filt.today = !S.filt.today; save(); render(); break;
     case 'filt-clear': S.filt = { lang: [], mode: [], gender: [], today: false, where: [] }; S.sort = 'match'; S.q = ''; save(); render(); break;
+    case 'xview': S.xview = S.xview === 'list' ? 'grid' : 'list'; save(); render(); break;
     case 'sortc': S.sort = v; save(); render(); break;
     case 'evdot': evGo(+v); break;
     case 'sort': S.sort = v; SHEET = null; save(); render(); break;
